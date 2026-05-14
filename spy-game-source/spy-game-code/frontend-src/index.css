@@ -1,0 +1,201 @@
+@import url('https://fonts.googleapis.com/css2?family=Kufam:wght@400;700;900&family=Tajawal:wght@400;500;700;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #0B0C10;
+  color: #F9FAFB;
+  font-family: 'Tajawal', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  direction: rtl;
+  min-height: 100vh;
+  overscroll-behavior: none;
+}
+
+#root {
+  min-height: 100vh;
+  background: #0B0C10;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.font-kufam { font-family: 'Kufam', sans-serif; }
+.font-tajawal { font-family: 'Tajawal', sans-serif; }
+
+/* Noise overlay */
+.bg-noise::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
+  z-index: 1;
+}
+
+/* Subtle vertical scanlines for noir feel */
+.bg-scan {
+  background-image: repeating-linear-gradient(
+    180deg,
+    rgba(255,255,255,0.012) 0px,
+    rgba(255,255,255,0.012) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+}
+
+@layer base {
+  :root {
+    --background: 220 13% 7%;
+    --foreground: 220 14% 96%;
+    --card: 217 19% 16%;
+    --card-foreground: 220 14% 96%;
+    --popover: 217 19% 12%;
+    --popover-foreground: 220 14% 96%;
+    --primary: 0 72% 51%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 217 19% 22%;
+    --secondary-foreground: 220 14% 96%;
+    --muted: 217 19% 22%;
+    --muted-foreground: 220 9% 65%;
+    --accent: 217 19% 22%;
+    --accent-foreground: 220 14% 96%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 217 19% 27%;
+    --input: 217 19% 22%;
+    --ring: 0 72% 51%;
+    --radius: 0.75rem;
+  }
+}
+
+@layer base {
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Press-button effect (Neo-Brutalist) */
+.btn-press {
+  transition: transform 0.1s ease, border-bottom-width 0.1s ease, box-shadow 0.1s ease;
+}
+.btn-press:active {
+  transform: translateY(2px);
+}
+
+/* Pulse glow for spy reveal */
+@keyframes spy-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.6); }
+  50% { box-shadow: 0 0 40px 8px rgba(220, 38, 38, 0.35); }
+}
+.spy-pulse { animation: spy-pulse 1.6s ease-in-out infinite; }
+
+@keyframes word-glow {
+  0%, 100% { text-shadow: 0 0 18px rgba(253, 224, 71, 0.4); }
+  50% { text-shadow: 0 0 32px rgba(253, 224, 71, 0.8); }
+}
+.word-glow { animation: word-glow 2s ease-in-out infinite; }
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fade-up 0.5s ease-out both; }
+
+@keyframes slide-in {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.slide-in { animation: slide-in 0.4s ease-out both; }
+
+@keyframes screen-fade {
+  from { opacity: 0; transform: translateY(8px) scale(0.99); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.screen-fade { animation: screen-fade 0.35s ease-out both; }
+
+/* ===== Desktop ambient background ===== */
+.desktop-bg {
+  background-color: #0B0C10;
+  background-image:
+    radial-gradient(circle at 12% 18%, rgba(220, 38, 38, 0.18) 0%, transparent 35%),
+    radial-gradient(circle at 88% 78%, rgba(253, 224, 71, 0.10) 0%, transparent 40%),
+    radial-gradient(circle at 75% 12%, rgba(220, 38, 38, 0.10) 0%, transparent 30%),
+    radial-gradient(circle at 18% 88%, rgba(59, 130, 246, 0.06) 0%, transparent 35%),
+    linear-gradient(180deg, #0B0C10 0%, #0a0a0e 50%, #0B0C10 100%);
+  position: relative;
+}
+
+.desktop-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(ellipse 80% 60% at center, black 30%, transparent 80%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 60% at center, black 30%, transparent 80%);
+}
+
+.desktop-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+}
+
+/* Vignette dark corners */
+.desktop-vignette {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+  background: radial-gradient(ellipse 110% 80% at center, transparent 40%, rgba(0,0,0,0.55) 100%);
+}
+
+/* Floating decorative orbs */
+@keyframes float-1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(20px, -30px) scale(1.08); }
+}
+@keyframes float-2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-25px, 25px) scale(1.05); }
+}
+.orb-1 { animation: float-1 12s ease-in-out infinite; }
+.orb-2 { animation: float-2 14s ease-in-out infinite; }
+
+/* Side eye watermark on desktop edges */
+.desktop-watermark {
+  position: fixed;
+  font-family: 'Kufam', sans-serif;
+  font-weight: 900;
+  color: rgba(220, 38, 38, 0.04);
+  font-size: 18rem;
+  line-height: 1;
+  letter-spacing: -0.05em;
+  pointer-events: none;
+  user-select: none;
+  z-index: 1;
+  white-space: nowrap;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #1F2833; }
+::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
+
+/* Long press progress for role reveal */
+.hold-progress {
+  background: linear-gradient(90deg, #DC2626 var(--p, 0%), transparent var(--p, 0%));
+}

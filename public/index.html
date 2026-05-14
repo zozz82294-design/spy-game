@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spy Game - لعبة الجاسوس</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6c5ce7;
+            --primary-light: #a29bfe;
+            --secondary: #00cec9;
+            --accent: #fd79a8;
+            --danger: #e17055;
+            --success: #00b894;
+            --warning: #fdcb6e;
+            --bg-dark: #0a0a1a;
+            --bg-card: rgba(20, 20, 45, 0.85);
+            --bg-glass: rgba(255, 255, 255, 0.05);
+            --border-glass: rgba(255, 255, 255, 0.1);
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.7);
+            --text-muted: rgba(255, 255, 255, 0.4);
+            --glow-primary: 0 0 20px rgba(108, 92, 231, 0.5);
+            --glow-secondary: 0 0 20px rgba(0, 206, 201, 0.5);
+            --glow-accent: 0 0 20px rgba(253, 121, 168, 0.5);
+            --neon-purple: #6c5ce7;
+            --neon-cyan: #00cec9;
+            --neon-pink: #fd79a8;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Cairo', 'Tajawal', sans-serif;
+            background: var(--bg-dark);
+            min-height: 100vh;
+            color: var(--text-primary);
+            overflow-x: hidden;
+            position: relative;
+        }
+        body.custom-cursor { cursor: none !important; }
+        body.custom-cursor * { cursor: none !important; }
+        body.custom-cursor a, body.custom-cursor button, body.custom-cursor [onclick] { cursor: none !important; }
+
+        .custom-cursor-dot {
+            position: fixed; width: 10px; height: 10px;
+            background: radial-gradient(circle, #fff 0%, var(--neon-cyan) 50%, transparent 100%);
+            border-radius: 50%; pointer-events: none; z-index: 99999;
+            transition: transform 0.08s ease, width 0.2s, height 0.2s, background 0.3s;
+            box-shadow: 0 0 8px var(--neon-cyan), 0 0 15px var(--neon-cyan), 0 0 30px rgba(0, 206, 201, 0.4);
+            transform: translate(-50%, -50%);
+        }
+        .custom-cursor-dot.hovering {
+            width: 16px; height: 16px;
+            background: radial-gradient(circle, #fff 0%, var(--neon-pink) 50%, transparent 100%);
+            box-shadow: 0 0 12px var(--neon-pink), 0 0 25px var(--neon-pink), 0 0 40px rgba(253, 121, 168, 0.4);
+        }
+        .custom-cursor-ring {
+            position: fixed; width: 40px; height: 40px;
+            border: 2px solid rgba(108, 92, 231, 0.5);
+            border-radius: 50%; pointer-events: none; z-index: 99998;
+            transition: width 0.3s ease, height 0.3s ease, border-color 0.3s ease, background 0.3s ease;
+            transform: translate(-50%, -50%);
+            background: rgba(108, 92, 231, 0.05);
+        }
+        .custom-cursor-ring.hovering {
+            width: 55px; height: 55px;
+            border-color: rgba(253, 121, 168, 0.6);
+            background: rgba(253, 121, 168, 0.08);
+        }
+        .particle-trail {
+            position: fixed; pointer-events: none; z-index: 99997;
+            animation: particleFade 1s ease forwards;
+        }
+        .particle-trail.star { width: 6px; height: 6px; border-radius: 50%; opacity: 0.9; }
+        .particle-trail.spark { width: 3px; height: 3px; border-radius: 50%; opacity: 0.7; }
+        .particle-trail.glow { width: 12px; height: 12px; border-radius: 50%; opacity: 0.5; filter: blur(3px); }
+
+        @keyframes particleFade {
+            0% { opacity: 0.9; transform: scale(1) translateY(0); }
+            50% { opacity: 0.5; transform: scale(0.7) translateY(-10px); }
+            100% { opacity: 0; transform: scale(0) translateY(-20px); }
+        }
+        @keyframes cursorPulse {
+            0%, 100% { box-shadow: 0 0 8px var(--neon-cyan), 0 0 15px var(--neon-cyan); }
+            50% { box-shadow: 0 0 12px var(--neon-cyan), 0 0 25px var(--neon-cyan), 0 0 40px rgba(0, 206, 201, 0.3); }
+        }
+        body.custom-cursor .btn:hover, body.custom-cursor button:hover {
+            transform: translateY(-2px) scale(1.02); filter: brightness(1.2);
+        }
+        body.custom-cursor .glass-card:hover {
+            border-color: rgba(108, 92, 231, 0.4) !important;
+            box-shadow: 0 0 20px rgba(108, 92, 231, 0.3), 0 0 40px rgba(108, 92, 231, 0.1) !important;
+        }
+
+        .bg-orb {
+            position: fixed; border-radius: 50%; filter: blur(80px); opacity: 0.15;
+            animation: orbFloat 20s ease-in-out infinite; pointer-events: none; z-index: 0;
+        }
+        .bg-orb:nth-child(1) { width: 400px; height: 400px; background: var(--neon-purple); top: -100px; left: -100px; }
+        .bg-orb:nth-child(2) { width: 350px; height: 350px; background: var(--neon-cyan); bottom: -100px; right: -100px; animation-delay: -7s; }
+        .bg-orb:nth-child(3) { width: 300px; height: 300px; background: var(--neon-pink); top: 50%; left: 50%; transform: translate(-50%, -50%); animation-delay: -14s; }
+        @keyframes orbFloat {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            25% { transform: translate(50px, -30px) scale(1.1); }
+            50% { transform: translate(-30px, 50px) scale(0.9); }
+            75% { transform: translate(30px, 30px) scale(1.05); }
+        }
+        .grid-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: linear-gradient(rgba(108, 92, 231, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(108, 92, 231, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px; z-index: 0; pointer-events: none;
+        }
+        .screen { display: none; position: relative; z-index: 1; min-height: 100vh; padding: 20px; animation: fadeIn 0.5s ease; }
+        .screen.active { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        @keyframes shimmer { 0% { background-position: -200% center; } 100% { background-position: 200% center; } }
+        @keyframes glow { 0%, 100% { box-shadow: 0 0 5px rgba(108, 92, 231, 0.5); } 50% { box-shadow: 0 0 20px rgba(108, 92, 231, 0.8), 0 0 40px rgba(108, 92, 231, 0.4); } }
+        @keyframes borderGlow { 0%, 100% { border-color: rgba(108, 92, 231, 0.3); } 50% { border-color: rgba(108, 92, 231, 0.8); } }
+
+        .glass-card {
+            background: var(--bg-glass); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border-glass); border-radius: 20px; padding: 30px; transition: all 0.3s ease;
+        }
+        .glass-card:hover { border-color: rgba(108, 92, 231, 0.3); box-shadow: var(--glow-primary); }
+        .neon-text {
+            background: linear-gradient(135deg, var(--neon-purple), var(--neon-cyan), var(--neon-pink));
+            background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text; animation: shimmer 4s linear infinite;
+        }
+        .neon-border { animation: borderGlow 2s ease-in-out infinite; }
+        .btn {
+            padding: 14px 36px; font-size: 1.1rem; font-weight: 700; font-family: 'Cairo', sans-serif;
+            border: none; border-radius: 14px; cursor: pointer; transition: all 0.3s ease;
+            position: relative; overflow: hidden; display: inline-flex; align-items: center;
+            justify-content: center; gap: 8px; letter-spacing: 0.5px;
+        }
+        .btn::before {
+            content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent); transition: left 0.5s;
+        }
+        .btn:hover::before { left: 100%; }
+        .btn-primary { background: linear-gradient(135deg, var(--neon-purple), #8b5cf6); color: white; box-shadow: 0 4px 15px rgba(108, 92, 231, 0.4); }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 25px rgba(108, 92, 231, 0.6); }
+        .btn-secondary { background: linear-gradient(135deg, var(--neon-cyan), #00d2d3); color: white; box-shadow: 0 4px 15px rgba(0, 206, 201, 0.4); }
+        .btn-secondary:hover { transform: translateY(-2px); box-shadow: 0 6px 25px rgba(0, 206, 201, 0.6); }
+        .btn-danger { background: linear-gradient(135deg, var(--danger), #e55039); color: white; box-shadow: 0 4px 15px rgba(225, 112, 85, 0.4); }
+        .btn-danger:hover { transform: translateY(-2px); box-shadow: 0 6px 25px rgba(225, 112, 85, 0.6); }
+        .btn-success { background: linear-gradient(135deg, var(--success), #55efc4); color: white; box-shadow: 0 4px 15px rgba(0, 184, 148, 0.4); }
+        .btn-success:hover { transform: translateY(-2px); box-shadow: 0 6px 25px rgba(0, 184, 148, 0.6); }
+        .btn-accent { background: linear-gradient(135deg, var(--neon-pink), #e84393); color: white; box-shadow: 0 4px 15px rgba(253, 121, 168, 0.4); }
+        .btn-accent:hover { transform: translateY(-2px); box-shadow: 0 6px 25px rgba(253, 121, 168, 0.6); }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
+        .btn:disabled::before { display: none; }
+        .btn-lg { padding: 18px 48px; font-size: 1.3rem; border-radius: 16px; }
+        .btn-sm { padding: 8px 20px; font-size: 0.9rem; border-radius: 10px; }
+        .input-field {
+            width: 100%; padding: 14px 20px; font-size: 1.1rem; font-family: 'Cairo', sans-serif;
+            background: rgba(255, 255, 255, 0.05); border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 14px; color: white; outline: none; transition: all 0.3s ease; text-align: center;
+        }
+        .input-field:focus { border-color: var(--neon-purple); box-shadow: 0 0 15px rgba(108, 92, 231, 0.3); background: rgba(255, 255, 255, 0.08); }
+        .input-field::placeholder { color: var(--text-muted); }
+        .toast-container {
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 99999;
+            display: flex; flex-direction: column; gap: 10px; pointer-events: none;
+        }
+        .toast {
+            padding: 14px 28px; border-radius: 14px; font-weight: 600; font-size: 0.95rem;
+            backdrop-filter: blur(20px); animation: toastIn 0.4s ease, toastOut 0.4s ease 2.6s forwards;
+            pointer-events: auto; text-align: center;
+        }
+        .toast-success { background: rgba(0, 184, 148, 0.2); border: 1px solid rgba(0, 184, 148, 0.4); color: #55efc4; }
+        .toast-error { background: rgba(225, 112, 85, 0.2); border: 1px solid rgba(225, 112, 85, 0.4); color: #fab1a0; }
+        .toast-info { background: rgba(108, 92, 231, 0.2); border: 1px solid rgba(108, 92, 231, 0.4); color: #a29bfe; }
+        .toast-warning { background: rgba(253, 203, 110, 0.2); border: 1px solid rgba(253, 203, 110, 0.4); color: #ffeaa7; }
+        @keyframes toastIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes toastOut { from { opacity: 1; } to { opacity: 0; transform: translateY(-20px); } }
+
+        .player-item {
+            background: var(--bg-glass); backdrop-filter: blur(10px);
+            border: 1px solid var(--border-glass); border-radius: 14px; padding: 12px 16px;
+            display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;
+            transition: all 0.3s ease;
+        }
+        .player-item:hover { border-color: rgba(108, 92, 231, 0.3); }
+        .mode-card { transition: all 0.3s ease; }
+        .mode-card:hover { border-color: var(--neon-cyan) !important; box-shadow: var(--glow-secondary) !important; }
+        .guess-word-card { transition: all 0.3s ease; }
+        .guess-word-card:hover { border-color: var(--neon-cyan) !important; }
+        .guess-word-card.selected { border-color: var(--neon-cyan) !important; box-shadow: var(--glow-secondary) !important; }
+
+        @media (max-width: 600px) {
+            .glass-card { padding: 20px; }
+            .btn { padding: 12px 24px; font-size: 1rem; }
+            .btn-lg { padding: 14px 32px; font-size: 1.1rem; }
+            h1 { font-size: 2rem !important; }
+            h2 { font-size: 1.3rem !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-orb"></div>
+    <div class="bg-orb"></div>
+    <div class="bg-orb"></div>
+    <div class="grid-overlay"></div>
+    <div class="toast-container" id="toastContainer"></div>
+    <div class="custom-cursor-dot" id="cursorDot" style="display:none;"></div>
+    <div class="custom-cursor-ring" id="cursorRing" style="display:none;"></div>
+
+    <!-- شاشة الهوست الرئيسية -->
+    <div class="screen active" id="hostHomeScreen">
+        <div class="glass-card neon-border" style="max-width:500px;width:100%;text-align:center;">
+            <div style="margin-bottom:30px;">
+                <div style="font-size:4rem;margin-bottom:10px;animation:float 3s ease-in-out infinite;">🕵️</div>
+                <h1 class="neon-text" style="font-size:3rem;font-weight:900;margin-bottom:5px;">SASUKE</h1>
+                <p style="color:var(--text-secondary);font-size:1.1rem;">إنشاء غرفة لعبة الجاسوس</p>
+            </div>
+            <div style="margin-bottom:25px;">
+                <p style="color:var(--text-secondary);margin-bottom:15px;font-size:1rem;">اختر نوع العرض</p>
+                <div style="display:flex;gap:15px;justify-content:center;">
+                    <button class="btn btn-primary" onclick="selectDisplayMode('mobile')" style="flex:1;max-width:180px;">📱 موبايل</button>
+                    <button class="btn btn-secondary" onclick="selectDisplayMode('computer')" style="flex:1;max-width:180px;">💻 كمبيوتر</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- شاشة إنشاء الغرفة -->
+    <div class="screen" id="createRoomScreen">
+        <div class="glass-card neon-border" style="max-width:500px;width:100%;text-align:center;">
+            <div style="margin-bottom:25px;">
+                <div style="font-size:3rem;margin-bottom:10px;">🏠</div>
+                <h2 class="neon-text" style="font-size:1.8rem;font-weight:900;">إنشاء غرفة جديدة</h2>
+            </div>
+            <div style="margin-bottom:20px;">
+                <input type="text" class="input-field" id="hostNameInput" placeholder="أدخل اسمك" maxlength="15" value="SASUKE">
+            </div>
+            <button class="btn btn-primary btn-lg" onclick="createRoom()" style="width:100%;">🚀 إنشاء الغرفة</button>
+        </div>
+    </div>
+
+    <!-- شاشة الغرفة (للهوست) -->
+    <div class="screen" id="hostRoomScreen">
+        <div class="glass-card" style="max-width:700px;width:100%;position:relative;">
+            <button onclick="toggleSettings()" style="position:absolute;top:15px;left:15px;background:none;border:none;font-size:1.5rem;cursor:pointer;opacity:0.7;transition:opacity 0.3s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'">⚙️</button>
+            <div style="text-align:center;margin-bottom:25px;">
+                <h2 style="font-size:1.5rem;font-weight:900;">🏠 غرفة اللعبة</h2>
+                <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px;">
+                    <span style="font-size:1.3rem;">👑</span>
+                    <span id="hostDisplayName" style="font-weight:900;font-size:1.2rem;color:var(--neon-cyan);">𝐒𝐀𝐒𝐔𝐊𝐄</span>
+                </div>
+            </div>
+            <div class="glass-card" style="padding:15px;margin-bottom:15px;background:rgba(108,92,231,0.1);">
+                <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+                    <div>
+                        <span style="color:var(--text-secondary);font-size:0.9rem;">رابط الانضمام:</span>
+                        <a id="roomLink" href="#" target="_blank" style="font-weight:700;color:#00d4ff;word-break:break-all;font-size:0.95rem;text-decoration:underline;cursor:pointer;"></a>
+                    </div>
+                    <button class="btn btn-sm btn-secondary" onclick="copyRoomLink()">📋 نسخ الرابط</button>
+                </div>
+            </div>
+            <div style="text-align:center;margin-bottom:15px;">
+                <span style="color:var(--text-secondary);">عدد اللاعبين:</span>
+                <span id="playerCount" style="font-weight:900;font-size:1.3rem;color:var(--neon-purple);margin-right:5px;">1</span>
+            </div>
+            <div id="hostPlayerList" style="margin-bottom:20px;max-height:300px;overflow-y:auto;"></div>
+            <!-- Settings and new link buttons removed from here -->
+            <div id="settingsPanel" style="display:none;margin-top:15px;">
+                <div class="glass-card" style="padding:15px;">
+                    <h3 style="font-weight:700;margin-bottom:10px;text-align:center;">⚙️ إعدادات الغرفة</h3>
+                    <div id="settingsPlayerList"></div>
+                    <!-- Sound settings removed -->
+                </div>
+            </div>
+            <div style="text-align:center;margin-top:20px;">
+                <button class="btn btn-success btn-lg" id="startGameBtn" onclick="startGame()" disabled style="width:100%;">🎮 بدء اللعبة</button>
+                <p id="startGameHint" style="color:var(--text-muted);font-size:0.85rem;margin-top:8px;">يحتاج 3 لاعبين على الأقل</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- شاشة الانضمام -->
+    <div class="screen" id="joinScreen">
+        <div class="glass-card neon-border" style="max-width:500px;width:100%;text-align:center;">
+            <div style="margin-bottom:25px;">
+                <div style="font-size:3rem;margin-bottom:10px;">🕵️</div>
+                <h2 class="neon-text" style="font-size:1.8rem;font-weight:900;">الانضمام للغرفة</h2>
+            </div>
+            <div style="margin-bottom:15px;">
+                <input type="text" class="input-field" id="joinNameInput" placeholder="أدخل اسمك" maxlength="15">
+            </div>
+            <div style="margin-bottom:20px;">
+                <p style="color:var(--text-secondary);margin-bottom:10px;font-size:0.95rem;">اختر نوع العرض</p>
+                <div style="display:flex;gap:15px;justify-content:center;">
+                    <button class="btn btn-primary btn-sm" onclick="setJoinDisplayMode('mobile')" id="joinMobileBtn">📱 موبايل</button>
+                    <button class="btn btn-secondary btn-sm" onclick="setJoinDisplayMode('computer')" id="joinComputerBtn">💻 كمبيوتر</button>
+                </div>
+            </div>
+            <button class="btn btn-success btn-lg" onclick="joinRoom()" style="width:100%;">🚪 انضمام</button>
+        </div>
+    </div>
+
+    <!-- شاشة اللاعب في الغرفة -->
+    <div class="screen" id="playerRoomScreen">
+        <div class="glass-card" style="max-width:700px;width:100%;">
+            <div style="text-align:center;margin-bottom:25px;">
+                <h2 style="font-size:1.5rem;font-weight:900;">🏠 غرفة اللعبة</h2>
+            </div>
+            <div id="playerPlayerList" style="margin-bottom:20px;max-height:400px;overflow-y:auto;"></div>
+            <div style="text-align:center;">
+                <button class="btn btn-danger" onclick="leaveRoom()">🚪 مغادرة</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- شاشة اختيار الوضع -->
+    <div class="screen" id="modeSelectScreen">
+        <div class="glass-card neon-border" style="max-width:600px;width:100%;text-align:center;">
+            <div style="margin-bottom:25px;">
+                <div style="font-size:3rem;margin-bottom:10px;">🎲</div>
+                <h2 class="neon-text" style="font-size:1.8rem;font-weight:900;">اختر وضع اللعب</h2>
+            </div>
+            <div class="glass-card mode-card" id="randomModeCard" onclick="selectMode('random')" style="cursor:pointer;padding:25px;margin-bottom:15px;">
+                <div style="font-size:2.5rem;margin-bottom:10px;">🎲</div>
+                <h3 style="font-weight:900;font-size:1.4rem;margin-bottom:8px;">عشوائي</h3>
+                <p style="color:var(--text-secondary);font-size:0.9rem;line-height:1.6;">ميزة الأشياء العشوائية: تقدر تكشف الجاسوس بسهولة أكبر، وتسأله إذا كان مكان أو جماد أو شخص، وده يجعل النقاش أمتع وأسهل للكشف.</p>
+            </div>
+            <button class="btn btn-success btn-lg" id="confirmModeBtn" onclick="confirmMode()" disabled style="width:100%;">✅ اختيار</button>
+        </div>
+    </div>
+
+    <!-- شاشة عرض الكلمة -->
+    <div class="screen" id="wordScreen">
+        <div class="glass-card neon-border" style="max-width:500px;width:100%;text-align:center;">
+            <div style="margin-bottom:20px;">
+                <div style="font-size:3rem;margin-bottom:10px;" id="wordIcon">📝</div>
+                <h2 class="neon-text" style="font-size:1.5rem;font-weight:900;" id="wordCategory">التصنيف: عشوائي</h2>
+            </div>
+            <div class="glass-card" style="padding:30px;margin-bottom:20px;background:rgba(108,92,231,0.15);">
+                <div id="wordDisplay" style="font-size:2.5rem;font-weight:900;color:var(--neon-cyan);"></div>
+            </div>
+            <div id="wordPlayersList" style="margin-bottom:20px;"></div>
+            <div id="hostVotingSection" style="display:none;text-align:center;margin-top:15px;">
+                <button class="btn btn-accent btn-lg" onclick="startVoting()" style="width:100%;">🗳️ بدء التصويت</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- شاشة التصويت -->
+    <div class="screen" id="votingScreen">
+        <div class="glass-card neon-border" style="max-width:600px;width:100%;">
+            <div style="text-align:center;margin-bottom:20px;">
+                <div style="font-size:2.5rem;margin-bottom:10px;">🗳️</div>
+                <h2 class="neon-text" style="font-size:1.5rem;font-weight:900;">التصويت</h2>
+                <div style="margin-top:10px;">
+                    <span id="voteCounter" style="font-size:1.3rem;font-weight:900;color:var(--neon-cyan);">0/0</span>
+                </div>
+            </div>
+            <div id="voteLog" style="margin-bottom:15px;max-height:150px;overflow-y:auto;"></div>
+            <div id="votingPlayersList" style="margin-bottom:20px;"></div>
+        </div>
+    </div>
+
+    <!-- شاشة نتيجة التصويت -->
+    <div class="screen" id="voteResultScreen">
+        <div class="glass-card neon-border" style="max-width:500px;width:100%;text-align:center;">
+            <div style="margin-bottom:20px;">
+                <div style="font-size:3rem;margin-bottom:10px;" id="voteResultIcon">🔍</div>
+                <h2 id="voteResultTitle" style="font-size:1.5rem;font-weight:900;"></h2>
+            </div>
+            <div id="voteResultContent" style="margin-bottom:20px;"></div>
+            <div id="spyGuessSection" style="display:none;">
+                <button class="btn btn-accent btn-lg" onclick="showGuessScreen()" style="width:100%;">🧠 تخمين الكلمة</button>
+            </div>
+            <div id="normalResultSection" style="display:none;">
+                <p style="color:var(--text-secondary);">في انتظار تخمين الجاسوس للكلمة...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- شاشة تخمين الكلمة -->
+    <div class="screen" id="guessScreen">
+        <div class="glass-card neon-border" style="max-width:700px;width:100%;">
+            <div style="text-align:center;margin-bottom:20px;">
+                <div style="font-size:2.5rem;margin-bottom:10px;">🧠</div>
+                <h2 class="neon-text" style="font-size:1.5rem;font-weight:900;">تخمين الكلمة</h2>
+                <p style="color:var(--text-secondary);font-size:0.9rem;">اختر الكلمة الصحيحة من بين الكلمات التالية</p>
+            </div>
+            <div id="guessWordsGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:20px;"></div>
+            <div style="text-align:center;">
+                <button class="btn btn-success btn-lg" id="confirmGuessBtn" onclick="confirmGuess()" disabled style="width:100%;max-width:300px;">✅ تأكيد</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- شاشة نتيجة التخمين -->
+    <div class="screen" id="guessResultScreen">
+        <div class="glass-card neon-border" style="max-width:500px;width:100%;text-align:center;">
+            <div style="margin-bottom:20px;">
+                <div style="font-size:3rem;margin-bottom:10px;" id="guessResultIcon">🎯</div>
+                <h2 id="guessResultTitle" style="font-size:1.5rem;font-weight:900;"></h2>
+            </div>
+            <div id="guessResultContent" style="margin-bottom:20px;"></div>
+            <button class="btn btn-primary btn-lg" onclick="endRound()" style="width:100%;max-width:300px;">حسناً</button>
+        </div>
+    </div>
+
+    <!-- شاشة انتهاء الجولة -->
+    <div class="screen" id="roundEndScreen">
+        <div class="glass-card neon-border" style="max-width:500px;width:100%;text-align:center;">
+            <div style="margin-bottom:20px;">
+                <div style="font-size:3rem;margin-bottom:10px;">🏁</div>
+                <h2 style="font-size:1.5rem;font-weight:900;">انتهت اللعبة</h2>
+                <p style="color:var(--text-secondary);margin-top:10px;">في انتظار قرار الهوست بإغلاق اللعبة أو إعادة اللعب</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- شاشة المغادرة -->
+    <div class="screen" id="leftScreen">
+        <div class="glass-card" style="max-width:400px;width:100%;text-align:center;">
+            <div style="font-size:3rem;margin-bottom:15px;">🚪</div>
+            <h2 style="font-size:1.5rem;font-weight:900;color:var(--danger);">لقد غادرت اللعبة</h2>
+        </div>
+    </div>
+
+    <!-- شاشة انتهاء صلاحية الرابط -->
+    <div class="screen" id="expiredLinkScreen">
+        <div class="glass-card" style="max-width:400px;width:100%;text-align:center;">
+            <div style="font-size:3rem;margin-bottom:15px;">⚠️</div>
+            <h2 style="font-size:1.5rem;font-weight:900;color:var(--danger);">انتهت صلاحية الرابط</h2>
+        </div>
+    </div>
+
+    <!-- شاشة الخطأ -->
+    <div class="screen" id="errorScreen">
+        <div class="glass-card" style="max-width:400px;width:100%;text-align:center;">
+            <div style="font-size:3rem;margin-bottom:15px;">❌</div>
+            <h2 id="errorMessage" style="font-size:1.3rem;font-weight:900;color:var(--danger);"></h2>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        // Initialize socket with error handling
+        var socket = null;
+        var socketReady = false;
+        console.log('[DEBUG] Starting socket initialization...');
+        console.log('[DEBUG] typeof io:', typeof io);
+        try {
+            socket = io({ reconnection: true, reconnectionAttempts: 10, reconnectionDelay: 1000 });
+            console.log('[DEBUG] io() called, socket created:', socket ? 'yes' : 'no');
+            console.log('[DEBUG] socket.id:', socket.id);
+            // Wait for actual connection before marking as ready
+            socket.on('connect', function() {
+                socketReady = true;
+                console.log('[DEBUG] Socket connected! id:', socket.id);
+                showToast('تم الاتصال بالسيرفر بنجاح!', 'success');
+            });
+            socket.on('disconnect', function() {
+                socketReady = false;
+                console.log('[DEBUG] Socket disconnected');
+                showToast('تم قطع الاتصال، جاري إعادة الاتصال...', 'warning');
+            });
+            socket.on('connect_error', function(err) {
+                socketReady = false;
+                console.warn('[DEBUG] Socket connection error:', err.message);
+                showToast('خطأ في الاتصال: ' + err.message, 'error');
+            });
+        } catch(e) {
+            console.warn('[DEBUG] Socket.IO not available:', e.message);
+            showToast('Socket.IO مش متاح: ' + e.message, 'error');
+        }
+
+        // Safe socket event listener
+        function safeOn(event, handler) {
+            if (socket) {
+                try { socket.on(event, handler); } catch(e) { console.warn('Socket on error:', e); }
+            }
+        }
+        function safeEmit(event, data) {
+            if (socket && socketReady) {
+                try { socket.emit(event, data); } catch(e) { console.warn('Socket emit error:', e); }
+            } else if (socket && !socketReady) {
+                showToast('جاري الاتصال بالسيرفر... حاول مرة أخرى', 'warning');
+            } else {
+                showToast('غير متصل بالسيرفر، تأكد من تشغيل السيرفر أولاً', 'error');
+            }
+        }
+
+        var currentScreen = 'hostHomeScreen';
+        var displayMode = 'computer';
+        var joinDisplayMode = 'computer';
+        var isHost = false;
+        var roomId = null;
+        // مش محتاجين serverIP أو publicURL - كل حاجة عبر window.location.origin
+        var playerName = '';
+        var selectedMode = null;
+        var selectedGuessWord = null;
+        var isSpy = false;
+        var currentWord = '';
+        var hasVoted = false;
+        var soundEnabled = true;
+        var volume = 70;
+        var audioCtx = null;
+
+        // Avatars removed
+
+        function toBold(text) {
+            var boldMap = {'A':'𝐀','B':'𝐁','C':'𝐂','D':'𝐃','E':'𝐄','F':'𝐅','G':'𝐆','H':'𝐇','I':'𝐈','J':'𝐉','K':'𝐊','L':'𝐋','M':'𝐌','N':'𝐍','O':'𝐎','P':'𝐏','Q':'𝐐','R':'𝐑','S':'𝐒','T':'𝐓','U':'𝐔','V':'𝐕','W':'𝐖','X':'𝐗','Y':'𝐘','Z':'𝐙','a':'𝐚','b':'𝐛','c':'𝐜','d':'𝐝','e':'𝐞','f':'𝐟','g':'𝐠','h':'𝐡','i':'𝐢','j':'𝐣','k':'𝐤','l':'𝐥','m':'𝐦','n':'𝐧','o':'𝐨','p':'𝐩','q':'𝐪','r':'𝐫','s':'𝐬','t':'𝐭','u':'𝐮','v':'𝐯','w':'𝐰','x':'𝐱','y':'𝐲','z':'𝐳'};
+            return text.split('').map(function(c) { return boldMap[c] || c; }).join('');
+        }
+
+        function initAudio() {
+            if (audioCtx) return;
+            try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+        }
+
+        function playSound(type) {
+            if (!soundEnabled || !audioCtx) return;
+            try {
+                var vol = volume / 100;
+                var gain = audioCtx.createGain();
+                gain.connect(audioCtx.destination);
+                gain.gain.value = vol * 0.3;
+                if (type === 'click') {
+                    var osc = audioCtx.createOscillator(); osc.type = 'sine';
+                    osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.1);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                    osc.connect(gain); osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+                } else if (type === 'join') {
+                    var osc = audioCtx.createOscillator(); osc.type = 'sine';
+                    osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.2);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                    osc.connect(gain); osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+                } else if (type === 'leave') {
+                    var osc = audioCtx.createOscillator(); osc.type = 'sine';
+                    osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.2);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                    osc.connect(gain); osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+                } else if (type === 'start') {
+                    [0, 0.1, 0.2].forEach(function(delay, i) {
+                        var osc = audioCtx.createOscillator(); var g = audioCtx.createGain();
+                        osc.type = 'sine'; osc.frequency.setValueAtTime([523, 659, 784][i], audioCtx.currentTime + delay);
+                        g.gain.setValueAtTime(vol * 0.2, audioCtx.currentTime + delay);
+                        g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + delay + 0.3);
+                        osc.connect(g); g.connect(audioCtx.destination); osc.start(audioCtx.currentTime + delay); osc.stop(audioCtx.currentTime + delay + 0.3);
+                    });
+                } else if (type === 'reveal') {
+                    var osc = audioCtx.createOscillator(); osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(900, audioCtx.currentTime + 0.5);
+                    gain.gain.setValueAtTime(vol * 0.25, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.6);
+                    osc.connect(gain); osc.start(); osc.stop(audioCtx.currentTime + 0.6);
+                } else if (type === 'vote') {
+                    var osc = audioCtx.createOscillator(); osc.type = 'square';
+                    osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+                    gain.gain.setValueAtTime(vol * 0.1, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+                    osc.connect(gain); osc.start(); osc.stop(audioCtx.currentTime + 0.15);
+                } else if (type === 'spyReveal') {
+                    [0, 0.15, 0.3, 0.45].forEach(function(delay, i) {
+                        var osc = audioCtx.createOscillator(); var g = audioCtx.createGain();
+                        osc.type = 'sawtooth'; osc.frequency.setValueAtTime([200, 250, 300, 400][i], audioCtx.currentTime + delay);
+                        g.gain.setValueAtTime(vol * 0.12, audioCtx.currentTime + delay);
+                        g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + delay + 0.2);
+                        osc.connect(g); g.connect(audioCtx.destination); osc.start(audioCtx.currentTime + delay); osc.stop(audioCtx.currentTime + delay + 0.2);
+                    });
+                } else if (type === 'win') {
+                    [0, 0.12, 0.24, 0.36, 0.48].forEach(function(delay, i) {
+                        var osc = audioCtx.createOscillator(); var g = audioCtx.createGain();
+                        osc.type = 'sine'; osc.frequency.setValueAtTime([523, 659, 784, 1047, 1319][i], audioCtx.currentTime + delay);
+                        g.gain.setValueAtTime(vol * 0.2, audioCtx.currentTime + delay);
+                        g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + delay + 0.3);
+                        osc.connect(g); g.connect(audioCtx.destination); osc.start(audioCtx.currentTime + delay); osc.stop(audioCtx.currentTime + delay + 0.3);
+                    });
+                } else if (type === 'lose') {
+                    [0, 0.2, 0.4].forEach(function(delay, i) {
+                        var osc = audioCtx.createOscillator(); var g = audioCtx.createGain();
+                        osc.type = 'sine'; osc.frequency.setValueAtTime([400, 300, 200][i], audioCtx.currentTime + delay);
+                        g.gain.setValueAtTime(vol * 0.2, audioCtx.currentTime + delay);
+                        g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + delay + 0.4);
+                        osc.connect(g); g.connect(audioCtx.destination); osc.start(audioCtx.currentTime + delay); osc.stop(audioCtx.currentTime + delay + 0.4);
+                    });
+                } else if (type === 'countdown') {
+                    var osc = audioCtx.createOscillator(); osc.type = 'sine';
+                    osc.frequency.setValueAtTime(1000, audioCtx.currentTime);
+                    gain.gain.setValueAtTime(vol * 0.15, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                    osc.connect(gain); osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+                } else if (type === 'guess') {
+                    var osc = audioCtx.createOscillator(); osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.3);
+                    gain.gain.setValueAtTime(vol * 0.2, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+                    osc.connect(gain); osc.start(); osc.stop(audioCtx.currentTime + 0.4);
+                }
+            } catch(e) {}
+        }
+
+        // No background music
+        function startBgMusic() {}
+        function stopBgMusic() {}
+        function updateVolume(val) { volume = parseInt(val); localStorage.setItem('spyGameVolume', volume); }
+        function toggleSound() { soundEnabled = !soundEnabled; localStorage.setItem('spyGameSound', soundEnabled); }
+        function toggleBgMusic() {}
+        function loadSoundSettings() {
+            var savedVol = localStorage.getItem('spyGameVolume');
+            var savedSound = localStorage.getItem('spyGameSound');
+            if (savedVol) { volume = parseInt(savedVol); }
+            if (savedSound !== null) { soundEnabled = savedSound === 'true'; }
+        }
+        function showToast(message, type) {
+            type = type || 'info';
+            var container = document.getElementById('toastContainer');
+            var toast = document.createElement('div');
+            toast.className = 'toast toast-' + type;
+            toast.textContent = message;
+            container.appendChild(toast);
+            setTimeout(function() { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 3000);
+        }
+        function switchScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
+            var screen = document.getElementById(screenId);
+            if (screen) { screen.classList.add('active'); currentScreen = screenId; }
+        }
+
+        // === Custom Cursor ===
+        var cursorInitialized = false;
+        var lastMouseX = 0, lastMouseY = 0, mouseSpeed = 0, particleThrottle = 0;
+
+        function setupCustomCursor() {
+            if (cursorInitialized) return;
+            cursorInitialized = true;
+            var dot = document.getElementById('cursorDot');
+            var ring = document.getElementById('cursorRing');
+            var mouseX = 0, mouseY = 0, ringX = 0, ringY = 0;
+
+            document.addEventListener('mousemove', function(e) {
+                mouseX = e.clientX; mouseY = e.clientY;
+                var dx = mouseX - lastMouseX, dy = mouseY - lastMouseY;
+                mouseSpeed = Math.sqrt(dx * dx + dy * dy);
+                lastMouseX = mouseX; lastMouseY = mouseY;
+                dot.style.left = mouseX + 'px'; dot.style.top = mouseY + 'px';
+                particleThrottle++;
+                var spawnRate = mouseSpeed > 15 ? 1 : mouseSpeed > 5 ? 2 : 4;
+                if (particleThrottle % spawnRate === 0 && mouseSpeed > 2) { spawnParticle(mouseX, mouseY); }
+            });
+            document.addEventListener('mouseover', function(e) {
+                var target = e.target.closest('button, a, [onclick], .btn, .glass-card, input');
+                if (target) { dot.classList.add('hovering'); ring.classList.add('hovering'); }
+            });
+            document.addEventListener('mouseout', function(e) {
+                var target = e.target.closest('button, a, [onclick], .btn, .glass-card, input');
+                if (target) { dot.classList.remove('hovering'); ring.classList.remove('hovering'); }
+            });
+            document.addEventListener('mousedown', function(e) {
+                dot.style.transform = 'translate(-50%, -50%) scale(0.7)';
+                ring.style.transform = 'translate(-50%, -50%) scale(0.85)';
+                for (var i = 0; i < 8; i++) { spawnBurstParticle(e.clientX, e.clientY); }
+            });
+            document.addEventListener('mouseup', function() {
+                dot.style.transform = 'translate(-50%, -50%) scale(1)';
+                ring.style.transform = 'translate(-50%, -50%) scale(1)';
+            });
+            function animateRing() {
+                ringX += (mouseX - ringX) * 0.12; ringY += (mouseY - ringY) * 0.12;
+                ring.style.left = ringX + 'px'; ring.style.top = ringY + 'px';
+                requestAnimationFrame(animateRing);
+            }
+            animateRing();
+        }
+
+        function spawnParticle(x, y) {
+            var types = ['star', 'spark', 'glow'];
+            var type = types[Math.floor(Math.random() * types.length)];
+            var particle = document.createElement('div');
+            particle.className = 'particle-trail ' + type;
+            particle.style.left = (x + (Math.random() - 0.5) * 20) + 'px';
+            particle.style.top = (y + (Math.random() - 0.5) * 20) + 'px';
+            var colors = ['var(--neon-purple)', 'var(--neon-cyan)', 'var(--neon-pink)', '#a29bfe', '#74b9ff', '#ffeaa7'];
+            particle.style.background = colors[Math.floor(Math.random() * colors.length)];
+            if (type === 'glow') { particle.style.background = 'radial-gradient(circle, ' + colors[Math.floor(Math.random() * colors.length)] + ', transparent)'; }
+            document.body.appendChild(particle);
+            setTimeout(function() { if (particle.parentNode) particle.parentNode.removeChild(particle); }, 1000);
+        }
+
+        function spawnBurstParticle(x, y) {
+            var particle = document.createElement('div');
+            particle.className = 'particle-trail star';
+            var angle = Math.random() * Math.PI * 2, distance = 20 + Math.random() * 30;
+            particle.style.left = (x + Math.cos(angle) * distance) + 'px';
+            particle.style.top = (y + Math.sin(angle) * distance) + 'px';
+            var colors = ['var(--neon-purple)', 'var(--neon-cyan)', 'var(--neon-pink)', '#fff'];
+            particle.style.background = colors[Math.floor(Math.random() * colors.length)];
+            document.body.appendChild(particle);
+            setTimeout(function() { if (particle.parentNode) particle.parentNode.removeChild(particle); }, 800);
+        }
+
+        // === Display Mode Selection ===
+        function selectDisplayMode(mode) {
+            initAudio(); playSound('click'); displayMode = mode;
+            if (mode === 'computer') {
+                document.body.classList.add('custom-cursor');
+                document.getElementById('cursorDot').style.display = 'block';
+                document.getElementById('cursorRing').style.display = 'block';
+                setupCustomCursor();
+            }
+            switchScreen('createRoomScreen');
+        }
+
+        function setJoinDisplayMode(mode) {
+            initAudio(); playSound('click'); joinDisplayMode = mode;
+            document.getElementById('joinMobileBtn').style.opacity = mode === 'mobile' ? '1' : '0.5';
+            document.getElementById('joinComputerBtn').style.opacity = mode === 'computer' ? '1' : '0.5';
+            if (mode === 'computer') {
+                document.body.classList.add('custom-cursor');
+                document.getElementById('cursorDot').style.display = 'block';
+                document.getElementById('cursorRing').style.display = 'block';
+                setupCustomCursor();
+            }
+        }
+
+        // === Room Creation ===
+        function createRoom() {
+            var name = document.getElementById('hostNameInput').value.trim();
+            if (!name) { showToast('الرجاء إدخال اسمك', 'error'); return; }
+            initAudio(); playSound('start'); isHost = true; playerName = name;
+            if (socket && socketReady) {
+                safeEmit('create-room', { hostName: name, displayMode: displayMode });
+            } else {
+                showToast('غير متصل بالسيرفر، تأكد من تشغيل السيرفر أولاً', 'error');
+            }
+        }
+
+        safeOn('room-created', function(data) {
+            roomId = data.roomId;
+            document.getElementById('hostDisplayName').textContent = '👑 ' + toBold(data.hostName);
+            updateRoomLink();
+            switchScreen('hostRoomScreen');
+            startBgMusic();
+        });
+
+        function updateRoomLink() {
+            if (!roomId) return;
+            var baseUrl = window.location.origin;
+            var fullLink = baseUrl + '/room/' + roomId;
+            var linkEl = document.getElementById('roomLink');
+            if (linkEl) {
+                linkEl.textContent = fullLink;
+                linkEl.href = fullLink;
+            }
+            if (fullLink.indexOf('localhost') !== -1 || fullLink.indexOf('127.0.0.1') !== -1) {
+                showToast('⚠️ الرابط محلي! ارفع اللعبة على Render عشان تشاركها', 'warning');
+            } else {
+                showToast('✅ الرابط جاهز! ابعتو لأصحابك من أي مكان!', 'success');
+            }
+        }
+
+        function copyRoomLink() {
+            initAudio(); playSound('click');
+            var link = document.getElementById('roomLink').textContent;
+            navigator.clipboard.writeText(link).then(function() { showToast('تم نسخ الرابط!', 'success'); }).catch(function() { showToast('فشل نسخ الرابط', 'error'); });
+        }
+
+        function generateNewLink() { initAudio(); playSound('click'); if (socket) safeEmit('generate-new-link'); }
+        safeOn('new-link-generated', function(data) {
+            var baseUrl2 = window.location.origin;
+            var linkEl2 = document.getElementById('roomLink');
+            linkEl2.textContent = baseUrl2 + '/room/' + data.roomId;
+            linkEl2.href = baseUrl2 + '/room/' + data.roomId;
+            showToast('تم إنشاء رابط جديد', 'success');
+        });
+
+        // الرابط بيتحدث تلقائي عبر window.location.origin
+
+        function toggleSettings() { initAudio(); playSound('click'); var panel = document.getElementById('settingsPanel'); panel.style.display = panel.style.display === 'none' ? 'block' : 'none'; }
+
+        function updateHostPlayerList(players) {
+            var html = '';
+            players.forEach(function(p) {
+                var boldName = toBold(p.name);
+                if (p.isHost) {
+                    html += '<div class="player-item"><div style="display:flex;align-items:center;gap:10px;"><span style="font-weight:900;color:var(--neon-cyan);">👑 ' + boldName + '</span></div><span style="color:var(--text-muted);font-size:0.8rem;">المستضيف</span></div>';
+                } else {
+                    html += '<div class="player-item"><div style="display:flex;align-items:center;gap:10px;"><span style="font-weight:900;">' + boldName + '</span></div><div style="display:flex;gap:5px;"><button class="btn btn-danger btn-sm" onclick="kickPlayer(\'' + p.id + '\')">طرد</button><button class="btn btn-primary btn-sm" onclick="promptChangeName(\'' + p.id + '\',\'' + p.name + '\')">تغيير الاسم</button></div></div>';
+                }
+            });
+            document.getElementById('hostPlayerList').innerHTML = html;
+            var settingsHtml = '';
+            players.forEach(function(p) {
+                if (!p.isHost) {
+                    settingsHtml += '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-glass);"><span>' + toBold(p.name) + '</span><div style="display:flex;gap:5px;"><button class="btn btn-danger btn-sm" onclick="kickPlayer(\'' + p.id + '\')">طرد</button><button class="btn btn-primary btn-sm" onclick="promptChangeName(\'' + p.id + '\',\'' + p.name + '\')">تغيير الاسم</button></div></div>';
+                }
+            });
+            document.getElementById('settingsPlayerList').innerHTML = settingsHtml;
+            var count = players.length;
+            document.getElementById('playerCount').textContent = count;
+            var btn = document.getElementById('startGameBtn');
+            var hint = document.getElementById('startGameHint');
+            if (count >= 3) { btn.disabled = false; btn.style.animation = 'glow 2s ease-in-out infinite'; hint.style.display = 'none'; }
+            else { btn.disabled = true; btn.style.animation = 'none'; hint.style.display = 'block'; hint.textContent = 'يحتاج ' + (3 - count) + ' لاعبين آخرين'; }
+        }
+
+        function kickPlayer(playerId) { initAudio(); playSound('click'); if (socket) safeEmit('kick-player', { playerId: playerId }); }
+        function promptChangeName(playerId, currentName) { var newName = prompt('أدخل الاسم الجديد لـ ' + currentName + ':', currentName); if (newName && newName.trim()) { if (socket) safeEmit('change-player-name', { playerId: playerId, newName: newName.trim() }); } }
+
+        safeOn('player-joined', function(data) { initAudio(); playSound('join'); showToast(data.name + ' انضم للغرفة!', 'success'); });
+        safeOn('player-left', function(data) { playSound('leave'); showToast(data.name + ' غادر الغرفة', 'info'); });
+        safeOn('room-update', function(data) { if (isHost) { updateHostPlayerList(data.players); } else { updatePlayerPlayerList(data.players); } });
+        safeOn('kicked', function(data) { playSound('leave'); showToast(data.message, 'error'); switchScreen('leftScreen'); });
+        safeOn('name-changed', function(data) { playerName = data.newName; showToast('تم تغيير اسمك إلى: ' + data.newName, 'info'); });
+
+        // === Join Room ===
+        function joinRoom() {
+            var name = document.getElementById('joinNameInput').value.trim();
+            if (!name) { showToast('الرجاء إدخال اسمك', 'error'); return; }
+            initAudio(); playSound('click'); isHost = false; playerName = name;
+            var pathParts = window.location.pathname.split('/');
+            var joinRoomId = pathParts[pathParts.length - 1];
+            if (socket && socketReady) { safeEmit('join-room', { roomId: joinRoomId, playerName: name, displayMode: joinDisplayMode }); }
+            else { showToast('غير متصل بالسيرفر', 'error'); }
+        }
+        safeOn('join-success', function(data) { roomId = data.roomId; playSound('join'); switchScreen('playerRoomScreen'); startBgMusic(); });
+        safeOn('join-error', function(data) { showToast(data.message, 'error'); if (data.message === 'انتهت صلاحية الرابط') { switchScreen('expiredLinkScreen'); } });
+
+        function updatePlayerPlayerList(players) {
+            var html = '';
+            players.forEach(function(p) {
+                var boldName = toBold(p.name);
+                html += '<div class="player-item">';
+                if (p.isHost) { html += '<span style="font-weight:900;color:var(--neon-cyan);">👑 ' + boldName + '</span>'; }
+                else if (p.name === playerName) { html += '<span style="font-weight:900;color:var(--neon-purple);">' + boldName + ' (أنت)</span>'; }
+                else { html += '<span style="font-weight:900;">' + boldName + '</span>'; }
+                html += '</div>';
+            });
+            document.getElementById('playerPlayerList').innerHTML = html;
+        }
+
+        function leaveRoom() { initAudio(); playSound('leave'); if (socket) safeEmit('leave-room'); stopBgMusic(); switchScreen('leftScreen'); }
+
+        // === Game Logic ===
+        function startGame() { initAudio(); playSound('start'); if (socket) safeEmit('start-game'); switchScreen('modeSelectScreen'); }
+        function selectMode(mode) { initAudio(); playSound('click'); selectedMode = mode; document.getElementById('randomModeCard').style.borderColor = 'var(--neon-cyan)'; document.getElementById('randomModeCard').style.boxShadow = 'var(--glow-secondary)'; document.getElementById('confirmModeBtn').disabled = false; }
+        function confirmMode() { initAudio(); playSound('start'); switchScreen('wordScreen'); }
+
+        safeOn('game-started', function(data) { if (!isHost) { switchScreen('wordScreen'); } });
+        safeOn('show-word', function(data) {
+            isSpy = data.isSpy; currentWord = data.word;
+            document.getElementById('wordCategory').textContent = 'التصنيف: ' + data.category;
+            if (data.isSpy) { document.getElementById('wordIcon').textContent = '🕵️'; document.getElementById('wordDisplay').textContent = 'أنت الجاسوس'; document.getElementById('wordDisplay').style.color = 'var(--neon-pink)'; playSound('spyReveal'); }
+            else { document.getElementById('wordIcon').textContent = '📝'; document.getElementById('wordDisplay').textContent = data.word; document.getElementById('wordDisplay').style.color = 'var(--neon-cyan)'; playSound('reveal'); }
+            if (isHost) { document.getElementById('hostVotingSection').style.display = 'block'; } else { document.getElementById('hostVotingSection').style.display = 'none'; }
+        });
+
+        function startVoting() { initAudio(); playSound('countdown'); if (socket) safeEmit('start-voting'); }
+        safeOn('voting-started', function(data) {
+            hasVoted = false; switchScreen('votingScreen');
+            document.getElementById('voteCounter').textContent = '0/' + data.voterCount;
+            document.getElementById('voteLog').innerHTML = '';
+            var html = '';
+            data.players.forEach(function(p) {
+                if (p.id === socket.id) return;
+                var avatar = getAvatar(p.avatar || 1);
+                html += '<div class="player-item"><div style="display:flex;align-items:center;gap:10px;"><span style="font-size:1.3rem;">' + avatar + '</span><span style="font-weight:700;">' + toBold(p.name) + '</span></div><button class="btn btn-accent btn-sm" onclick="castVote(\'' + p.id + '\',\'' + p.name + '\')" id="voteBtn_' + p.id + '">🗳️ صوّت</button></div>';
+            });
+            document.getElementById('votingPlayersList').innerHTML = html;
+        });
+
+        function castVote(playerId, pName) {
+            if (hasVoted) return; initAudio(); playSound('vote'); hasVoted = true;
+            if (socket) safeEmit('vote', { votedFor: playerId, votedForName: pName });
+            document.querySelectorAll('[id^="voteBtn_"]').forEach(function(btn) { btn.disabled = true; btn.style.opacity = '0.3'; });
+            var votedBtn = document.getElementById('voteBtn_' + playerId);
+            if (votedBtn) { votedBtn.style.opacity = '1'; votedBtn.textContent = '✅ تم التصويت'; votedBtn.style.background = 'var(--success)'; }
+        }
+
+        safeOn('vote-update', function(data) {
+            document.getElementById('voteCounter').textContent = data.voteCount + '/' + data.totalPlayers;
+            var log = document.getElementById('voteLog');
+            var entry = document.createElement('div');
+            entry.style.cssText = 'padding:6px 12px;margin-bottom:4px;border-radius:8px;background:rgba(108,92,231,0.1);font-size:0.9rem;';
+            entry.innerHTML = '<span style="color:var(--neon-cyan);">' + toBold(data.voterName) + '</span> صوت على <span style="color:var(--neon-pink);">' + toBold(data.votedForName) + '</span>';
+            log.appendChild(entry);
+            playSound('vote');
+        });
+
+        safeOn('voting-ended', function(data) {
+            switchScreen('voteResultScreen');
+            if (data.isSpy) {
+                document.getElementById('voteResultIcon').textContent = '✅';
+                document.getElementById('voteResultTitle').style.color = 'var(--success)';
+                document.getElementById('voteResultTitle').textContent = 'تم كشف الجاسوس!';
+                document.getElementById('voteResultContent').innerHTML = '<p style="font-size:1.2rem;margin-bottom:10px;">لقد كان <span style="color:var(--neon-pink);font-weight:900;">' + toBold(data.spyName) + '</span> الجاسوس فعلاً، أحسنتم</p><p style="color:var(--text-secondary);">في انتظار تخمينه للكلمة</p>';
+                playSound('win');
+            } else {
+                document.getElementById('voteResultIcon').textContent = '❌';
+                document.getElementById('voteResultTitle').style.color = 'var(--danger)';
+                document.getElementById('voteResultTitle').textContent = 'خطأ!';
+                document.getElementById('voteResultContent').innerHTML = '<p style="font-size:1.2rem;margin-bottom:10px;">لم يكن <span style="color:var(--danger);font-weight:900;">' + toBold(data.mostVotedName) + '</span> الجاسوس</p><p style="margin-bottom:10px;">لقد كان <span style="color:var(--neon-pink);font-weight:900;">' + toBold(data.spyName) + '</span> الجاسوس</p><p style="color:var(--text-secondary);">في انتظار تخمينه للكلمة</p>';
+                playSound('lose');
+            }
+            if (isSpy) { document.getElementById('spyGuessSection').style.display = 'block'; document.getElementById('normalResultSection').style.display = 'none'; }
+            else { document.getElementById('spyGuessSection').style.display = 'none'; document.getElementById('normalResultSection').style.display = 'block'; }
+            window._guessWords = data.guessWords; window._correctWord = data.correctWord;
+        });
+
+        function showGuessScreen() {
+            initAudio(); playSound('guess'); selectedGuessWord = null;
+            document.getElementById('confirmGuessBtn').disabled = true;
+            switchScreen('guessScreen');
+            var words = window._guessWords || [];
+            var html = '';
+            words.forEach(function(word) {
+                html += '<div class="glass-card guess-word-card" id="guessWord_' + word + '" onclick="selectGuessWord(\'' + word + '\')" style="padding:15px;text-align:center;cursor:pointer;transition:all 0.3s;"><span style="font-weight:700;font-size:1.1rem;">' + word + '</span><div class="guess-word-label" style="display:none;font-size:0.75rem;color:var(--neon-cyan);margin-top:5px;"></div></div>';
+            });
+            document.getElementById('guessWordsGrid').innerHTML = html;
+        }
+
+        function selectGuessWord(word) {
+            initAudio(); playSound('click'); selectedGuessWord = word;
+            document.querySelectorAll('.guess-word-card').forEach(function(card) { card.style.borderColor = 'var(--border-glass)'; card.style.boxShadow = 'none'; card.querySelector('.guess-word-label').style.display = 'none'; });
+            var selected = document.getElementById('guessWord_' + word);
+            if (selected) { selected.style.borderColor = 'var(--neon-cyan)'; selected.style.boxShadow = 'var(--glow-secondary)'; selected.querySelector('.guess-word-label').textContent = 'اختارها ' + toBold(playerName); selected.querySelector('.guess-word-label').style.display = 'block'; }
+            document.getElementById('confirmGuessBtn').disabled = false;
+        }
+
+        function confirmGuess() { if (!selectedGuessWord) return; initAudio(); playSound('click'); if (socket) safeEmit('spy-guess', { word: selectedGuessWord }); }
+
+        safeOn('spy-guess-result', function(data) {
+            switchScreen('guessResultScreen');
+            if (data.isCorrect) {
+                document.getElementById('guessResultIcon').textContent = '🎯';
+                document.getElementById('guessResultTitle').style.color = 'var(--success)';
+                document.getElementById('guessResultTitle').textContent = 'إجابة صحيحة!';
+                document.getElementById('guessResultContent').innerHTML = '<p style="font-size:1.2rem;margin-bottom:10px;">لقد خمن الجاسوس <span style="color:var(--neon-pink);font-weight:900;">' + toBold(data.spyName) + '</span> الكلمة</p><p style="font-size:1.1rem;margin-bottom:10px;">الكلمة: <span style="color:var(--neon-cyan);font-weight:900;">' + data.guessedWord + '</span></p><p style="color:var(--success);font-weight:700;">الإجابة صحيحة! 🎉</p><p style="color:var(--text-secondary);">الكلمة الصحيحة كانت: <span style="color:var(--neon-cyan);">' + data.correctWord + '</span></p>';
+            } else {
+                document.getElementById('guessResultIcon').textContent = '❌';
+                document.getElementById('guessResultTitle').style.color = 'var(--danger)';
+                document.getElementById('guessResultTitle').textContent = 'إجابة خاطئة!';
+                document.getElementById('guessResultContent').innerHTML = '<p style="font-size:1.2rem;margin-bottom:10px;">لقد خمن الجاسوس <span style="color:var(--neon-pink);font-weight:900;">' + toBold(data.spyName) + '</span> الكلمة</p><p style="font-size:1.1rem;margin-bottom:10px;">الكلمة: <span style="color:var(--danger);font-weight:900;">' + data.guessedWord + '</span></p><p style="color:var(--danger);font-weight:700;">الإجابة خاطئة!</p><p style="color:var(--text-secondary);">الكلمة الصحيحة كانت: <span style="color:var(--neon-cyan);">' + data.correctWord + '</span></p>';
+            }
+        });
+
+        function endRound() { initAudio(); playSound('click'); if (socket) safeEmit('end-round'); if (!isHost) { switchScreen('roundEndScreen'); } }
+        safeOn('round-ended', function() { if (!isHost) { switchScreen('roundEndScreen'); } });
+        safeOn('game-restarted', function() { switchScreen(isHost ? 'hostRoomScreen' : 'playerRoomScreen'); showToast('تم إعادة اللعبة!', 'success'); });
+        safeOn('room-closed', function() { showToast('تم إغلاق الغرفة', 'error'); switchScreen('leftScreen'); });
+        safeOn('host-disconnected', function() { showToast('المستضيف غير متصل، جاري الانتظار...', 'warning'); });
+
+        // URL routing
+        window.addEventListener('load', function() {
+            var pathParts = window.location.pathname.split('/');
+            if (pathParts.length > 2 && (pathParts[1] === 'join' || pathParts[1] === 'room')) { switchScreen('joinScreen'); }
+            loadSoundSettings();
+        });
+
+        // Hover sound removed
+    </script>
+</body>
+</html>

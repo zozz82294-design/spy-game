@@ -1,0 +1,2 @@
+/* App-specific overrides; keep minimal - main styles in index.css */
+.App { min-height: 100vh; }

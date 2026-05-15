@@ -740,6 +740,21 @@
         // === Display Mode Selection ===
         var homeDisplaySelected = false;
 
+        function setCustomCursor(enabled) {
+            var dot = document.getElementById('cursorDot');
+            var ring = document.getElementById('cursorRing');
+            if (enabled) {
+                document.body.classList.add('custom-cursor');
+                if (dot) dot.style.display = 'block';
+                if (ring) ring.style.display = 'block';
+                setupCustomCursor();
+            } else {
+                document.body.classList.remove('custom-cursor');
+                if (dot) dot.style.display = 'none';
+                if (ring) ring.style.display = 'none';
+            }
+        }
+
         function selectHomeDisplayMode(mode) {
             initAudio(); playSound('click');
             displayMode = mode;
@@ -771,16 +786,8 @@
             goBtn.style.pointerEvents = 'auto';
             goBtn.style.boxShadow = '0 0 25px rgba(0,255,136,0.4)';
 
-            if (mode === 'computer') {
-                document.body.classList.add('custom-cursor');
-                document.getElementById('cursorDot').style.display = 'block';
-                document.getElementById('cursorRing').style.display = 'block';
-                setupCustomCursor();
-            } else {
-                document.body.classList.remove('custom-cursor');
-                document.getElementById('cursorDot').style.display = 'none';
-                document.getElementById('cursorRing').style.display = 'none';
-            }
+            // تحكم في الماوس المخصص
+            setCustomCursor(mode === 'computer');
         }
 
         function goCreateRoom() {
@@ -794,12 +801,7 @@
 
         function selectDisplayMode(mode) {
             initAudio(); playSound('click'); displayMode = mode;
-            if (mode === 'computer') {
-                document.body.classList.add('custom-cursor');
-                document.getElementById('cursorDot').style.display = 'block';
-                document.getElementById('cursorRing').style.display = 'block';
-                setupCustomCursor();
-            }
+            setCustomCursor(mode === 'computer');
             switchScreen('createRoomScreen');
         }
 
@@ -807,12 +809,7 @@
             initAudio(); playSound('click'); joinDisplayMode = mode;
             document.getElementById('joinMobileBtn').style.opacity = mode === 'mobile' ? '1' : '0.5';
             document.getElementById('joinComputerBtn').style.opacity = mode === 'computer' ? '1' : '0.5';
-            if (mode === 'computer') {
-                document.body.classList.add('custom-cursor');
-                document.getElementById('cursorDot').style.display = 'block';
-                document.getElementById('cursorRing').style.display = 'block';
-                setupCustomCursor();
-            }
+            setCustomCursor(mode === 'computer');
         }
 
         // === Room Creation ===

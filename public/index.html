@@ -1028,7 +1028,15 @@
             document.getElementById('wordCategory').textContent = 'التصنيف: ' + data.category;
             if (data.isSpy) { document.getElementById('wordIcon').textContent = '🕵️'; document.getElementById('wordDisplay').textContent = 'أنت الجاسوس'; document.getElementById('wordDisplay').style.color = 'var(--neon-pink)'; playSound('spyReveal'); }
             else { document.getElementById('wordIcon').textContent = '📝'; document.getElementById('wordDisplay').textContent = data.word; document.getElementById('wordDisplay').style.color = 'var(--neon-cyan)'; playSound('reveal'); }
-            if (isHost) { document.getElementById('hostVotingSection').style.display = 'block'; } else { document.getElementById('hostVotingSection').style.display = 'none'; }
+            if (isHost) {
+                document.getElementById('hostVotingSection').style.display = 'block';
+                document.getElementById('hostGameSettingsSection').style.display = 'block';
+                document.getElementById('playerLeaveSection').style.display = 'none';
+            } else {
+                document.getElementById('hostVotingSection').style.display = 'none';
+                document.getElementById('hostGameSettingsSection').style.display = 'none';
+                document.getElementById('playerLeaveSection').style.display = 'block';
+            }
         });
 
         function startVoting() { initAudio(); playSound('countdown'); if (socket) safeEmit('start-voting'); }
@@ -1036,6 +1044,13 @@
             hasVoted = false; switchScreen('votingScreen');
             document.getElementById('voteCounter').textContent = '0/' + data.voterCount;
             document.getElementById('voteLog').innerHTML = '';
+            if (isHost) {
+                document.getElementById('votingHostSettingsSection').style.display = 'block';
+                document.getElementById('votingLeaveSection').style.display = 'none';
+            } else {
+                document.getElementById('votingHostSettingsSection').style.display = 'none';
+                document.getElementById('votingLeaveSection').style.display = 'block';
+            }
             var html = '';
             data.players.forEach(function(p) {
                 if (p.id === socket.id) return;

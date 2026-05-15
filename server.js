@@ -367,8 +367,24 @@ io.on('connection', (socket) => {
 
     const targetSocketId = data.playerId;
     if (rooms[roomId].players[targetSocketId]) {
-      rooms[roomId].players[targetSocketId].name = data.newName;
-      io.to(targetSocketId).emit('name-changed', { newName: data.newName });
+      var oldName = rooms[roomId].players[targetSocketId].name;
+      var newName = (data.newName || '').trim().substring(0, 15);
+      if (!newName) return;
+      // فحص تكرار الاسم
+      if (playerNames[roomId] && playerNames[roomId].has(newName.toLowerCase()) && newName.toLowerCase() !== oldName.toLowerCase()) {
+        socket.emit('name-change-error', { message: 'هذا الاسم مستخدم بالفعل!' });
+        return;
+      }
+      // تحديث playerNames
+      if (playerNames[roomId]) {
+        playerNames[roomId].delete(oldName.toLowerCase());
+        playerNames[roomId].add(newName.toLowerCase());
+      }
+      rooms[roomId].players[targetSocketId].name = newName;
+      // تحديث socketPlayerMap
+      if (socketPlayerMap[targetSocketId]) { socketPlayerMap[targetSocketId].name = newName; }
+      io.to(targetSocketId).emit('name-changed', { newName: newName });
+      io.to(roomId).emit('player-name-updated', { oldName: oldName, newName: newName, playerId: targetSocketId });
       emitRoomUpdate(roomId);
     }
   });
@@ -479,9 +495,16 @@ io.on('connection', (socket) => {
     rooms[roomId].votes = {};
 
     const players = getRoomPlayers(roomId);
-    io.to(roomId).emit('voting-started', {
-      players: players,
-      voterCount: players.length
+    // إرسال قائمة مخصصة لكل لاعب - بدون اسمه هو
+    players.forEach(function(player) {
+      const otherPlayers = players.filter(function(p) { return p.id !== player.id; });
+      io.to(player.id).emit('voting-started', {
+        players: otherPlayers,
+        voterCount: players.length,
+        allPlayers: players,
+        myId: player.id,
+        myName: player.isHost ? rooms[roomId].hostName : (rooms[roomId].players[player.id] ? rooms[roomId].players[player.id].name : '')
+      });
     });
   });
 
@@ -501,15 +524,47 @@ io.on('connection', (socket) => {
     const voters = Object.keys(rooms[roomId].votes).length;
     const totalPlayers = getRoomPlayers(roomId).length;
 
-    const voterName = socketPlayerMap[socket.id]?.name || 'مجهول';
-    const votedForName = data.votedForName || 'مجهول';
+    // تحديد اسم المصوت بشكل دقيق
+    let voterName = 'مجهول';
+    if (socket.id === rooms[roomId].hostSocketId) {
+      voterName = rooms[roomId].hostName;
+    } else if (rooms[roomId].players[socket.id]) {
+      voterName = rooms[roomId].players[socket.id].name;
+    }
 
-    // إرسال سجل التصويت المباشر - كل شخص يشوف الاسم المصوّت عليه بالأحمر
+    // تحديد اسم المصوّت عليه بشكل دقيق من السيرفر
+    let votedForName = 'مجهول';
+    if (data.votedFor === rooms[roomId].hostSocketId) {
+      votedForName = rooms[roomId].hostName;
+    } else if (rooms[roomId].players[data.votedFor]) {
+      votedForName = rooms[roomId].players[data.votedFor].name;
+    }
+
+    // بناء سجل التصويت الكامل من السيرفر (المصدر الوحيد للحقيقة)
+    const voteLog = [];
+    for (const [voterId, votedForId] of Object.entries(rooms[roomId].votes)) {
+      let vName = 'مجهول';
+      if (voterId === rooms[roomId].hostSocketId) {
+        vName = rooms[roomId].hostName;
+      } else if (rooms[roomId].players[voterId]) {
+        vName = rooms[roomId].players[voterId].name;
+      }
+      let vfName = 'مجهول';
+      if (votedForId === rooms[roomId].hostSocketId) {
+        vfName = rooms[roomId].hostName;
+      } else if (rooms[roomId].players[votedForId]) {
+        vfName = rooms[roomId].players[votedForId].name;
+      }
+      voteLog.push({ voterName: vName, votedForName: vfName, voterId: voterId, votedForId: votedForId });
+    }
+
+    // إرسال سجل التصويت المباشر الكامل - كل شخص يشوف الاسم المصوّت عليه بالأحمر
     io.to(roomId).emit('vote-update', {
       voterName: voterName,
       votedForName: votedForName,
       voteCount: voters,
-      totalPlayers: totalPlayers
+      totalPlayers: totalPlayers,
+      voteLog: voteLog
     });
 
     if (voters >= totalPlayers) {
@@ -550,13 +605,32 @@ io.on('connection', (socket) => {
       const guessWords = getSimilarWords(rooms[roomId].currentWord, 14);
       rooms[roomId].guessWords = guessWords;
 
+      // بناء سجل التصويت النهائي
+      const finalVoteLog = [];
+      for (const [voterId, votedForId] of Object.entries(rooms[roomId].votes)) {
+        let vName = 'مجهول';
+        if (voterId === rooms[roomId].hostSocketId) {
+          vName = rooms[roomId].hostName;
+        } else if (rooms[roomId].players[voterId]) {
+          vName = rooms[roomId].players[voterId].name;
+        }
+        let vfName = 'مجهول';
+        if (votedForId === rooms[roomId].hostSocketId) {
+          vfName = rooms[roomId].hostName;
+        } else if (rooms[roomId].players[votedForId]) {
+          vfName = rooms[roomId].players[votedForId].name;
+        }
+        finalVoteLog.push({ voterName: vName, votedForName: vfName, voterId: voterId, votedForId: votedForId });
+      }
+
       io.to(roomId).emit('voting-ended', {
         mostVotedId: mostVotedId,
         mostVotedName: mostVotedName,
         isSpy: isSpy,
         spyName: spyName,
         guessWords: guessWords,
-        correctWord: rooms[roomId].currentWord
+        correctWord: rooms[roomId].currentWord,
+        voteLog: finalVoteLog
       });
     }
   });
@@ -851,11 +925,37 @@ io.on('connection', (socket) => {
 
     // لو في تصويت نشط، نبعت بيانات التصويت
     if (rooms[roomId].votingActive) {
-      var players = getRoomPlayers(roomId);
+      var allPlayers = getRoomPlayers(roomId);
+      var otherPlayers = allPlayers.filter(function(p) { return p.id !== socket.id; });
+      var myName = rooms[roomId].players[socket.id] ? rooms[roomId].players[socket.id].name : '';
       socket.emit('voting-started', {
-        players: players,
-        voterCount: players.length
+        players: otherPlayers,
+        voterCount: allPlayers.length,
+        allPlayers: allPlayers,
+        myId: socket.id,
+        myName: myName
       });
+      // نبعت سجل التصويت الحالي
+      var existingVoteLog = [];
+      for (var vid in rooms[roomId].votes) {
+        var vName2 = 'مجهول';
+        if (vid === rooms[roomId].hostSocketId) { vName2 = rooms[roomId].hostName; }
+        else if (rooms[roomId].players[vid]) { vName2 = rooms[roomId].players[vid].name; }
+        var vfid = rooms[roomId].votes[vid];
+        var vfName2 = 'مجهول';
+        if (vfid === rooms[roomId].hostSocketId) { vfName2 = rooms[roomId].hostName; }
+        else if (rooms[roomId].players[vfid]) { vfName2 = rooms[roomId].players[vfid].name; }
+        existingVoteLog.push({ voterName: vName2, votedForName: vfName2, voterId: vid, votedForId: vfid });
+      }
+      if (existingVoteLog.length > 0) {
+        socket.emit('vote-update', {
+          voterName: '',
+          votedForName: '',
+          voteCount: Object.keys(rooms[roomId].votes).length,
+          totalPlayers: allPlayers.length,
+          voteLog: existingVoteLog
+        });
+      }
     }
 
     io.to(rooms[roomId].hostSocketId).emit('player-reconnected', { name: rooms[roomId].players[socket.id].name });

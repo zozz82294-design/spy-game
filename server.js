@@ -8,8 +8,12 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: { origin: "*" },
-  pingTimeout: 60000,
-  pingInterval: 25000
+  pingTimeout: 120000,
+  pingInterval: 25000,
+  upgradeTimeout: 30000,
+  maxHttpBufferSize: 1e6,
+  transports: ['websocket', 'polling'],
+  allowEIO3: true
 });
 
 app.use(express.static(path.join(__dirname, 'public')));
@@ -29,6 +33,24 @@ app.get('/room/:roomId', (req, res) => {
 const rooms = {};
 const socketRoomMap = {};
 const socketPlayerMap = {};
+const playerNames = {}; // roomId -> Set of names (منع تكرار الأسماء)
+const disconnectTimeouts = {}; // socket.id -> timeout (إعادة اتصال مؤقتة)
+
+// تنظيف الغرف القديمة كل 5 دقايق
+setInterval(function() {
+  var now = Date.now();
+  for (var rid in rooms) {
+    if (!rooms[rid]) continue;
+    // لو الغرفة فاضية أو الهوست مش متصل
+    var hostConnected = io.sockets.sockets.has(rooms[rid].hostSocketId);
+    var playerCount = Object.keys(rooms[rid].players).length;
+    if (!hostConnected && playerCount === 0) {
+      console.log('Cleaning empty room:', rid);
+      delete rooms[rid];
+      delete playerNames[rid];
+    }
+  }
+}, 300000);
 
 const WORDS = [
   'ماكدونالدز','هاتف','أسد','قطار','مدرسة','ديسكورد','بيتزا','ناروتو','سيف','مصر',
@@ -118,10 +140,12 @@ io.on('connection', (socket) => {
     const roomId = generateRoomId();
     const avatar = Math.floor(Math.random() * 8) + 1;
 
+    var hostName = (data.hostName || 'SASUKE').trim().substring(0, 15);
+
     rooms[roomId] = {
       id: roomId,
       hostSocketId: socket.id,
-      hostName: data.hostName || 'SASUKE',
+      hostName: hostName,
       hostAvatar: avatar,
       hostDisplayMode: data.displayMode || 'computer',
       players: {},
@@ -133,18 +157,23 @@ io.on('connection', (socket) => {
       guessWords: null,
       spyGuessedWord: null,
       roundEnded: false,
-      linkActive: true
+      linkActive: true,
+      createdAt: Date.now()
     };
 
+    // سجل اسم الهوست
+    playerNames[roomId] = new Set();
+    playerNames[roomId].add(hostName.toLowerCase());
+
     socketRoomMap[socket.id] = roomId;
-    socketPlayerMap[socket.id] = { isHost: true, name: data.hostName || 'SASUKE' };
+    socketPlayerMap[socket.id] = { isHost: true, name: hostName };
 
     socket.join(roomId);
 
     console.log('Room created:', roomId);
     socket.emit('room-created', {
       roomId: roomId,
-      hostName: data.hostName || 'SASUKE',
+      hostName: hostName,
       avatar: avatar,
       joinLink: data.joinLink || roomId
     });
@@ -153,10 +182,13 @@ io.on('connection', (socket) => {
   });
 
   socket.on('join-room', (data) => {
-    const roomId = data.roomId;
+    var roomId = data.roomId;
 
-    if (!rooms[roomId]) {
-      socket.emit('join-error', { message: 'الغرفة غير موجودة' });
+    // تنظيف roomId
+    if (roomId) roomId = roomId.trim().toUpperCase();
+
+    if (!roomId || !rooms[roomId]) {
+      socket.emit('join-error', { message: 'الغرفة غير موجودة أو الرابط غلط' });
       return;
     }
 
@@ -166,55 +198,90 @@ io.on('connection', (socket) => {
     }
 
     if (rooms[roomId].gameStarted) {
-      socket.emit('join-error', { message: 'اللعبة已经开始 بالفعل' });
+      socket.emit('join-error', { message: 'اللعبة بدأت بالفعل!' });
       return;
     }
 
-    const existingNames = getRoomPlayers(roomId).map(p => p.name);
-    if (existingNames.includes(data.playerName)) {
-      socket.emit('join-error', { message: 'هذا الاسم مستخدم بالفعل' });
+    // حد أقصى للاعبين
+    var currentPlayerCount = getRoomPlayers(roomId).length;
+    if (currentPlayerCount >= 20) {
+      socket.emit('join-error', { message: 'الغرفة مليئة (أقصى حد 20 لاعب)' });
       return;
     }
 
-    const avatar = Math.floor(Math.random() * 8) + 1;
+    var playerName = (data.playerName || '').trim().substring(0, 15);
+    if (!playerName || playerName.length < 1) {
+      socket.emit('join-error', { message: 'اكتب اسمك الأول' });
+      return;
+    }
+
+    // فحص تكرار الاسم (case-insensitive)
+    if (playerNames[roomId] && playerNames[roomId].has(playerName.toLowerCase())) {
+      socket.emit('join-error', { message: 'هذا الاسم مستخدم بالفعل! جرب اسم تاني' });
+      return;
+    }
+
+    // لو اللاعب كان في الغرفة قبل كده (reconnect) - اشيل القديم
+    if (socketRoomMap[socket.id] === roomId) {
+      socket.emit('join-error', { message: 'أنت بالفعل في الغرفة!' });
+      return;
+    }
+
+    var avatar = Math.floor(Math.random() * 8) + 1;
 
     rooms[roomId].players[socket.id] = {
-      name: data.playerName,
+      name: playerName,
       avatar: avatar,
-      displayMode: data.displayMode || 'computer'
+      displayMode: data.displayMode || 'computer',
+      joinedAt: Date.now()
     };
 
+    // سجل اسم اللاعب
+    if (!playerNames[roomId]) playerNames[roomId] = new Set();
+    playerNames[roomId].add(playerName.toLowerCase());
+
     socketRoomMap[socket.id] = roomId;
-    socketPlayerMap[socket.id] = { isHost: false, name: data.playerName };
+    socketPlayerMap[socket.id] = { isHost: false, name: playerName };
+
+    // اشيل timeout لو كان فيه
+    if (disconnectTimeouts[socket.id]) {
+      clearTimeout(disconnectTimeouts[socket.id]);
+      delete disconnectTimeouts[socket.id];
+    }
 
     socket.join(roomId);
 
     socket.emit('join-success', {
       roomId: roomId,
-      playerName: data.playerName,
+      playerName: playerName,
       avatar: avatar,
       hostName: rooms[roomId].hostName
     });
 
     io.to(rooms[roomId].hostSocketId).emit('player-joined', {
-      name: data.playerName,
+      name: playerName,
       avatar: avatar
     });
 
     emitRoomUpdate(roomId);
+    console.log('Player joined:', playerName, '-> Room:', roomId, '(' + getRoomPlayers(roomId).length + ' players)');
   });
 
   socket.on('kick-player', (data) => {
-    const roomId = socketRoomMap[socket.id];
+    var roomId = socketRoomMap[socket.id];
     if (!rooms[roomId] || rooms[roomId].hostSocketId !== socket.id) return;
 
-    const targetSocketId = data.playerId;
+    var targetSocketId = data.playerId;
     if (rooms[roomId].players[targetSocketId]) {
-      const playerName = rooms[roomId].players[targetSocketId].name;
+      var kickedName = rooms[roomId].players[targetSocketId].name;
       io.to(targetSocketId).emit('kicked', { message: 'لقد تم طردك من الغرفة' });
+
+      // شيل الاسم من playerNames
+      if (playerNames[roomId]) playerNames[roomId].delete(kickedName.toLowerCase());
+
       delete rooms[roomId].players[targetSocketId];
 
-      const targetSockets = io.sockets.sockets;
+      var targetSockets = io.sockets.sockets;
       if (targetSockets.has(targetSocketId)) {
         targetSockets.get(targetSocketId).leave(roomId);
       }
@@ -223,6 +290,7 @@ io.on('connection', (socket) => {
       delete socketPlayerMap[targetSocketId];
 
       emitRoomUpdate(roomId);
+      console.log('Player kicked:', kickedName, 'from Room:', roomId);
     }
   });
 
@@ -450,14 +518,20 @@ io.on('connection', (socket) => {
   });
 
   socket.on('leave-room', () => {
-    const roomId = socketRoomMap[socket.id];
+    var roomId = socketRoomMap[socket.id];
     if (!roomId || !rooms[roomId]) return;
 
     if (rooms[roomId].hostSocketId === socket.id) {
+      // الهوست غادر - اقفل الغرفة
       io.to(roomId).emit('room-closed');
+      if (playerNames[roomId]) delete playerNames[roomId];
       delete rooms[roomId];
     } else {
+      var leavingName = rooms[roomId].players[socket.id]?.name || 'لاعب';
+      // شيل الاسم من playerNames
+      if (playerNames[roomId]) playerNames[roomId].delete(leavingName.toLowerCase());
       delete rooms[roomId].players[socket.id];
+      io.to(rooms[roomId].hostSocketId).emit('player-left', { name: leavingName });
       emitRoomUpdate(roomId);
     }
 
@@ -466,27 +540,99 @@ io.on('connection', (socket) => {
     delete socketPlayerMap[socket.id];
   });
 
-  socket.on('disconnect', () => {
-    console.log('User disconnected:', socket.id);
-    const roomId = socketRoomMap[socket.id];
-    if (!roomId || !rooms[roomId]) return;
+  socket.on('disconnect', (reason) => {
+    console.log('User disconnected:', socket.id, 'Reason:', reason);
+    var roomId = socketRoomMap[socket.id];
+    if (!roomId || !rooms[roomId]) {
+      delete socketRoomMap[socket.id];
+      delete socketPlayerMap[socket.id];
+      return;
+    }
 
     if (rooms[roomId].hostSocketId === socket.id) {
+      // الهوست فصل - استنى 15 ثانية قبل ما تقفل الغرفة
       io.to(roomId).emit('host-disconnected');
-      setTimeout(() => {
+      disconnectTimeouts[socket.id] = setTimeout(function() {
         if (rooms[roomId] && rooms[roomId].hostSocketId === socket.id) {
+          console.log('Host did not reconnect, closing room:', roomId);
+          io.to(roomId).emit('room-closed');
+          if (playerNames[roomId]) delete playerNames[roomId];
           delete rooms[roomId];
         }
-      }, 10000);
+        delete disconnectTimeouts[socket.id];
+      }, 15000);
     } else {
-      const playerName = rooms[roomId].players[socket.id]?.name || 'لاعب';
-      delete rooms[roomId].players[socket.id];
-      io.to(rooms[roomId].hostSocketId).emit('player-left', { name: playerName });
-      emitRoomUpdate(roomId);
+      // لاعب فصل - استنى 10 ثواني قبل ما تشيله
+      var discName = rooms[roomId].players[socket.id]?.name || 'لاعب';
+      io.to(rooms[roomId].hostSocketId).emit('player-disconnected', { name: discName, socketId: socket.id });
+
+      disconnectTimeouts[socket.id] = setTimeout(function() {
+        if (rooms[roomId] && rooms[roomId].players[socket.id]) {
+          // شيل الاسم من playerNames
+          if (playerNames[roomId]) playerNames[roomId].delete(discName.toLowerCase());
+          delete rooms[roomId].players[socket.id];
+          io.to(rooms[roomId].hostSocketId).emit('player-left', { name: discName });
+          emitRoomUpdate(roomId);
+          console.log('Player removed after timeout:', discName, 'from Room:', roomId);
+        }
+        delete disconnectTimeouts[socket.id];
+      }, 10000);
     }
 
     delete socketRoomMap[socket.id];
     delete socketPlayerMap[socket.id];
+  });
+
+  // إعادة اتصال لاعب
+  socket.on('rejoin-room', function(data) {
+    var roomId = data.roomId;
+    if (!roomId || !rooms[roomId]) {
+      socket.emit('join-error', { message: 'الغرفة لم تعد موجودة' });
+      return;
+    }
+
+    // لو الهوست رجع
+    if (rooms[roomId].hostSocketId === data.oldSocketId) {
+      // اشيل timeout القديم
+      if (disconnectTimeouts[data.oldSocketId]) {
+        clearTimeout(disconnectTimeouts[data.oldSocketId]);
+        delete disconnectTimeouts[data.oldSocketId];
+      }
+      rooms[roomId].hostSocketId = socket.id;
+      socketRoomMap[socket.id] = roomId;
+      socketPlayerMap[socket.id] = { isHost: true, name: rooms[roomId].hostName };
+      socket.join(roomId);
+      socket.emit('rejoin-success', { roomId: roomId, isHost: true });
+      io.to(roomId).emit('host-reconnected');
+      emitRoomUpdate(roomId);
+      console.log('Host reconnected:', rooms[roomId].hostName, '-> Room:', roomId);
+      return;
+    }
+
+    // لو لاعب رجع
+    // اشيل timeout القديم
+    if (disconnectTimeouts[data.oldSocketId]) {
+      clearTimeout(disconnectTimeouts[data.oldSocketId]);
+      delete disconnectTimeouts[data.oldSocketId];
+    }
+    // لو لسه موجود (ماشالناهوش بعد)
+    if (rooms[roomId].players[data.oldSocketId]) {
+      rooms[roomId].players[socket.id] = rooms[roomId].players[data.oldSocketId];
+      delete rooms[roomId].players[data.oldSocketId];
+      rooms[roomId].players[socket.id].rejoinedAt = Date.now();
+    } else {
+      // اتعمل له remove - يدخل من جديد
+      socket.emit('join-error', { message: 'تم إزالتك من الغرفة، ادخل من جديد' });
+      return;
+    }
+
+    socketRoomMap[socket.id] = roomId;
+    socketPlayerMap[socket.id] = { isHost: false, name: rooms[roomId].players[socket.id].name };
+    socket.join(roomId);
+    socket.emit('rejoin-success', { roomId: roomId, isHost: false, playerName: rooms[roomId].players[socket.id].name });
+    io.to(rooms[roomId].hostSocketId).emit('player-reconnected', { name: rooms[roomId].players[socket.id].name });
+    emitRoomUpdate(roomId);
+    console.log('Player reconnected:', rooms[roomId].players[socket.id].name, '-> Room:', roomId);
   });
 });
 
@@ -496,6 +642,6 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log('═══════════════════════════════════════════');
   console.log('🎮 Spy Game server running!');
   console.log('📡 Port: ' + PORT);
-  console.log('🌐 Open: http://localhost:' + PORT);
+  console.log('🌐 Production: https://spy-game-rrmo.onrender.com');
   console.log('═══════════════════════════════════════════');
 });

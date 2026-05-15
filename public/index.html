@@ -214,14 +214,16 @@
             <div style="margin-bottom:30px;">
                 <div style="font-size:4rem;margin-bottom:10px;animation:float 3s ease-in-out infinite;">🕵️</div>
                 <h1 class="neon-text" style="font-size:3rem;font-weight:900;margin-bottom:5px;">SASUKE</h1>
-                <p style="color:var(--text-secondary);font-size:1.1rem;">إنشاء غرفة لعبة الجاسوس</p>
             </div>
             <div style="margin-bottom:25px;">
                 <p style="color:var(--text-secondary);margin-bottom:15px;font-size:1rem;">اختر نوع العرض</p>
                 <div style="display:flex;gap:15px;justify-content:center;">
-                    <button class="btn btn-primary" onclick="selectDisplayMode('mobile')" style="flex:1;max-width:180px;">📱 موبايل</button>
-                    <button class="btn btn-secondary" onclick="selectDisplayMode('computer')" style="flex:1;max-width:180px;">💻 كمبيوتر</button>
+                    <button class="btn btn-primary" id="homeMobileBtn" onclick="selectHomeDisplayMode('mobile')" style="flex:1;max-width:180px;transition:all 0.3s ease;opacity:0.5;">📱 موبايل</button>
+                    <button class="btn btn-primary" id="homeComputerBtn" onclick="selectHomeDisplayMode('computer')" style="flex:1;max-width:180px;transition:all 0.3s ease;opacity:0.5;">💻 كمبيوتر</button>
                 </div>
+            </div>
+            <div style="margin-top:20px;">
+                <button class="btn btn-success btn-lg" id="goCreateRoomBtn" onclick="goCreateRoom()" style="width:100%;font-size:1.2rem;padding:15px;opacity:0.4;pointer-events:none;transition:all 0.3s ease;">🏠 إنشاء غرفة لعبة الجاسوس</button>
             </div>
         </div>
     </div>
@@ -446,27 +448,59 @@
         // Initialize socket with error handling
         var socket = null;
         var socketReady = false;
+        var lastSocketId = null; // لحفظ آخر socket ID عشان rejoin
+        var myRoomId = null; // الغرفة اللي أنا فيها
+        var myPlayerName = ''; // اسمي
+        var amIHost = false; // أنا هوست ولا لا
         console.log('[DEBUG] Starting socket initialization...');
-        console.log('[DEBUG] typeof io:', typeof io);
         try {
-            socket = io({ reconnection: true, reconnectionAttempts: 10, reconnectionDelay: 1000 });
-            console.log('[DEBUG] io() called, socket created:', socket ? 'yes' : 'no');
-            console.log('[DEBUG] socket.id:', socket.id);
-            // Wait for actual connection before marking as ready
+            socket = io({
+                reconnection: true,
+                reconnectionAttempts: Infinity,
+                reconnectionDelay: 1000,
+                reconnectionDelayMax: 5000,
+                timeout: 20000,
+                transports: ['websocket', 'polling'],
+                upgrade: true,
+                forceNew: false
+            });
+
             socket.on('connect', function() {
                 socketReady = true;
+                lastSocketId = socket.id;
                 console.log('[DEBUG] Socket connected! id:', socket.id);
-                showToast('تم الاتصال بالسيرفر بنجاح!', 'success');
+
+                // لو كنت في غرفة وفصلت، حاول تعمل rejoin
+                if (myRoomId && myPlayerName) {
+                    var oldSocketId = lastSocketId;
+                    socket.emit('rejoin-room', {
+                        roomId: myRoomId,
+                        oldSocketId: oldSocketId,
+                        playerName: myPlayerName
+                    });
+                }
             });
-            socket.on('disconnect', function() {
+
+            socket.on('rejoin-success', function(data) {
+                console.log('[DEBUG] Rejoin success:', data);
+                myRoomId = data.roomId;
+                amIHost = data.isHost || false;
+                showToast('تم إعادة الاتصال بنجاح! ✅', 'success');
+            });
+
+            socket.on('disconnect', function(reason) {
                 socketReady = false;
-                console.log('[DEBUG] Socket disconnected');
-                showToast('تم قطع الاتصال، جاري إعادة الاتصال...', 'warning');
+                console.log('[DEBUG] Socket disconnected, reason:', reason);
+                if (reason === 'io server disconnect') {
+                    showToast('تم قطع الاتصال من السيرفر، جاري إعادة الاتصال...', 'warning');
+                } else {
+                    showToast('تم قطع الاتصال، جاري إعادة الاتصال...', 'warning');
+                }
             });
+
             socket.on('connect_error', function(err) {
                 socketReady = false;
                 console.warn('[DEBUG] Socket connection error:', err.message);
-                showToast('خطأ في الاتصال: ' + err.message, 'error');
             });
         } catch(e) {
             console.warn('[DEBUG] Socket.IO not available:', e.message);
@@ -704,6 +738,60 @@
         }
 
         // === Display Mode Selection ===
+        var homeDisplaySelected = false;
+
+        function selectHomeDisplayMode(mode) {
+            initAudio(); playSound('click');
+            displayMode = mode;
+            homeDisplaySelected = true;
+
+            // تنوير الزر المختار وتغيمة التاني
+            var mobileBtn = document.getElementById('homeMobileBtn');
+            var computerBtn = document.getElementById('homeComputerBtn');
+            var goBtn = document.getElementById('goCreateRoomBtn');
+
+            if (mode === 'mobile') {
+                mobileBtn.style.opacity = '1';
+                mobileBtn.style.boxShadow = '0 0 20px rgba(0,212,255,0.5), inset 0 0 20px rgba(0,212,255,0.1)';
+                mobileBtn.style.borderColor = 'var(--neon-cyan)';
+                computerBtn.style.opacity = '0.4';
+                computerBtn.style.boxShadow = 'none';
+                computerBtn.style.borderColor = 'transparent';
+            } else {
+                computerBtn.style.opacity = '1';
+                computerBtn.style.boxShadow = '0 0 20px rgba(108,92,231,0.5), inset 0 0 20px rgba(108,92,231,0.1)';
+                computerBtn.style.borderColor = 'var(--neon-purple)';
+                mobileBtn.style.opacity = '0.4';
+                mobileBtn.style.boxShadow = 'none';
+                mobileBtn.style.borderColor = 'transparent';
+            }
+
+            // تفعيل زر إنشاء الغرفة
+            goBtn.style.opacity = '1';
+            goBtn.style.pointerEvents = 'auto';
+            goBtn.style.boxShadow = '0 0 25px rgba(0,255,136,0.4)';
+
+            if (mode === 'computer') {
+                document.body.classList.add('custom-cursor');
+                document.getElementById('cursorDot').style.display = 'block';
+                document.getElementById('cursorRing').style.display = 'block';
+                setupCustomCursor();
+            } else {
+                document.body.classList.remove('custom-cursor');
+                document.getElementById('cursorDot').style.display = 'none';
+                document.getElementById('cursorRing').style.display = 'none';
+            }
+        }
+
+        function goCreateRoom() {
+            if (!homeDisplaySelected) {
+                showToast('اختار نوع العرض الأول!', 'warning');
+                return;
+            }
+            initAudio(); playSound('click');
+            switchScreen('createRoomScreen');
+        }
+
         function selectDisplayMode(mode) {
             initAudio(); playSound('click'); displayMode = mode;
             if (mode === 'computer') {
@@ -741,6 +829,9 @@
 
         safeOn('room-created', function(data) {
             roomId = data.roomId;
+            myRoomId = data.roomId;
+            myPlayerName = data.hostName;
+            amIHost = true;
             document.getElementById('hostDisplayName').textContent = '👑 ' + toBold(data.hostName);
             updateRoomLink();
             switchScreen('hostRoomScreen');
@@ -827,7 +918,7 @@
             if (socket && socketReady) { safeEmit('join-room', { roomId: joinRoomId, playerName: name, displayMode: joinDisplayMode }); }
             else { showToast('غير متصل بالسيرفر', 'error'); }
         }
-        safeOn('join-success', function(data) { roomId = data.roomId; playSound('join'); switchScreen('playerRoomScreen'); startBgMusic(); });
+        safeOn('join-success', function(data) { roomId = data.roomId; myRoomId = data.roomId; myPlayerName = data.playerName; amIHost = false; playSound('join'); switchScreen('playerRoomScreen'); startBgMusic(); });
         safeOn('join-error', function(data) { showToast(data.message, 'error'); if (data.message === 'انتهت صلاحية الرابط') { switchScreen('expiredLinkScreen'); } });
 
         function updatePlayerPlayerList(players) {

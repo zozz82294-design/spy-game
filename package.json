@@ -2,10 +2,10 @@
   "name": "spy-game",
   "version": "1.0.0",
   "description": "Spy Game - Professional Multiplayer Spy Game",
-  "main": "server.js",
+  "main": "backend/server.js",
   "scripts": {
-    "dev": "node server.js",
-    "start": "node server.js"
+    "dev": "node backend/server.js",
+    "start": "node backend/server.js"
   },
   "dependencies": {
     "express": "^4.18.2",

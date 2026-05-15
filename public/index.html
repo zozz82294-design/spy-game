@@ -998,7 +998,7 @@
                     settingsHtml += '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-glass);"><span>' + toBold(p.name) + '</span><div style="display:flex;gap:5px;"><button class="btn btn-danger btn-sm" onclick="kickPlayer(\'' + p.id + '\')">طرد</button><button class="btn btn-primary btn-sm" onclick="promptChangeName(\'' + p.id + '\',\'' + p.name + '\')">تغيير الاسم</button></div></div>';
                 }
             });
-            document.getElementById('settingsPlayerList').innerHTML = settingsHtml;
+            // settingsPlayerList تم نقله للوحة الإعدادات الثابتة
             var count = players.length;
             document.getElementById('playerCount').textContent = count;
             var btn = document.getElementById('startGameBtn');
@@ -1012,8 +1012,18 @@
 
         safeOn('player-joined', function(data) { initAudio(); playSound('join'); showToast(data.name + ' انضم للغرفة!', 'success'); });
         safeOn('player-left', function(data) { playSound('leave'); showToast(data.name + ' غادر الغرفة', 'info'); });
-        safeOn('room-update', function(data) { if (isHost) { updateHostPlayerList(data.players); } else { updatePlayerPlayerList(data.players); } });
-        safeOn('kicked', function(data) { playSound('leave'); showToast(data.message, 'error'); switchScreen('leftScreen'); });
+        safeOn('room-update', function(data) {
+            if (isHost) {
+                updateHostPlayerList(data.players);
+                // تحديث قائمة الإعدادات الثابتة لو مفتوحة
+                if (document.getElementById('settingsOverlay').classList.contains('visible')) {
+                    renderGlobalSettingsPlayerList(data.players);
+                }
+            } else {
+                updatePlayerPlayerList(data.players);
+            }
+        });
+        safeOn('kicked', function(data) { playSound('leave'); showToast(data.message, 'error'); hideHostSettingsFab(); closeHostSettings(); switchScreen('leftScreen'); });
         safeOn('name-changed', function(data) { playerName = data.newName; showToast('تم تغيير اسمك إلى: ' + data.newName, 'info'); });
 
         // === Join Room ===
@@ -1042,7 +1052,7 @@
             document.getElementById('playerPlayerList').innerHTML = html;
         }
 
-        function leaveRoom() { initAudio(); playSound('leave'); if (socket) safeEmit('leave-room'); stopBgMusic(); switchScreen('leftScreen'); }
+        function leaveRoom() { initAudio(); playSound('leave'); hideHostSettingsFab(); closeHostSettings(); if (socket) safeEmit('leave-room'); stopBgMusic(); switchScreen('leftScreen'); }
 
         // === Game Logic ===
         function startGame() { initAudio(); playSound('start'); if (socket) safeEmit('start-game'); switchScreen('modeSelectScreen'); }
@@ -1190,13 +1200,12 @@
         function startVoting() { initAudio(); playSound('countdown'); if (socket) safeEmit('start-voting'); }
         safeOn('voting-started', function(data) {
             hasVoted = false; switchScreen('votingScreen');
+            processedVoteIds.clear(); // تنظيف سجل التصويت عند بداية تصويت جديد
             document.getElementById('voteCounter').textContent = '0/' + data.voterCount;
             document.getElementById('voteLog').innerHTML = '';
             if (isHost) {
-                document.getElementById('votingSettingsBtn').style.display = 'block';
                 document.getElementById('votingLeaveSection').style.display = 'none';
             } else {
-                document.getElementById('votingSettingsBtn').style.display = 'none';
                 document.getElementById('votingLeaveSection').style.display = 'block';
             }
             var html = '';
@@ -1219,12 +1228,19 @@
             if (votedCard) { votedCard.style.opacity = '1'; votedCard.style.borderColor = 'var(--success)'; votedCard.style.boxShadow = '0 0 15px rgba(0,255,136,0.3)'; }
         }
 
+        // سجل التصويت - منع التكرار
+        var processedVoteIds = new Set();
+
         safeOn('vote-update', function(data) {
             document.getElementById('voteCounter').textContent = data.voteCount + '/' + data.totalPlayers;
+            // منع التكرار - كل مصوت يظهر مرة واحدة فقط
+            var voteKey = data.voterName + '->' + data.votedForName;
+            if (processedVoteIds.has(voteKey)) return;
+            processedVoteIds.add(voteKey);
             var log = document.getElementById('voteLog');
             var entry = document.createElement('div');
-            entry.style.cssText = 'padding:8px 14px;margin-bottom:6px;border-radius:10px;background:rgba(108,92,231,0.15);border:1px solid rgba(108,92,231,0.2);font-size:0.9rem;animation:fadeIn 0.3s ease;';
-            entry.innerHTML = 'صوت <span style="color:var(--neon-cyan);font-weight:900;">' + toBold(data.voterName) + '</span> على <span style="color:#ff4757;font-weight:900;">' + toBold(data.votedForName) + '</span>';
+            entry.className = 'vote-log-entry';
+            entry.innerHTML = '<span class="voter-name">' + toBold(data.voterName) + '</span> صوت على <span class="voted-name">' + toBold(data.votedForName) + '</span>';
             log.appendChild(entry);
             log.scrollTop = log.scrollHeight;
             playSound('vote');
@@ -1289,8 +1305,8 @@
 
         function endRound() { initAudio(); playSound('click'); if (socket) safeEmit('end-round'); if (!isHost) { switchScreen('roundEndScreen'); } }
         safeOn('round-ended', function() { if (!isHost) { switchScreen('roundEndScreen'); } });
-        safeOn('game-restarted', function() { switchScreen(isHost ? 'hostRoomScreen' : 'playerRoomScreen'); showToast('تم إعادة اللعبة!', 'success'); });
-        safeOn('room-closed', function() { showToast('تم إغلاق الغرفة', 'error'); switchScreen('leftScreen'); });
+        safeOn('game-restarted', function() { switchScreen(isHost ? 'hostRoomScreen' : 'playerRoomScreen'); showToast('تم إعادة اللعبة!', 'success'); showHostSettingsFab(); });
+        safeOn('room-closed', function() { showToast('تم إغلاق الغرفة', 'error'); hideHostSettingsFab(); closeHostSettings(); switchScreen('leftScreen'); });
         safeOn('host-disconnected', function() { showToast('المستضيف غير متصل، جاري الانتظار...', 'warning'); });
 
         // URL routing

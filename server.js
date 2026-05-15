@@ -183,6 +183,7 @@ io.on('connection', (socket) => {
 
   socket.on('join-room', (data) => {
     var roomId = data.roomId;
+    var playerName = (data.playerName || '').trim().substring(0, 15);
 
     // تنظيف roomId
     if (roomId) roomId = roomId.trim().toUpperCase();
@@ -276,7 +277,6 @@ io.on('connection', (socket) => {
       return;
     }
 
-    var playerName = (data.playerName || '').trim().substring(0, 15);
     if (!playerName || playerName.length < 1) {
       socket.emit('join-error', { message: 'اكتب اسمك الأول' });
       return;

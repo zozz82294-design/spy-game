@@ -1035,9 +1035,10 @@
             document.getElementById('voteCounter').textContent = data.voteCount + '/' + data.totalPlayers;
             var log = document.getElementById('voteLog');
             var entry = document.createElement('div');
-            entry.style.cssText = 'padding:6px 12px;margin-bottom:4px;border-radius:8px;background:rgba(108,92,231,0.1);font-size:0.9rem;';
-            entry.innerHTML = '<span style="color:var(--neon-cyan);">' + toBold(data.voterName) + '</span> صوت على <span style="color:var(--neon-pink);">' + toBold(data.votedForName) + '</span>';
+            entry.style.cssText = 'padding:8px 14px;margin-bottom:6px;border-radius:10px;background:rgba(108,92,231,0.15);border:1px solid rgba(108,92,231,0.2);font-size:0.9rem;animation:fadeIn 0.3s ease;';
+            entry.innerHTML = 'لقد صوت <span style="color:var(--neon-cyan);font-weight:900;">' + toBold(data.voterName) + '</span> على <span style="color:#ff4757;font-weight:900;">' + toBold(data.votedForName) + '</span>';
             log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
             playSound('vote');
         });
 

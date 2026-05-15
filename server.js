@@ -417,6 +417,15 @@ io.on('connection', (socket) => {
     io.to(roomId).emit('mode-selected', { hostName: hostName });
   });
 
+  // الهوست يسحب اختياره
+  socket.on('cancel-mode', () => {
+    const roomId = socketRoomMap[socket.id];
+    if (!rooms[roomId] || rooms[roomId].hostSocketId !== socket.id) return;
+
+    // إبلاغ الكل إن الهوست سحب الاختيار
+    io.to(roomId).emit('mode-cancelled');
+  });
+
   // الهوست يؤكد اختيار الوضع
   socket.on('confirm-mode', () => {
     const roomId = socketRoomMap[socket.id];
@@ -666,6 +675,59 @@ io.on('connection', (socket) => {
           io.to(rooms[roomId].hostSocketId).emit('player-left', { name: discName });
           emitRoomUpdate(roomId);
           console.log('Player removed after timeout:', discName, 'from Room:', roomId);
+
+          // لو في تصويت نشط، حدّث العداد وشوف هل كل اللي فاضل صوّتوا
+          if (rooms[roomId].votingActive) {
+            var currentPlayers = getRoomPlayers(roomId);
+            var voters = Object.keys(rooms[roomId].votes).length;
+            // شيل اللاعب اللي خرج من الأصوات لو كان صوّت
+            if (rooms[roomId].votes[socket.id]) {
+              delete rooms[roomId].votes[socket.id];
+              voters = Object.keys(rooms[roomId].votes).length;
+            }
+            // حدّث العداد للكل
+            io.to(roomId).emit('vote-update', {
+              voterName: discName,
+              votedForName: 'غادر اللعبة',
+              voteCount: voters,
+              totalPlayers: currentPlayers.length
+            });
+            // لو كل اللي فاضل صوّتوا، أنهِ التصويت
+            if (voters >= currentPlayers.length) {
+              rooms[roomId].votingActive = false;
+              var voteCounts = {};
+              for (var votedFor of Object.values(rooms[roomId].votes)) {
+                voteCounts[votedFor] = (voteCounts[votedFor] || 0) + 1;
+              }
+              var maxVotes = 0;
+              var mostVotedId = null;
+              for (var [id, count] of Object.entries(voteCounts)) {
+                if (count > maxVotes) {
+                  maxVotes = count;
+                  mostVotedId = id;
+                }
+              }
+              var spyId = rooms[roomId].spySocketId;
+              var isSpy = mostVotedId === spyId;
+              var mostVotedName = '';
+              if (mostVotedId === rooms[roomId].hostSocketId) {
+                mostVotedName = rooms[roomId].hostName;
+              } else if (rooms[roomId].players[mostVotedId]) {
+                mostVotedName = rooms[roomId].players[mostVotedId].name;
+              }
+              var spyName = rooms[roomId].players[spyId]?.name || 'الجاسوس';
+              var guessWords = getSimilarWords(rooms[roomId].currentWord, 14);
+              rooms[roomId].guessWords = guessWords;
+              io.to(roomId).emit('voting-ended', {
+                mostVotedId: mostVotedId,
+                mostVotedName: mostVotedName,
+                isSpy: isSpy,
+                spyName: spyName,
+                guessWords: guessWords
+              });
+              rooms[roomId].roundEnded = true;
+            }
+          }
         }
         delete disconnectTimeouts[socket.id];
       }, 60000);
@@ -694,7 +756,30 @@ io.on('connection', (socket) => {
       socketRoomMap[socket.id] = roomId;
       socketPlayerMap[socket.id] = { isHost: true, name: rooms[roomId].hostName };
       socket.join(roomId);
-      socket.emit('rejoin-success', { roomId: roomId, isHost: true });
+
+      // نبعت حالة اللعبة الحالية
+      var gameState = 'lobby'; // افتراضي
+      if (rooms[roomId].gameStarted && !rooms[roomId].modeConfirmed) {
+        gameState = 'mode-select';
+      } else if (rooms[roomId].modeConfirmed && !rooms[roomId].votingActive && !rooms[roomId].roundEnded) {
+        gameState = 'word';
+      } else if (rooms[roomId].votingActive) {
+        gameState = 'voting';
+      } else if (rooms[roomId].roundEnded) {
+        gameState = 'result';
+      }
+
+      socket.emit('rejoin-success', { roomId: roomId, isHost: true, gameState: gameState });
+
+      // لو اللعبة بدأت، نبعت الكلمة للهوست
+      if (rooms[roomId].modeConfirmed) {
+        socket.emit('show-word', {
+          word: rooms[roomId].currentWord,
+          category: 'عشوائي',
+          isSpy: false
+        });
+      }
+
       io.to(roomId).emit('host-reconnected');
       emitRoomUpdate(roomId);
       console.log('Host reconnected:', rooms[roomId].hostName, '-> Room:', roomId);
@@ -721,7 +806,39 @@ io.on('connection', (socket) => {
     socketRoomMap[socket.id] = roomId;
     socketPlayerMap[socket.id] = { isHost: false, name: rooms[roomId].players[socket.id].name };
     socket.join(roomId);
-    socket.emit('rejoin-success', { roomId: roomId, isHost: false, playerName: rooms[roomId].players[socket.id].name });
+
+    // نبعت حالة اللعبة الحالية
+    var playerGameState = 'lobby';
+    if (rooms[roomId].gameStarted && !rooms[roomId].modeConfirmed) {
+      playerGameState = 'mode-select';
+    } else if (rooms[roomId].modeConfirmed && !rooms[roomId].votingActive && !rooms[roomId].roundEnded) {
+      playerGameState = 'word';
+    } else if (rooms[roomId].votingActive) {
+      playerGameState = 'voting';
+    } else if (rooms[roomId].roundEnded) {
+      playerGameState = 'result';
+    }
+
+    socket.emit('rejoin-success', { roomId: roomId, isHost: false, playerName: rooms[roomId].players[socket.id].name, gameState: playerGameState });
+
+    // لو اللعبة بدأت، نبعت الكلمة للاعب
+    if (rooms[roomId].modeConfirmed) {
+      if (rooms[roomId].spySocketId === socket.id) {
+        socket.emit('show-word', { word: null, category: 'عشوائي', isSpy: true });
+      } else {
+        socket.emit('show-word', { word: rooms[roomId].currentWord, category: 'عشوائي', isSpy: false });
+      }
+    }
+
+    // لو في تصويت نشط، نبعت بيانات التصويت
+    if (rooms[roomId].votingActive) {
+      var players = getRoomPlayers(roomId);
+      socket.emit('voting-started', {
+        players: players,
+        voterCount: players.length
+      });
+    }
+
     io.to(rooms[roomId].hostSocketId).emit('player-reconnected', { name: rooms[roomId].players[socket.id].name });
     emitRoomUpdate(roomId);
     console.log('Player reconnected:', rooms[roomId].players[socket.id].name, '-> Room:', roomId);

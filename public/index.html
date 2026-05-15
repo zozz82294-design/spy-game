@@ -977,12 +977,42 @@
             document.getElementById('randomModeCard').style.borderColor = 'var(--neon-cyan)';
             document.getElementById('randomModeCard').style.boxShadow = 'var(--glow-secondary)';
             document.getElementById('confirmModeBtn').disabled = false;
+            document.getElementById('cancelModeBtn').style.display = 'block';
         }
 
         function confirmMode() {
             initAudio(); playSound('start');
             if (!isHost) return;
             if (socket) safeEmit('confirm-mode');
+        }
+
+        function cancelMode() {
+            initAudio(); playSound('click');
+            selectedMode = null;
+            document.getElementById('randomModeCard').style.borderColor = '';
+            document.getElementById('randomModeCard').style.boxShadow = '';
+            document.getElementById('confirmModeBtn').disabled = true;
+            document.getElementById('cancelModeBtn').style.display = 'none';
+            document.getElementById('hostSelectLabel').style.display = 'none';
+            if (socket) safeEmit('cancel-mode');
+        }
+
+        function toggleGameSettings() {
+            initAudio(); playSound('click');
+            var panel = document.getElementById('gameSettingsPanel');
+            if (panel.style.display === 'none') {
+                panel.style.display = 'block';
+                updateGameSettingsPlayerList();
+            } else {
+                panel.style.display = 'none';
+            }
+        }
+
+        function updateGameSettingsPlayerList() {
+            var html = '';
+            var players = document.querySelectorAll('#wordScreen .game-settings-item, #hostPlayerList .player-item');
+            // بناء القائمة من بيانات الغرفة
+            if (socket) safeEmit('get-room-players');
         }
 
         safeOn('game-started', function(data) {

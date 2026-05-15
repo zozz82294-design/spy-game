@@ -803,7 +803,7 @@
         function promptChangeName(playerId, currentName) { var newName = prompt('أدخل الاسم الجديد لـ ' + currentName + ':', currentName); if (newName && newName.trim()) safeEmit('change-player-name', { playerId: playerId, newName: newName.trim() }); }
 
         safeOn('player-joined', function(data) { initAudio(); playSound('join'); showToast(data.name + ' انضم للغرفة!', 'success'); });
-        safeOn('player-left', function(data) { playSound('leave'); showToast(data.name + ' غادر الغرفة', 'info'); });
+        safeOn('', function(data) { playSound('leave'); showToast(data.name + ' غادر الغرفة', 'info'); });
         safeOn('room-update', function(data) { if (isHost) updateHostPlayerList(data.players); else updatePlayerPlayerList(data.players); });
         safeOn('kicked', function(data) { playSound('leave'); showToast(data.message, 'error'); switchScreen('leftScreen'); });
         safeOn('name-changed', function(data) { playerName = data.newName; showToast('تم تغيير اسمك إلى: ' + data.newName, 'info'); });
@@ -868,36 +868,80 @@
 
         function startVoting() { initAudio(); playSound('click'); safeEmit('start-voting'); }
 
-        safeOn('voting-started', function(data) {
+                safeOn('voting-started', function(data) {
             hasVoted = false; switchScreen('votingScreen');
-            document.getElementById('voteCounter').textContent = '0/' + data.voterCount;
+            processedVoteIds.clear(); // تنظيف سجل التصويت عند بداية تصويت جديد
+            
+            // استخدام البيانات القادمة من السيرفر للعداد (عشان لو حد خرج يتحدث)
+            var totalVoters = data.voterCount || data.players.length;
+            document.getElementById('voteCounter').textContent = '0/' + totalVoters;
             document.getElementById('voteLog').innerHTML = '';
+            
+            // حفظ بيانات اللاعب الحالي
+            votingMyId = data.myId || socket.id;
+            votingMyName = data.myName || playerName;
+            
+            if (isHost) {
+                document.getElementById('votingLeaveSection').style.display = 'none';
+            } else {
+                document.getElementById('votingLeaveSection').style.display = 'block';
+            }
+            
             var html = '';
             data.players.forEach(function(p) {
-                if (p.id === socket.id) return;
-                var avatar = getAvatar(p.avatar || 1);
-                html += '<div class="glass-card" style="padding:12px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;">';
-                html += '<div style="display:flex;align-items:center;gap:10px;"><span style="font-size:1.3rem;">' + avatar + '</span><span style="font-weight:700;">' + toBold(p.name) + '</span></div>';
-                html += '<button class="btn btn-accent btn-sm" onclick="castVote(\'' + p.id + '\',\'' + p.name + '\')" id="voteBtn_' + p.id + '">🗳️ صوّت</button></div>';
+                // 1. إخفاء اسم اللاعب من القائمة حتى لا يصوت لنفسه
+                if (p.id === votingMyId) return; 
+                
+                var safeName = p.name.replace(/'/g, "\\'");
+                html += '<div class="glass-card" style="padding:12px 16px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;transition:all 0.3s;" id="voteCard_' + p.id + '"><div style="display:flex;align-items:center;gap:12px;"><span style="font-weight:900;font-size:1.1rem;">' + toBold(p.name) + '</span></div><button class="btn btn-accent btn-sm" onclick="castVote(\'' + p.id + '\',\'' + safeName + '\')" id="voteBtn_' + p.id + '" style="min-width:90px;transition:all 0.3s;">🗳️ صوّت</button></div>';
             });
             document.getElementById('votingPlayersList').innerHTML = html;
         });
 
         function castVote(playerId, pName) {
-            if (hasVoted) return; initAudio(); playSound('vote'); hasVoted = true;
-            safeEmit('vote', { votedFor: playerId, votedForName: pName });
-            document.querySelectorAll('[id^="voteBtn_"]').forEach(function(btn) { btn.disabled = true; btn.style.opacity = '0.3'; });
+            if (hasVoted) return; // منع التصويت المكرر
+            initAudio(); playSound('vote'); hasVoted = true;
+            if (socket) safeEmit('vote', { votedFor: playerId, votedForName: pName });
+            
+            // تعطيل كل أزرار التصويت فور الضغط
+            document.querySelectorAll('[id^="voteBtn_"]').forEach(function(btn) { btn.disabled = true; btn.style.opacity = '0.3'; btn.style.pointerEvents = 'none'; });
+            document.querySelectorAll('[id^="voteCard_"]').forEach(function(card) { card.style.opacity = '0.5'; });
+            
+            // تمييز الشخص المصوّت عليه فقط
             var votedBtn = document.getElementById('voteBtn_' + playerId);
-            if (votedBtn) { votedBtn.style.opacity = '1'; votedBtn.textContent = '✅ تم التصويت'; votedBtn.style.background = 'var(--success)'; }
+            var votedCard = document.getElementById('voteCard_' + playerId);
+            if (votedBtn) { votedBtn.style.opacity = '1'; votedBtn.innerHTML = '✅ تم'; votedBtn.style.background = 'var(--success)'; votedBtn.style.borderColor = 'var(--success)'; }
+            if (votedCard) { votedCard.style.opacity = '1'; votedCard.style.borderColor = 'var(--success)'; votedCard.style.boxShadow = '0 0 15px rgba(0,255,136,0.3)'; }
         }
 
+        // سجل التصويت المباشر
+        var processedVoteIds = new Set();
+        var votingMyId = '';
+        var votingMyName = '';
+
         safeOn('vote-update', function(data) {
-            document.getElementById('voteCounter').textContent = data.voteCount + '/' + data.totalPlayers;
-            var log = document.getElementById('voteLog');
-            var entry = document.createElement('div');
-            entry.style.cssText = 'padding:6px 12px;margin-bottom:4px;border-radius:8px;background:rgba(108,92,231,0.1);font-size:0.9rem;';
-            entry.innerHTML = '<span style="color:var(--neon-cyan);">' + toBold(data.voterName) + '</span> صوت على <span style="color:var(--neon-pink);">' + toBold(data.votedForName) + '</span>';
-            log.appendChild(entry);
+            // تحديث العداد (totalPlayers بيتحدث من السيرفر لو خرج لاعب)
+            var totalVoters = data.totalPlayers || data.voterCount;
+            document.getElementById('voteCounter').textContent = data.voteCount + '/' + totalVoters;
+            
+            // إعادة بناء سجل التصويت الكامل من البيانات القادمة من السيرفر
+            if (data.voteLog && Array.isArray(data.voteLog)) {
+                var log = document.getElementById('voteLog');
+                log.innerHTML = ''; // مسح السجل القديم عشان نمنع التكرار واللخبطة
+                var seenVoterIds = new Set();
+                
+                data.voteLog.forEach(function(vote) {
+                    // منع التكرار باستخدام voterId
+                    if (seenVoterIds.has(vote.voterId)) return;
+                    seenVoterIds.add(vote.voterId);
+                    
+                    var entry = document.createElement('div');
+                    entry.className = 'vote-log-entry';
+                    entry.innerHTML = '<span class="voter-name">' + toBold(vote.voterName) + '</span> صوتت على <span class="voted-name">' + toBold(vote.votedForName) + '</span>';
+                    log.appendChild(entry);
+                });
+                log.scrollTop = log.scrollHeight;
+            }
             playSound('vote');
         });
 

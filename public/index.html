@@ -228,18 +228,18 @@
         }
         .settings-player-row:last-child { border-bottom: none; }
 
-        /* تحسين سجل التصويت */
+                /* تحسين سجل التصويت */
         .vote-log-entry {
             padding: 10px 16px; margin-bottom: 8px; border-radius: 12px;
-            background: rgba(108,92,231,0.12); border: 1px solid rgba(108,92,231,0.2);
+            background: rgba(20, 20, 45, 0.6); border: 1px solid rgba(255,255,255,0.05);
             font-size: 0.95rem; animation: fadeIn 0.3s ease;
             display: flex; align-items: center; gap: 6px;
         }
         .vote-log-entry .voter-name {
-            color: var(--neon-cyan); font-weight: 900;
+            color: var(--neon-purple); font-weight: 900; /* اللون الأرجواني لمن صوت */
         }
         .vote-log-entry .voted-name {
-            color: #ff4757; font-weight: 900;
+            color: #ff4757; font-weight: 900; /* اللون الأحمر لمن تم التصويت عليه */
         }
 
         @media (max-width: 600px) {
@@ -1013,16 +1013,18 @@
         function promptChangeName(playerId, currentName) { var newName = prompt('أدخل الاسم الجديد لـ ' + currentName + ':', currentName); if (newName && newName.trim()) { if (socket) safeEmit('change-player-name', { playerId: playerId, newName: newName.trim() }); } }
 
         safeOn('player-joined', function(data) { initAudio(); playSound('join'); showToast(data.name + ' انضم للغرفة!', 'success'); });
-        safeOn('player-left', function(data) { playSound('leave'); showToast(data.name + ' غادر الغرفة', 'info'); });
-        safeOn('room-update', function(data) {
-            if (isHost) {
-                updateHostPlayerList(data.players);
-                // تحديث قائمة الإعدادات الثابتة لو مفتوحة
-                if (document.getElementById('settingsOverlay').classList.contains('visible')) {
-                    renderGlobalSettingsPlayerList(data.players);
+        safeOn('player-left', function(data) { 
+            playSound('leave'); 
+            showToast(data.name + ' غادر الغرفة', 'info'); 
+            
+            // لو خسر لاعب أثناء التصويت، نشيل بطاقته فوراً من شاشة التصويت
+            if (currentScreen === 'votingScreen') {
+                var card = document.getElementById('voteCard_' + data.playerId);
+                if (card) {
+                    card.style.opacity = '0';
+                    card.style.transform = 'translateX(100px)';
+                    setTimeout(function() { if(card.parentNode) card.parentNode.removeChild(card); }, 300);
                 }
-            } else {
-                updatePlayerPlayerList(data.players);
             }
         });
         safeOn('kicked', function(data) { playSound('leave'); showToast(data.message, 'error'); hideHostSettingsFab(); closeHostSettings(); switchScreen('leftScreen'); });

@@ -1205,6 +1205,9 @@
             processedVoteIds.clear(); // تنظيف سجل التصويت عند بداية تصويت جديد
             document.getElementById('voteCounter').textContent = '0/' + data.voterCount;
             document.getElementById('voteLog').innerHTML = '';
+            // حفظ بيانات اللاعب الحالي
+            votingMyId = data.myId || socket.id;
+            votingMyName = data.myName || playerName;
             if (isHost) {
                 document.getElementById('votingLeaveSection').style.display = 'none';
             } else {
@@ -1213,8 +1216,8 @@
             var html = '';
             data.players.forEach(function(p) {
                 if (p.id === socket.id) return;
-                var avatar = getAvatar(p.avatar || 1);
-                html += '<div class="glass-card" style="padding:12px 16px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;transition:all 0.3s;" id="voteCard_' + p.id + '"><div style="display:flex;align-items:center;gap:12px;"><span style="font-size:1.5rem;">' + avatar + '</span><span style="font-weight:900;font-size:1.1rem;">' + toBold(p.name) + '</span></div><button class="btn btn-accent btn-sm" onclick="castVote(\'' + p.id + '\',\'' + p.name + '\')" id="voteBtn_' + p.id + '" style="min-width:90px;transition:all 0.3s;">🗳️ صوّت</button></div>';
+                var safeName = p.name.replace(/'/g, "\\'");
+                html += '<div class="glass-card" style="padding:12px 16px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;transition:all 0.3s;" id="voteCard_' + p.id + '"><div style="display:flex;align-items:center;gap:12px;"><span style="font-weight:900;font-size:1.1rem;">' + toBold(p.name) + '</span></div><button class="btn btn-accent btn-sm" onclick="castVote(\'' + p.id + '\',\'' + safeName + '\')" id="voteBtn_' + p.id + '" style="min-width:90px;transition:all 0.3s;">🗳️ صوّت</button></div>';
             });
             document.getElementById('votingPlayersList').innerHTML = html;
         });
@@ -1222,29 +1225,51 @@
         function castVote(playerId, pName) {
             if (hasVoted) return; initAudio(); playSound('vote'); hasVoted = true;
             if (socket) safeEmit('vote', { votedFor: playerId, votedForName: pName });
+            // تعطيل كل أزرار التصويت
             document.querySelectorAll('[id^="voteBtn_"]').forEach(function(btn) { btn.disabled = true; btn.style.opacity = '0.3'; btn.style.pointerEvents = 'none'; });
             document.querySelectorAll('[id^="voteCard_"]').forEach(function(card) { card.style.opacity = '0.5'; });
+            // تمييز الشخص المصوّت عليه
             var votedBtn = document.getElementById('voteBtn_' + playerId);
             var votedCard = document.getElementById('voteCard_' + playerId);
             if (votedBtn) { votedBtn.style.opacity = '1'; votedBtn.innerHTML = '✅ تم'; votedBtn.style.background = 'var(--success)'; votedBtn.style.borderColor = 'var(--success)'; }
             if (votedCard) { votedCard.style.opacity = '1'; votedCard.style.borderColor = 'var(--success)'; votedCard.style.boxShadow = '0 0 15px rgba(0,255,136,0.3)'; }
         }
 
-        // سجل التصويت - منع التكرار
+        // سجل التصويت - منع التكرار باستخدام voterId
         var processedVoteIds = new Set();
+        var votingMyId = '';
+        var votingMyName = '';
 
         safeOn('vote-update', function(data) {
             document.getElementById('voteCounter').textContent = data.voteCount + '/' + data.totalPlayers;
-            // منع التكرار - كل مصوت يظهر مرة واحدة فقط
-            var voteKey = data.voterName + '->' + data.votedForName;
-            if (processedVoteIds.has(voteKey)) return;
-            processedVoteIds.add(voteKey);
-            var log = document.getElementById('voteLog');
-            var entry = document.createElement('div');
-            entry.className = 'vote-log-entry';
-            entry.innerHTML = '<span class="voter-name">' + toBold(data.voterName) + '</span> صوت على <span class="voted-name">' + toBold(data.votedForName) + '</span>';
-            log.appendChild(entry);
-            log.scrollTop = log.scrollHeight;
+            // إعادة بناء سجل التصويت الكامل من البيانات القادمة من السيرفر (المصدر الوحيد للحقيقة)
+            if (data.voteLog && data.voteLog.length > 0) {
+                var log = document.getElementById('voteLog');
+                log.innerHTML = '';
+                var seenVoterIds = new Set();
+                data.voteLog.forEach(function(vote) {
+                    // منع التكرار باستخدام voterId
+                    if (seenVoterIds.has(vote.voterId)) return;
+                    seenVoterIds.add(vote.voterId);
+                    var entry = document.createElement('div');
+                    entry.className = 'vote-log-entry';
+                    entry.innerHTML = '<span class="voter-name">' + toBold(vote.voterName) + '</span> صوتت على <span class="voted-name">' + toBold(vote.votedForName) + '</span>';
+                    log.appendChild(entry);
+                });
+                log.scrollTop = log.scrollHeight;
+            } else if (data.voterName && data.votedForName) {
+                // fallback للتصويت القديم
+                var voteKey = data.voterName + '->' + data.votedForName;
+                if (!processedVoteIds.has(voteKey)) {
+                    processedVoteIds.add(voteKey);
+                    var log = document.getElementById('voteLog');
+                    var entry = document.createElement('div');
+                    entry.className = 'vote-log-entry';
+                    entry.innerHTML = '<span class="voter-name">' + toBold(data.voterName) + '</span> صوتت على <span class="voted-name">' + toBold(data.votedForName) + '</span>';
+                    log.appendChild(entry);
+                    log.scrollTop = log.scrollHeight;
+                }
+            }
             playSound('vote');
         });
 

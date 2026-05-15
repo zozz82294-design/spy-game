@@ -198,8 +198,75 @@ io.on('connection', (socket) => {
     }
 
     if (rooms[roomId].gameStarted) {
-      socket.emit('join-error', { message: 'اللعبة بدأت بالفعل!' });
-      return;
+      // لو اللعبة بدأت، نشوف هل اللاعب ده كان في الغرفة قبل كده وقفل وقفل الـ timeout
+      // يعني كان بيلعب وطلع بالغلط - لو نفس الاسم يدخل تاني
+      var wasInRoom = false;
+      var oldSocketId = null;
+      for (var sid in rooms[roomId].players) {
+        if (rooms[roomId].players[sid] && rooms[roomId].players[sid].name.toLowerCase() === playerName.toLowerCase()) {
+          wasInRoom = true;
+          oldSocketId = sid;
+          break;
+        }
+      }
+      // كمان نشوف في الـ disconnectTimeouts لو كان متسجل
+      if (!wasInRoom && disconnectTimeouts) {
+        for (var tid in disconnectTimeouts) {
+          // نشوف في socketPlayerMap القديم
+          if (socketPlayerMap[tid] && socketPlayerMap[tid].name && socketPlayerMap[tid].name.toLowerCase() === playerName.toLowerCase() && socketPlayerMap[tid].roomId === roomId) {
+            wasInRoom = true;
+            oldSocketId = tid;
+            break;
+          }
+        }
+      }
+      if (wasInRoom && oldSocketId) {
+        // نفس الاسم - ندخله تاني ويكمل
+        // اشيل القديم
+        if (disconnectTimeouts[oldSocketId]) {
+          clearTimeout(disconnectTimeouts[oldSocketId]);
+          delete disconnectTimeouts[oldSocketId];
+        }
+        var oldPlayer = rooms[roomId].players[oldSocketId];
+        if (oldPlayer) {
+          delete rooms[roomId].players[oldSocketId];
+        }
+        // نضيفه بالـ socket id الجديد
+        rooms[roomId].players[socket.id] = {
+          name: playerName,
+          avatar: oldPlayer ? oldPlayer.avatar : (Math.floor(Math.random() * 8) + 1),
+          displayMode: data.displayMode || 'computer',
+          joinedAt: oldPlayer ? oldPlayer.joinedAt : Date.now(),
+          rejoinedAt: Date.now()
+        };
+        socketRoomMap[socket.id] = roomId;
+        socketPlayerMap[socket.id] = { isHost: false, name: playerName, roomId: roomId };
+        socket.join(roomId);
+
+        socket.emit('join-success', {
+          roomId: roomId,
+          playerName: playerName,
+          avatar: rooms[roomId].players[socket.id].avatar,
+          hostName: rooms[roomId].hostName
+        });
+
+        io.to(rooms[roomId].hostSocketId).emit('player-reconnected', { name: playerName });
+        emitRoomUpdate(roomId);
+
+        // لو اللعبة شغالة، نبعتله حالة اللعبة الحالية
+        if (rooms[roomId].spySocketId === socket.id) {
+          socket.emit('show-word', { word: null, category: 'عشوائي', isSpy: true });
+        } else {
+          socket.emit('show-word', { word: rooms[roomId].currentWord, category: 'عشوائي', isSpy: false });
+        }
+
+        console.log('Player rejoined game with same name:', playerName, '-> Room:', roomId);
+        return;
+      } else {
+        // اسم مختلف واللعبة بدأت
+        socket.emit('join-error', { message: 'الغرفة بدأت بالفعل! انتظر الهوست يعمل إعادة اللعب ووقتها تقدر تدخل' });
+        return;
+      }
     }
 
     // حد أقصى للاعبين
@@ -575,7 +642,7 @@ io.on('connection', (socket) => {
     }
 
     if (rooms[roomId].hostSocketId === socket.id) {
-      // الهوست فصل - استنى 15 ثانية قبل ما تقفل الغرفة
+      // الهوست فصل - استنى 30 ثانية قبل ما تقفل الغرفة
       io.to(roomId).emit('host-disconnected');
       disconnectTimeouts[socket.id] = setTimeout(function() {
         if (rooms[roomId] && rooms[roomId].hostSocketId === socket.id) {
@@ -585,9 +652,9 @@ io.on('connection', (socket) => {
           delete rooms[roomId];
         }
         delete disconnectTimeouts[socket.id];
-      }, 15000);
+      }, 30000);
     } else {
-      // لاعب فصل - استنى 10 ثواني قبل ما تشيله
+      // لاعب فصل - استنى 60 ثانية قبل ما تشيله (عشان الموبايل يفصل شاشة ويرجع)
       var discName = rooms[roomId].players[socket.id]?.name || 'لاعب';
       io.to(rooms[roomId].hostSocketId).emit('player-disconnected', { name: discName, socketId: socket.id });
 
@@ -601,7 +668,7 @@ io.on('connection', (socket) => {
           console.log('Player removed after timeout:', discName, 'from Room:', roomId);
         }
         delete disconnectTimeouts[socket.id];
-      }, 10000);
+      }, 60000);
     }
 
     delete socketRoomMap[socket.id];

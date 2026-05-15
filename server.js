@@ -373,6 +373,14 @@ io.on('connection', (socket) => {
     }
   });
 
+  // الحصول على قائمة اللاعبين (للإعدادات أثناء اللعب)
+  socket.on('get-room-players', () => {
+    const roomId = socketRoomMap[socket.id];
+    if (!rooms[roomId]) return;
+    const players = getRoomPlayers(roomId);
+    socket.emit('room-players-list', { players: players });
+  });
+
   socket.on('start-game', () => {
     const roomId = socketRoomMap[socket.id];
     if (!rooms[roomId] || rooms[roomId].hostSocketId !== socket.id) return;
@@ -482,6 +490,10 @@ io.on('connection', (socket) => {
     if (!rooms[roomId]) return;
     if (!rooms[roomId].votingActive) return;
 
+    // منع التصويت على النفس
+    if (data.votedFor === socket.id) return;
+
+    // منع التصويت المكرر
     if (rooms[roomId].votes[socket.id]) return;
 
     rooms[roomId].votes[socket.id] = data.votedFor;
@@ -492,6 +504,7 @@ io.on('connection', (socket) => {
     const voterName = socketPlayerMap[socket.id]?.name || 'مجهول';
     const votedForName = data.votedForName || 'مجهول';
 
+    // إرسال سجل التصويت المباشر - كل شخص يشوف الاسم المصوّت عليه بالأحمر
     io.to(roomId).emit('vote-update', {
       voterName: voterName,
       votedForName: votedForName,
@@ -507,14 +520,20 @@ io.on('connection', (socket) => {
         voteCounts[votedFor] = (voteCounts[votedFor] || 0) + 1;
       }
 
+      // التحقق من التعادل
       let maxVotes = 0;
-      let mostVotedId = null;
+      let mostVotedIds = [];
       for (const [id, count] of Object.entries(voteCounts)) {
         if (count > maxVotes) {
           maxVotes = count;
-          mostVotedId = id;
+          mostVotedIds = [id];
+        } else if (count === maxVotes) {
+          mostVotedIds.push(id);
         }
       }
+
+      // لو في تعادل، اختار عشوائياً
+      const mostVotedId = mostVotedIds[Math.floor(Math.random() * mostVotedIds.length)];
 
       const spyId = rooms[roomId].spySocketId;
       const isSpy = mostVotedId === spyId;

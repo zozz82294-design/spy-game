@@ -190,6 +190,58 @@
         .guess-word-card:hover { border-color: var(--neon-cyan) !important; }
         .guess-word-card.selected { border-color: var(--neon-cyan) !important; box-shadow: var(--glow-secondary) !important; }
 
+        /* زر الإعدادات الثابت للهوست */
+        .host-settings-fab {
+            position: fixed; top: 15px; left: 15px; z-index: 9999;
+            width: 48px; height: 48px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--neon-purple), #8b5cf6);
+            border: 2px solid rgba(255,255,255,0.2);
+            color: white; font-size: 1.4rem; cursor: pointer;
+            display: none; align-items: center; justify-content: center;
+            box-shadow: 0 4px 15px rgba(108, 92, 231, 0.5);
+            transition: all 0.3s ease;
+        }
+        .host-settings-fab:hover {
+            transform: scale(1.1) rotate(30deg);
+            box-shadow: 0 6px 25px rgba(108, 92, 231, 0.7);
+        }
+        .host-settings-fab.visible { display: flex; }
+
+        /* لوحة الإعدادات المنبثقة */
+        .settings-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(5px);
+            z-index: 9998; display: none; align-items: flex-start; justify-content: flex-start;
+            padding: 70px 15px 15px 15px;
+        }
+        .settings-overlay.visible { display: flex; }
+        .settings-popup {
+            background: var(--bg-card); backdrop-filter: blur(20px);
+            border: 1px solid var(--border-glass); border-radius: 20px;
+            padding: 20px; max-width: 400px; width: 100%;
+            max-height: 70vh; overflow-y: auto;
+            animation: fadeIn 0.3s ease;
+        }
+        .settings-player-row {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 10px 0; border-bottom: 1px solid var(--border-glass);
+        }
+        .settings-player-row:last-child { border-bottom: none; }
+
+        /* تحسين سجل التصويت */
+        .vote-log-entry {
+            padding: 10px 16px; margin-bottom: 8px; border-radius: 12px;
+            background: rgba(108,92,231,0.12); border: 1px solid rgba(108,92,231,0.2);
+            font-size: 0.95rem; animation: fadeIn 0.3s ease;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .vote-log-entry .voter-name {
+            color: var(--neon-cyan); font-weight: 900;
+        }
+        .vote-log-entry .voted-name {
+            color: #ff4757; font-weight: 900;
+        }
+
         @media (max-width: 600px) {
             .glass-card { padding: 20px; }
             .btn { padding: 12px 24px; font-size: 1rem; }
@@ -205,12 +257,24 @@
     <div class="bg-orb"></div>
     <div class="grid-overlay"></div>
     <div class="toast-container" id="toastContainer"></div>
+    <!-- زر الإعدادات الثابت للهوست - يظهر طول الوقت -->
+    <button class="host-settings-fab" id="hostSettingsFab" onclick="openHostSettings()">⚙️</button>
+    <!-- لوحة الإعدادات المنبثقة -->
+    <div class="settings-overlay" id="settingsOverlay" onclick="closeHostSettingsOverlay(event)">
+        <div class="settings-popup" onclick="event.stopPropagation()">
+            <h3 style="font-weight:900;margin-bottom:15px;text-align:center;font-size:1.2rem;">⚙️ إعدادات الغرفة</h3>
+            <div id="globalSettingsPlayerList"></div>
+        </div>
+    </div>
     <div class="custom-cursor-dot" id="cursorDot" style="display:none;"></div>
     <div class="custom-cursor-ring" id="cursorRing" style="display:none;"></div>
 
+    <!-- خلفية الفضاء للشاشة الرئيسية -->
+    <canvas id="spaceCanvas" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;"></canvas>
+
     <!-- شاشة الهوست الرئيسية -->
     <div class="screen active" id="hostHomeScreen">
-        <div class="glass-card neon-border" style="max-width:500px;width:100%;text-align:center;">
+        <div class="glass-card neon-border" style="max-width:500px;width:100%;text-align:center;position:relative;z-index:2;">
             <div style="margin-bottom:30px;">
                 <div style="font-size:4rem;margin-bottom:10px;animation:float 3s ease-in-out infinite;">🕵️</div>
                 <h1 class="neon-text" style="font-size:3rem;font-weight:900;margin-bottom:5px;">SASUKE</h1>
@@ -244,8 +308,7 @@
 
     <!-- شاشة الغرفة (للهوست) -->
     <div class="screen" id="hostRoomScreen">
-        <div class="glass-card" style="max-width:700px;width:100%;position:relative;">
-            <button onclick="toggleSettings()" style="position:absolute;top:15px;left:15px;background:none;border:none;font-size:1.5rem;cursor:pointer;opacity:0.7;transition:opacity 0.3s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'">⚙️</button>
+        <div class="glass-card" style="max-width:700px;width:100%;">
             <div style="text-align:center;margin-bottom:25px;">
                 <h2 style="font-size:1.5rem;font-weight:900;">🏠 غرفة اللعبة</h2>
                 <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px;">
@@ -267,14 +330,7 @@
                 <span id="playerCount" style="font-weight:900;font-size:1.3rem;color:var(--neon-purple);margin-right:5px;">1</span>
             </div>
             <div id="hostPlayerList" style="margin-bottom:20px;max-height:300px;overflow-y:auto;"></div>
-            <!-- Settings and new link buttons removed from here -->
-            <div id="settingsPanel" style="display:none;margin-top:15px;">
-                <div class="glass-card" style="padding:15px;">
-                    <h3 style="font-weight:700;margin-bottom:10px;text-align:center;">⚙️ إعدادات الغرفة</h3>
-                    <div id="settingsPlayerList"></div>
-                    <!-- Sound settings removed -->
-                </div>
-            </div>
+            <!-- الإعدادات تم نقلها للزر الثابت أعلى الشمال -->
             <div style="text-align:center;margin-top:20px;">
                 <button class="btn btn-success btn-lg" id="startGameBtn" onclick="startGame()" disabled style="width:100%;">🎮 بدء اللعبة</button>
                 <p id="startGameHint" style="color:var(--text-muted);font-size:0.85rem;margin-top:8px;">يحتاج 3 لاعبين على الأقل</p>
@@ -343,9 +399,7 @@
     <!-- شاشة عرض الكلمة -->
     <div class="screen" id="wordScreen">
         <div class="glass-card neon-border" style="max-width:500px;width:100%;text-align:center;position:relative;">
-            <div id="wordSettingsBtn" style="display:none;position:absolute;top:15px;left:15px;z-index:10;">
-                <button onclick="toggleGameSettings()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;opacity:0.7;transition:opacity 0.3s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'">⚙️</button>
-            </div>
+            <!-- زر الإعدادات الثابت يستبدل الزر القديم -->
             <div style="margin-bottom:20px;">
                 <div style="font-size:3rem;margin-bottom:10px;" id="wordIcon">📝</div>
                 <h2 class="neon-text" style="font-size:1.5rem;font-weight:900;" id="wordCategory">التصنيف: عشوائي</h2>
@@ -360,21 +414,13 @@
             <div id="playerLeaveSection" style="display:none;text-align:center;margin-top:15px;">
                 <button class="btn btn-danger" onclick="leaveRoom()" style="width:100%;">🚪 مغادرة</button>
             </div>
-            <div id="gameSettingsPanel" style="display:none;margin-top:10px;">
-                <div class="glass-card" style="padding:15px;">
-                    <h3 style="font-weight:700;margin-bottom:10px;text-align:center;">⚙️ إعدادات الغرفة</h3>
-                    <div id="gameSettingsPlayerList"></div>
-                </div>
-            </div>
+            <!-- الإعدادات تم نقلها للزر الثابت -->
         </div>
     </div>
 
     <!-- شاشة التصويت -->
     <div class="screen" id="votingScreen">
-        <div class="glass-card neon-border" style="max-width:600px;width:100%;position:relative;">
-            <div id="votingSettingsBtn" style="display:none;position:absolute;top:15px;left:15px;z-index:10;">
-                <button onclick="toggleGameSettings()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;opacity:0.7;transition:opacity 0.3s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'">⚙️</button>
-            </div>
+        <div class="glass-card neon-border" style="max-width:600px;width:100%;">
             <div style="text-align:center;margin-bottom:20px;">
                 <div style="font-size:2.5rem;margin-bottom:10px;animation:float 2s ease-in-out infinite;">🗳️</div>
                 <h2 class="neon-text" style="font-size:1.8rem;font-weight:900;">مرحلة التصويت</h2>
@@ -384,16 +430,10 @@
                     <span id="voteCounter" style="font-size:1.5rem;font-weight:900;color:var(--neon-cyan);">0/0</span>
                 </div>
             </div>
-            <div id="voteLog" style="margin-bottom:15px;max-height:150px;overflow-y:auto;padding:5px;"></div>
+            <div id="voteLog" style="margin-bottom:15px;max-height:200px;overflow-y:auto;padding:5px;"></div>
             <div id="votingPlayersList" style="margin-bottom:20px;"></div>
             <div id="votingLeaveSection" style="display:none;text-align:center;">
                 <button class="btn btn-danger" onclick="leaveRoom()" style="width:100%;">🚪 مغادرة</button>
-            </div>
-            <div id="gameSettingsPanel2" style="display:none;margin-top:10px;">
-                <div class="glass-card" style="padding:15px;">
-                    <h3 style="font-weight:700;margin-bottom:10px;text-align:center;">⚙️ إعدادات الغرفة</h3>
-                    <div id="gameSettingsPlayerList2"></div>
-                </div>
             </div>
         </div>
     </div>
@@ -903,6 +943,7 @@
             updateRoomLink();
             switchScreen('hostRoomScreen');
             startBgMusic();
+            showHostSettingsFab(); // إظهار زر الإعدادات الثابت
         });
 
         function updateRoomLink() {
@@ -1035,22 +1076,54 @@
             if (socket) safeEmit('cancel-mode');
         }
 
-        function toggleGameSettings() {
+        // === إعدادات الهوست الثابتة ===
+        var currentPlayersList = []; // حفظ قائمة اللاعبين الحالية
+
+        function openHostSettings() {
             initAudio(); playSound('click');
-            var panel = document.getElementById('gameSettingsPanel');
-            if (panel.style.display === 'none') {
-                panel.style.display = 'block';
-                updateGameSettingsPlayerList();
-            } else {
-                panel.style.display = 'none';
+            document.getElementById('settingsOverlay').classList.add('visible');
+            updateGlobalSettingsPlayerList();
+        }
+
+        function closeHostSettingsOverlay(event) {
+            if (event.target === document.getElementById('settingsOverlay')) {
+                document.getElementById('settingsOverlay').classList.remove('visible');
             }
         }
 
-        function updateGameSettingsPlayerList() {
-            var html = '';
-            var players = document.querySelectorAll('#wordScreen .game-settings-item, #hostPlayerList .player-item');
-            // بناء القائمة من بيانات الغرفة
+        function closeHostSettings() {
+            document.getElementById('settingsOverlay').classList.remove('visible');
+        }
+
+        function updateGlobalSettingsPlayerList() {
             if (socket) safeEmit('get-room-players');
+        }
+
+        function renderGlobalSettingsPlayerList(players) {
+            currentPlayersList = players;
+            var html = '';
+            players.forEach(function(p) {
+                if (p.isHost) {
+                    html += '<div class="settings-player-row"><div style="display:flex;align-items:center;gap:8px;"><span style="font-weight:900;color:var(--neon-cyan);">👑 ' + toBold(p.name) + '</span><span style="color:var(--text-muted);font-size:0.8rem;">(المستضيف)</span></div></div>';
+                } else {
+                    html += '<div class="settings-player-row"><div style="display:flex;align-items:center;gap:8px;"><span style="font-weight:900;">' + toBold(p.name) + '</span></div><div style="display:flex;gap:6px;"><button class="btn btn-danger btn-sm" onclick="kickPlayer(\'' + p.id + '\')">طرد</button><button class="btn btn-primary btn-sm" onclick="promptChangeName(\'' + p.id + '\',\'' + p.name + '\')">تغيير الاسم</button></div></div>';
+                }
+            });
+            document.getElementById('globalSettingsPlayerList').innerHTML = html;
+        }
+
+        safeOn('room-players-list', function(data) {
+            renderGlobalSettingsPlayerList(data.players);
+        });
+
+        function showHostSettingsFab() {
+            if (isHost) {
+                document.getElementById('hostSettingsFab').classList.add('visible');
+            }
+        }
+
+        function hideHostSettingsFab() {
+            document.getElementById('hostSettingsFab').classList.remove('visible');
         }
 
         safeOn('game-started', function(data) {
@@ -1107,11 +1180,9 @@
             else { document.getElementById('wordIcon').textContent = '📝'; document.getElementById('wordDisplay').textContent = data.word; document.getElementById('wordDisplay').style.color = 'var(--neon-cyan)'; playSound('reveal'); }
             if (isHost) {
                 document.getElementById('hostVotingSection').style.display = 'block';
-                document.getElementById('wordSettingsBtn').style.display = 'block';
                 document.getElementById('playerLeaveSection').style.display = 'none';
             } else {
                 document.getElementById('hostVotingSection').style.display = 'none';
-                document.getElementById('wordSettingsBtn').style.display = 'none';
                 document.getElementById('playerLeaveSection').style.display = 'block';
             }
         });
@@ -1230,6 +1301,143 @@
         });
 
         // Hover sound removed
+
+        // === Space Background - نجوم متحركة للشاشة الرئيسية ===
+        (function() {
+            var canvas = document.getElementById('spaceCanvas');
+            if (!canvas) return;
+            var ctx = canvas.getContext('2d');
+            var stars = [];
+            var shootingStars = [];
+            var animId = null;
+            var STAR_COUNT = 120;
+            var SHOOTING_INTERVAL = 3000; // كل 3 ثواني شهب
+            var lastShootingTime = 0;
+
+            function resize() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+            resize();
+            window.addEventListener('resize', resize);
+
+            // إنشاء النجوم
+            for (var i = 0; i < STAR_COUNT; i++) {
+                stars.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    r: Math.random() * 1.8 + 0.3,
+                    alpha: Math.random() * 0.7 + 0.3,
+                    twinkleSpeed: Math.random() * 0.02 + 0.005,
+                    twinklePhase: Math.random() * Math.PI * 2
+                });
+            }
+
+            function createShootingStar() {
+                var side = Math.random();
+                var sx, sy, angle;
+                if (side < 0.5) {
+                    sx = Math.random() * canvas.width;
+                    sy = -10;
+                    angle = Math.PI / 4 + Math.random() * 0.3;
+                } else {
+                    sx = canvas.width + 10;
+                    sy = Math.random() * canvas.height * 0.5;
+                    angle = Math.PI * 0.6 + Math.random() * 0.3;
+                }
+                shootingStars.push({
+                    x: sx, y: sy,
+                    len: Math.random() * 80 + 40,
+                    speed: Math.random() * 6 + 4,
+                    angle: angle,
+                    alpha: 1,
+                    life: 0
+                });
+            }
+
+            function draw() {
+                // إخفاء الـ canvas لو مش على الشاشة الرئيسية
+                var homeScreen = document.getElementById('hostHomeScreen');
+                if (!homeScreen || !homeScreen.classList.contains('active')) {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    animId = requestAnimationFrame(draw);
+                    return;
+                }
+
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // رسم النجوم الثابتة مع اللمعان
+                var now = Date.now() * 0.001;
+                for (var i = 0; i < stars.length; i++) {
+                    var s = stars[i];
+                    var twinkle = Math.sin(now * s.twinkleSpeed * 60 + s.twinklePhase);
+                    var a = s.alpha * (0.6 + 0.4 * twinkle);
+                    ctx.beginPath();
+                    ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(255, 255, 255, ' + Math.max(0.1, a) + ')';
+                    ctx.fill();
+
+                    // وهج خفيف للنجوم الكبيرة
+                    if (s.r > 1.2) {
+                        ctx.beginPath();
+                        ctx.arc(s.x, s.y, s.r * 3, 0, Math.PI * 2);
+                        ctx.fillStyle = 'rgba(180, 200, 255, ' + (a * 0.1) + ')';
+                        ctx.fill();
+                    }
+                }
+
+                // رسم الشهب
+                var currentTime = Date.now();
+                if (currentTime - lastShootingTime > SHOOTING_INTERVAL + Math.random() * 2000) {
+                    createShootingStar();
+                    lastShootingTime = currentTime;
+                }
+
+                for (var j = shootingStars.length - 1; j >= 0; j--) {
+                    var ss = shootingStars[j];
+                    ss.x += Math.cos(ss.angle) * ss.speed;
+                    ss.y += Math.sin(ss.angle) * ss.speed;
+                    ss.life++;
+                    ss.alpha = Math.max(0, 1 - ss.life / 60);
+
+                    if (ss.alpha <= 0) {
+                        shootingStars.splice(j, 1);
+                        continue;
+                    }
+
+                    // ذيل الشهاب
+                    var tailX = ss.x - Math.cos(ss.angle) * ss.len;
+                    var tailY = ss.y - Math.sin(ss.angle) * ss.len;
+
+                    var grad = ctx.createLinearGradient(tailX, tailY, ss.x, ss.y);
+                    grad.addColorStop(0, 'rgba(255, 255, 255, 0)');
+                    grad.addColorStop(0.7, 'rgba(200, 220, 255, ' + (ss.alpha * 0.5) + ')');
+                    grad.addColorStop(1, 'rgba(255, 255, 255, ' + ss.alpha + ')');
+
+                    ctx.beginPath();
+                    ctx.moveTo(tailX, tailY);
+                    ctx.lineTo(ss.x, ss.y);
+                    ctx.strokeStyle = grad;
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+
+                    // رأس الشهاب المتوهج
+                    ctx.beginPath();
+                    ctx.arc(ss.x, ss.y, 2, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(255, 255, 255, ' + ss.alpha + ')';
+                    ctx.fill();
+
+                    ctx.beginPath();
+                    ctx.arc(ss.x, ss.y, 5, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(180, 200, 255, ' + (ss.alpha * 0.3) + ')';
+                    ctx.fill();
+                }
+
+                animId = requestAnimationFrame(draw);
+            }
+
+            draw();
+        })();
     </script>
 </body>
 </html>

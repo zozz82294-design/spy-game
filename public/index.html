@@ -323,10 +323,15 @@
                 <div style="font-size:3rem;margin-bottom:10px;">🎲</div>
                 <h2 class="neon-text" style="font-size:1.8rem;font-weight:900;">اختر وضع اللعب</h2>
             </div>
-            <div class="glass-card mode-card" id="randomModeCard" onclick="selectMode('random')" style="cursor:pointer;padding:25px;margin-bottom:15px;">
+            <div class="glass-card mode-card" id="randomModeCard" onclick="selectMode('random')" style="cursor:pointer;padding:25px;margin-bottom:15px;position:relative;transition:all 0.3s;">
+                <div id="hostSelectLabel" style="display:none;position:absolute;top:10px;left:10px;background:var(--neon-cyan);color:#000;font-weight:900;font-size:0.75rem;padding:4px 10px;border-radius:8px;">اختارها <span id="hostSelectName"></span></div>
                 <div style="font-size:2.5rem;margin-bottom:10px;">🎲</div>
                 <h3 style="font-weight:900;font-size:1.4rem;margin-bottom:8px;">عشوائي</h3>
                 <p style="color:var(--text-secondary);font-size:0.9rem;line-height:1.6;">ميزة الأشياء العشوائية: تقدر تكشف الجاسوس بسهولة أكبر، وتسأله إذا كان مكان أو جماد أو شخص، وده يجعل النقاش أمتع وأسهل للكشف.</p>
+            </div>
+            <div id="playerModeWaiting" style="display:none;padding:20px;">
+                <div style="font-size:1.5rem;margin-bottom:10px;animation:float 2s ease-in-out infinite;">⏳</div>
+                <p style="color:var(--text-secondary);font-size:1rem;">في انتظار اختيار الهوست...</p>
             </div>
             <button class="btn btn-success btn-lg" id="confirmModeBtn" onclick="confirmMode()" disabled style="width:100%;">✅ اختيار</button>
         </div>
@@ -937,12 +942,64 @@
 
         // === Game Logic ===
         function startGame() { initAudio(); playSound('start'); if (socket) safeEmit('start-game'); switchScreen('modeSelectScreen'); }
-        function selectMode(mode) { initAudio(); playSound('click'); selectedMode = mode; document.getElementById('randomModeCard').style.borderColor = 'var(--neon-cyan)'; document.getElementById('randomModeCard').style.boxShadow = 'var(--glow-secondary)'; document.getElementById('confirmModeBtn').disabled = false; }
-        function confirmMode() { initAudio(); playSound('start'); switchScreen('wordScreen'); }
 
-        safeOn('game-started', function(data) { if (!isHost) { switchScreen('wordScreen'); } });
+        function selectMode(mode) {
+            initAudio(); playSound('click');
+            selectedMode = mode;
+            // الهوست بس اللي يقدر يختار
+            if (!isHost) return;
+            if (socket) safeEmit('select-mode');
+            document.getElementById('randomModeCard').style.borderColor = 'var(--neon-cyan)';
+            document.getElementById('randomModeCard').style.boxShadow = 'var(--glow-secondary)';
+            document.getElementById('confirmModeBtn').disabled = false;
+        }
+
+        function confirmMode() {
+            initAudio(); playSound('start');
+            if (!isHost) return;
+            if (socket) safeEmit('confirm-mode');
+        }
+
+        safeOn('game-started', function(data) {
+            // الكل يشوف شاشة اختيار الوضع
+            switchScreen('modeSelectScreen');
+            // إعادة تعيين الحالة
+            document.getElementById('randomModeCard').style.borderColor = '';
+            document.getElementById('randomModeCard').style.boxShadow = '';
+            document.getElementById('confirmModeBtn').disabled = true;
+            document.getElementById('hostSelectLabel').style.display = 'none';
+            document.getElementById('playerModeWaiting').style.display = 'none';
+
+            if (isHost) {
+                // الهوست يقدر يضغط على البطاقة
+                document.getElementById('randomModeCard').style.cursor = 'pointer';
+                document.getElementById('confirmModeBtn').style.display = '';
+            } else {
+                // اللاعبين مش يقدروش يضغطوا
+                document.getElementById('randomModeCard').style.cursor = 'default';
+                document.getElementById('randomModeCard').onclick = null;
+                document.getElementById('confirmModeBtn').style.display = 'none';
+                document.getElementById('playerModeWaiting').style.display = 'block';
+            }
+        });
+
+        safeOn('mode-selected', function(data) {
+            // الهوست اختار عشوائي - يظهر اسمه فوق البطاقة للكل
+            document.getElementById('hostSelectLabel').style.display = 'block';
+            document.getElementById('hostSelectName').textContent = data.hostName;
+            document.getElementById('randomModeCard').style.borderColor = 'var(--neon-cyan)';
+            document.getElementById('randomModeCard').style.boxShadow = 'var(--glow-secondary)';
+            document.getElementById('playerModeWaiting').style.display = 'none';
+            playSound('click');
+        });
+
+        safeOn('mode-confirmed', function() {
+            // الهوست أكد الاختيار - ننتظر الكلمة
+            playSound('start');
+        });
         safeOn('show-word', function(data) {
             isSpy = data.isSpy; currentWord = data.word;
+            switchScreen('wordScreen');
             document.getElementById('wordCategory').textContent = 'التصنيف: ' + data.category;
             if (data.isSpy) { document.getElementById('wordIcon').textContent = '🕵️'; document.getElementById('wordDisplay').textContent = 'أنت الجاسوس'; document.getElementById('wordDisplay').style.color = 'var(--neon-pink)'; playSound('spyReveal'); }
             else { document.getElementById('wordIcon').textContent = '📝'; document.getElementById('wordDisplay').textContent = data.word; document.getElementById('wordDisplay').style.color = 'var(--neon-cyan)'; playSound('reveal'); }
@@ -966,9 +1023,12 @@
         function castVote(playerId, pName) {
             if (hasVoted) return; initAudio(); playSound('vote'); hasVoted = true;
             if (socket) safeEmit('vote', { votedFor: playerId, votedForName: pName });
-            document.querySelectorAll('[id^="voteBtn_"]').forEach(function(btn) { btn.disabled = true; btn.style.opacity = '0.3'; });
+            document.querySelectorAll('[id^="voteBtn_"]').forEach(function(btn) { btn.disabled = true; btn.style.opacity = '0.3'; btn.style.pointerEvents = 'none'; });
+            document.querySelectorAll('[id^="voteCard_"]').forEach(function(card) { card.style.opacity = '0.5'; });
             var votedBtn = document.getElementById('voteBtn_' + playerId);
-            if (votedBtn) { votedBtn.style.opacity = '1'; votedBtn.textContent = '✅ تم التصويت'; votedBtn.style.background = 'var(--success)'; }
+            var votedCard = document.getElementById('voteCard_' + playerId);
+            if (votedBtn) { votedBtn.style.opacity = '1'; votedBtn.innerHTML = '✅ تم'; votedBtn.style.background = 'var(--success)'; votedBtn.style.borderColor = 'var(--success)'; }
+            if (votedCard) { votedCard.style.opacity = '1'; votedCard.style.borderColor = 'var(--success)'; votedCard.style.boxShadow = '0 0 15px rgba(0,255,136,0.3)'; }
         }
 
         safeOn('vote-update', function(data) {

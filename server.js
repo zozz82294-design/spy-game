@@ -316,9 +316,11 @@ io.on('connection', (socket) => {
     rooms[roomId].gameStarted = true;
     rooms[roomId].linkActive = false;
 
+    // اختيار الكلمة
     const wordIndex = Math.floor(Math.random() * WORDS.length);
     rooms[roomId].currentWord = WORDS[wordIndex];
 
+    // اختيار الجاسوس من اللاعبين فقط (الهوست مش جاسوس أبداً)
     const playerIds = Object.keys(rooms[roomId].players);
     const spyIndex = Math.floor(Math.random() * playerIds.length);
     rooms[roomId].spySocketId = playerIds[spyIndex];
@@ -327,38 +329,61 @@ io.on('connection', (socket) => {
     rooms[roomId].votingActive = false;
     rooms[roomId].roundEnded = false;
     rooms[roomId].spyGuessedWord = null;
+    rooms[roomId].modeConfirmed = false;
 
+    // الكل يشوف شاشة اختيار الوضع (بس الهوست بس اللي يقدر يضغط)
+    const hostName = rooms[roomId].hostName || 'الهوست';
     io.to(roomId).emit('game-started', {
       category: 'عشوائي',
-      categoryDescription: 'ميزة الأشياء العشوائية: تقدر تكشف الجاسوس بسهولة أكبر، وتسأله إذا كان مكان أو جماد أو شخص، وده يجعل النقاش أمتع وأسهل للكشف.'
+      categoryDescription: 'ميزة الأشياء العشوائية: تقدر تكشف الجاسوس بسهولة أكبر، وتسأله إذا كان مكان أو جماد أو شخص، وده يجعل النقاش أمتع وأسهل للكشف.',
+      hostName: hostName
     });
+  });
 
-    setTimeout(() => {
-      const hostData = {
-        word: rooms[roomId].currentWord,
-        category: 'عشوائي',
-        isSpy: false
-      };
-      io.to(rooms[roomId].hostSocketId).emit('show-word', hostData);
+  // الهوست يضغط على بطاقة عشوائي
+  socket.on('select-mode', () => {
+    const roomId = socketRoomMap[socket.id];
+    if (!rooms[roomId] || rooms[roomId].hostSocketId !== socket.id) return;
 
-      for (const [socketId, player] of Object.entries(rooms[roomId].players)) {
-        if (socketId === rooms[roomId].spySocketId) {
-          io.to(socketId).emit('show-word', {
-            word: null,
-            category: 'عشوائي',
-            isSpy: true
-          });
-        } else {
-          io.to(socketId).emit('show-word', {
-            word: rooms[roomId].currentWord,
-            category: 'عشوائي',
-            isSpy: false
-          });
-        }
+    const hostName = rooms[roomId].hostName || 'الهوست';
+    // إبلاغ الكل إن الهوست اختار عشوائي
+    io.to(roomId).emit('mode-selected', { hostName: hostName });
+  });
+
+  // الهوست يؤكد اختيار الوضع
+  socket.on('confirm-mode', () => {
+    const roomId = socketRoomMap[socket.id];
+    if (!rooms[roomId] || rooms[roomId].hostSocketId !== socket.id) return;
+    if (rooms[roomId].modeConfirmed) return;
+
+    rooms[roomId].modeConfirmed = true;
+
+    // إرسال الكلمات للكل
+    const hostData = {
+      word: rooms[roomId].currentWord,
+      category: 'عشوائي',
+      isSpy: false
+    };
+    io.to(rooms[roomId].hostSocketId).emit('show-word', hostData);
+
+    for (const [socketId, player] of Object.entries(rooms[roomId].players)) {
+      if (socketId === rooms[roomId].spySocketId) {
+        io.to(socketId).emit('show-word', {
+          word: null,
+          category: 'عشوائي',
+          isSpy: true
+        });
+      } else {
+        io.to(socketId).emit('show-word', {
+          word: rooms[roomId].currentWord,
+          category: 'عشوائي',
+          isSpy: false
+        });
       }
+    }
 
-      emitRoomUpdate(roomId);
-    }, 2000);
+    io.to(roomId).emit('mode-confirmed');
+    emitRoomUpdate(roomId);
   });
 
   socket.on('start-voting', () => {

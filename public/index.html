@@ -517,7 +517,43 @@
                 console.log('[DEBUG] Rejoin success:', data);
                 myRoomId = data.roomId;
                 amIHost = data.isHost || false;
+                isHost = data.isHost || false;
                 showToast('تم إعادة الاتصال بنجاح! ✅', 'success');
+
+                // تحويل للشاشة الصح حسب حالة اللعبة
+                if (data.gameState === 'mode-select') {
+                    switchScreen('modeSelectScreen');
+                    // إعادة تعيين حالة شاشة اختيار الوضع
+                    document.getElementById('randomModeCard').style.borderColor = '';
+                    document.getElementById('randomModeCard').style.boxShadow = '';
+                    document.getElementById('confirmModeBtn').disabled = true;
+                    document.getElementById('hostSelectLabel').style.display = 'none';
+                    document.getElementById('playerModeWaiting').style.display = 'none';
+                    if (isHost) {
+                        document.getElementById('randomModeCard').style.cursor = 'pointer';
+                        document.getElementById('confirmModeBtn').style.display = '';
+                    } else {
+                        document.getElementById('randomModeCard').style.cursor = 'default';
+                        document.getElementById('randomModeCard').onclick = null;
+                        document.getElementById('confirmModeBtn').style.display = 'none';
+                        document.getElementById('playerModeWaiting').style.display = 'block';
+                    }
+                } else if (data.gameState === 'word') {
+                    // الكلمة هتتعرض من show-word event - لازم نحول مؤقتاً
+                    switchScreen('wordScreen');
+                } else if (data.gameState === 'voting') {
+                    // التصويت هيتعرض من voting-started event - لازم نحول مؤقتاً
+                    switchScreen('votingScreen');
+                } else if (data.gameState === 'result') {
+                    switchScreen('resultScreen');
+                } else {
+                    // lobby - نرجع لشاشة الغرفة
+                    if (isHost) {
+                        switchScreen('hostRoomScreen');
+                    } else {
+                        switchScreen('playerRoomScreen');
+                    }
+                }
             });
 
             socket.on('disconnect', function(reason) {
@@ -1045,6 +1081,15 @@
             document.getElementById('randomModeCard').style.borderColor = 'var(--neon-cyan)';
             document.getElementById('randomModeCard').style.boxShadow = 'var(--glow-secondary)';
             document.getElementById('playerModeWaiting').style.display = 'none';
+            playSound('click');
+        });
+
+        safeOn('mode-cancelled', function() {
+            // الهوست سحب الاختيار - نشيل اسمه ونرجع الحالة
+            document.getElementById('hostSelectLabel').style.display = 'none';
+            document.getElementById('randomModeCard').style.borderColor = '';
+            document.getElementById('randomModeCard').style.boxShadow = '';
+            document.getElementById('playerModeWaiting').style.display = 'block';
             playSound('click');
         });
 

@@ -354,8 +354,19 @@
             <div id="hostVotingSection" style="display:none;text-align:center;margin-top:15px;">
                 <button class="btn btn-accent btn-lg" onclick="startVoting()" style="width:100%;">🗳️ بدء التصويت</button>
             </div>
-            <div id="playerLeaveSection" style="display:none;text-align:center;margin-top:10px;">
-                <button class="btn btn-danger" onclick="leaveRoom()" style="width:100%;">🚪 مغادرة</button>
+            <div style="display:flex;gap:10px;margin-top:15px;">
+                <div id="hostGameSettingsSection" style="display:none;flex:1;">
+                    <button class="btn btn-secondary" onclick="toggleGameSettings()" style="width:100%;">⚙️ الإعدادات</button>
+                </div>
+                <div id="playerLeaveSection" style="display:none;flex:1;">
+                    <button class="btn btn-danger" onclick="leaveRoom()" style="width:100%;">🚪 مغادرة</button>
+                </div>
+            </div>
+            <div id="gameSettingsPanel" style="display:none;margin-top:10px;">
+                <div class="glass-card" style="padding:15px;">
+                    <h3 style="font-weight:700;margin-bottom:10px;text-align:center;">⚙️ إعدادات الغرفة</h3>
+                    <div id="gameSettingsPlayerList"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -374,8 +385,13 @@
             </div>
             <div id="voteLog" style="margin-bottom:15px;max-height:120px;overflow-y:auto;padding:0 5px;"></div>
             <div id="votingPlayersList" style="margin-bottom:20px;"></div>
-            <div id="votingLeaveSection" style="display:none;text-align:center;">
-                <button class="btn btn-danger" onclick="leaveRoom()" style="width:100%;">🚪 مغادرة</button>
+            <div style="display:flex;gap:10px;">
+                <div id="votingHostSettingsSection" style="display:none;flex:1;">
+                    <button class="btn btn-secondary" onclick="toggleGameSettings()" style="width:100%;">⚙️ الإعدادات</button>
+                </div>
+                <div id="votingLeaveSection" style="display:none;flex:1;">
+                    <button class="btn btn-danger" onclick="leaveRoom()" style="width:100%;">🚪 مغادرة</button>
+                </div>
             </div>
         </div>
     </div>

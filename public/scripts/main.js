@@ -51,11 +51,10 @@ let isPcMode = false;
 let isHost = false; 
 
 // ==========================================
-// 🚀 نظام الماوس السلس جداً
+// 🚀 نظام الماوس السلس (Buttery Smooth)
 // ==========================================
 let mouseX = window.innerWidth / 2, mouseY = window.innerHeight / 2;
 let f1X = mouseX, f1Y = mouseY, f2X = mouseX, f2Y = mouseY;
-let activeMagneticButton = null; // متغير لحفظ الزرار اللي الماوس واقف عليه
 
 function animateCursor() {
     if (isPcMode) {
@@ -73,60 +72,75 @@ function animateCursor() {
 requestAnimationFrame(animateCursor);
 
 // ==========================================
-// 🧲 تأثير المغناطيس الاحترافي للأزرار
+// 🧲 تأثير المغناطيس الاحترافي للأزرار (المعدل)
 // ==========================================
 document.addEventListener('mousemove', (e) => {
     mouseX = e.clientX;
     mouseY = e.clientY;
     
-    if (!isPcMode) {
-        if (activeMagneticButton) {
-            activeMagneticButton.style.transform = '';
-            activeMagneticButton = null;
-        }
-        return;
-    }
+    if (!isPcMode) return;
 
-    const targetBtn = e.target.closest('button');
+    // بنطبق التأثير على كل الزراير في الشاشة
+    const buttons = document.querySelectorAll('button');
     
-    // لو الماوس خرج من الزرار اللي كان عليه
-    if (activeMagneticButton && activeMagneticButton !== targetBtn) {
-        // إرجاع الزرار مكانه بتأثير "سوستة" مرن
-        activeMagneticButton.style.transition = 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
-        activeMagneticButton.style.transform = '';
-        activeMagneticButton = null;
-    }
+    buttons.forEach(btn => {
+        // لو الزرار مخفي متتعبش المتصفح في الحسابات
+        if (btn.offsetParent === null) return;
 
-    // لو الماوس دخل على زرار
-    if (targetBtn) {
-        activeMagneticButton = targetBtn;
-        const rect = targetBtn.getBoundingClientRect();
+        const rect = btn.getBoundingClientRect();
+        const transformStr = window.getComputedStyle(btn).transform;
         
+        // استخراج الإحداثيات الأصلية للزرار عشان ميحصلش تقطيع (Jittering)
+        let tx = 0, ty = 0;
+        if (transformStr && transformStr !== 'none') {
+            const match = transformStr.match(/matrix\((.+)\)/);
+            if (match) {
+                const values = match[1].split(', ');
+                tx = parseFloat(values[4]) || 0;
+                ty = parseFloat(values[5]) || 0;
+            }
+        }
+
+        // تحديد مركز الزرار الحقيقي في الشاشة
+        const originalLeft = rect.left - tx;
+        const originalTop = rect.top - ty;
+        const btnCenterX = originalLeft + rect.width / 2;
+        const btnCenterY = originalTop + rect.height / 2;
+
         // حساب المسافة بين الماوس ومركز الزرار
-        const x = mouseX - rect.left - rect.width / 2;
-        const y = mouseY - rect.top - rect.height / 2;
-        
-        // تحريك الزرار بنسبة بسيطة ناحية الماوس
-        targetBtn.style.transition = 'transform 0.1s ease-out';
-        targetBtn.style.transform = `translate(${x * 0.25}px, ${y * 0.25}px) scale(1.05)`;
-    }
+        const distX = mouseX - btnCenterX;
+        const distY = mouseY - btnCenterY;
+        const distance = Math.sqrt(distX * distX + distY * distY);
+
+        // قوة الجاذبية ونطاق المغناطيس (تقدر تعدلهم براحتك)
+        const magneticRadius = 130; // الماوس يبدأ يشد الزرار من على بعد 130 بيكسل
+        const pullStrength = 0.35;  // قوة الشد
+
+        if (distance < magneticRadius) {
+            // لو الماوس في نطاق الجاذبية -> شد الزرار
+            const moveX = distX * pullStrength;
+            const moveY = distY * pullStrength;
+            
+            btn.style.transition = 'transform 0.1s ease-out';
+            btn.style.transform = `translate(${moveX}px, ${moveY}px) scale(1.05)`;
+            btn.dataset.magnetic = 'true'; // تسجيل إن الزرار مسحوب
+        } else {
+            // لو الماوس خرج من النطاق -> سيب الزرار يرجع بتأثير سوستة
+            if (btn.dataset.magnetic === 'true') {
+                btn.style.transition = 'transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+                btn.style.transform = `translate(0px, 0px) scale(1)`;
+                btn.dataset.magnetic = 'false';
+            }
+        }
+    });
 });
 
+// تأثير الدائرة الزرقا بتاعت الماوس
 document.addEventListener('mouseover', (e) => { 
     if (isPcMode && e.target.closest('button') && customCursor) customCursor.classList.add('hovering'); 
 });
-
 document.addEventListener('mouseout', (e) => { 
-    if (isPcMode) {
-        const targetBtn = e.target.closest('button');
-        // التأكد إن الماوس خرج بره الزرار تماماً مش جواه
-        if (targetBtn && (!e.relatedTarget || !targetBtn.contains(e.relatedTarget))) {
-            if (customCursor) customCursor.classList.remove('hovering');
-            targetBtn.style.transition = 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
-            targetBtn.style.transform = '';
-            if (activeMagneticButton === targetBtn) activeMagneticButton = null;
-        }
-    } 
+    if (isPcMode && e.target.closest('button') && customCursor) customCursor.classList.remove('hovering'); 
 });
 // ==========================================
 

@@ -1,82 +1,163 @@
 const socket = io();
 
+// ==========================================
+// 🎧 نظام الصوتيات الاحترافي (بدون تحميل ملفات خارحية)
+// ==========================================
+const AudioContext = window.AudioContext || window.webkitAudioContext;
+let audioCtx;
+
+function initAudio() {
+    if (!audioCtx) audioCtx = new AudioContext();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+// تفعيل الصوت مع أول ضغطة في الشاشة لتخطي حماية المتصفح
+document.addEventListener('click', initAudio, { once: true });
+
+function playSound(type) {
+    if (!audioCtx) return;
+    const osc = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    osc.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+
+    const now = audioCtx.currentTime;
+    
+    if (type === 'click') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(800, now);
+        osc.frequency.exponentialRampToValueAtTime(300, now + 0.1);
+        gainNode.gain.setValueAtTime(0.1, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+        osc.start(now); osc.stop(now + 0.1);
+    } 
+    else if (type === 'start') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(300, now);
+        osc.frequency.exponentialRampToValueAtTime(800, now + 0.4);
+        gainNode.gain.setValueAtTime(0, now);
+        gainNode.gain.linearRampToValueAtTime(0.2, now + 0.2);
+        gainNode.gain.linearRampToValueAtTime(0, now + 0.4);
+        osc.start(now); osc.stop(now + 0.4);
+    }
+    else if (type === 'vote') {
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(400, now);
+        gainNode.gain.setValueAtTime(0.05, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+        osc.start(now); osc.stop(now + 0.1);
+    }
+    else if (type === 'win') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(400, now);
+        osc.frequency.setValueAtTime(600, now + 0.1);
+        osc.frequency.setValueAtTime(800, now + 0.2);
+        gainNode.gain.setValueAtTime(0.2, now);
+        gainNode.gain.linearRampToValueAtTime(0, now + 0.5);
+        osc.start(now); osc.stop(now + 0.5);
+    }
+    else if (type === 'lose') {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(300, now);
+        osc.frequency.exponentialRampToValueAtTime(100, now + 0.5);
+        gainNode.gain.setValueAtTime(0.2, now);
+        gainNode.gain.linearRampToValueAtTime(0, now + 0.5);
+        osc.start(now); osc.stop(now + 0.5);
+    }
+}
+
+// إضافة صوت النقرة لكل الزراير
+document.addEventListener('click', (e) => {
+    if(e.target.tagName === 'BUTTON' || e.target.closest('button')) playSound('click');
+});
+
+// ==========================================
+// 🆔 نظام منع التكرار (Player ID)
+// ==========================================
+let myPlayerId = sessionStorage.getItem('playerId');
+if (!myPlayerId) {
+    myPlayerId = 'player_' + Math.random().toString(36).substr(2, 9);
+    sessionStorage.setItem('playerId', myPlayerId);
+}
+
+// ==========================================
+// ⚙️ إعدادات زر المغادرة
+// ==========================================
+const generalSettingsBtn = document.getElementById('generalSettingsBtn');
+const generalSettingsModal = document.getElementById('generalSettingsModal');
+const closeGeneralSettingsBtn = document.getElementById('closeGeneralSettingsBtn');
+const toggleLeaveBtn = document.getElementById('toggleLeaveBtn');
+const leaveRoomBtn = document.getElementById('leaveRoomBtn');
+
+// استرجاع الإعداد من المتصفح
+let isLeaveBtnEnabled = localStorage.getItem('leaveBtnEnabled') !== 'false';
+
+function updateLeaveBtnState() {
+    if (isLeaveBtnEnabled) {
+        toggleLeaveBtn.innerText = "مفعل ✔️";
+        toggleLeaveBtn.className = "toggle-btn active";
+        // إظهاره فقط لو الضيف جوه الغرفة مش في الشاشة الرئيسية
+        if (!isHost && !document.getElementById('welcomeScreen').classList.contains('active')) {
+            leaveRoomBtn.classList.remove('hidden');
+        }
+    } else {
+        toggleLeaveBtn.innerText = "معطل ❌";
+        toggleLeaveBtn.className = "toggle-btn inactive";
+        leaveRoomBtn.classList.add('hidden');
+    }
+}
+
+if(generalSettingsBtn) generalSettingsBtn.addEventListener('click', () => generalSettingsModal.classList.remove('hidden'));
+if(closeGeneralSettingsBtn) closeGeneralSettingsBtn.addEventListener('click', () => generalSettingsModal.classList.add('hidden'));
+
+if(toggleLeaveBtn) toggleLeaveBtn.addEventListener('click', () => {
+    isLeaveBtnEnabled = !isLeaveBtnEnabled;
+    localStorage.setItem('leaveBtnEnabled', isLeaveBtnEnabled);
+    updateLeaveBtnState();
+});
+
+// ==========================================
+// باقي أكواد اللعبة الأساسية
+// ==========================================
 const screens = {
-    welcome: document.getElementById('welcomeScreen'),
-    waiting: document.getElementById('waitingScreen'),
-    modeSelection: document.getElementById('modeSelectionScreen'),
-    game: document.getElementById('gameScreen'),
-    voting: document.getElementById('votingScreen'),
-    guessing: document.getElementById('guessingScreen')
+    welcome: document.getElementById('welcomeScreen'), waiting: document.getElementById('waitingScreen'),
+    modeSelection: document.getElementById('modeSelectionScreen'), game: document.getElementById('gameScreen'),
+    voting: document.getElementById('votingScreen'), guessing: document.getElementById('guessingScreen')
 };
 
-// Elements
 const mainContainer = document.getElementById('mainContainer');
-const pcViewBtn = document.getElementById('pcViewBtn');
-const mobileViewBtn = document.getElementById('mobileViewBtn');
-const goToWaitingBtn = document.getElementById('goToWaitingBtn'); 
-const joinRoomBtn = document.getElementById('joinRoomBtn');       
-const playerNameInput = document.getElementById('playerNameInput'); 
-const copyInviteBtn = document.getElementById('copyInviteBtn');
-const notificationToast = document.getElementById('notificationToast');
-const playerCountSpan = document.getElementById('playerCount');
-const playersListDiv = document.getElementById('playersList');
-const startGameBtn = document.getElementById('startGameBtn');
-const actualStartBtn = document.getElementById('actualStartBtn');
+const pcViewBtn = document.getElementById('pcViewBtn'); const mobileViewBtn = document.getElementById('mobileViewBtn');
+const goToWaitingBtn = document.getElementById('goToWaitingBtn'); const joinRoomBtn = document.getElementById('joinRoomBtn');       
+const playerNameInput = document.getElementById('playerNameInput'); const copyInviteBtn = document.getElementById('copyInviteBtn');
+const playerCountSpan = document.getElementById('playerCount'); const playersListDiv = document.getElementById('playersList');
+const startGameBtn = document.getElementById('startGameBtn'); const actualStartBtn = document.getElementById('actualStartBtn');
 const hostSettingsBtn = document.getElementById('hostSettingsBtn');
-const leaveRoomBtn = document.getElementById('leaveRoomBtn');
-const restartGameBtn = document.getElementById('restartGameBtn');
-
-// Modals
-const hostSettingsModal = document.getElementById('hostSettingsModal');
-const closeModalBtn = document.getElementById('closeModalBtn');
-const modalPlayersList = document.getElementById('modalPlayersList');
-const hostLeftModal = document.getElementById('hostLeftModal');
-const kickedModal = document.getElementById('kickedModal');
-const leftRoomModal = document.getElementById('leftRoomModal'); 
-const invalidRoomModal = document.getElementById('invalidRoomModal'); 
+const hostSettingsModal = document.getElementById('hostSettingsModal'); const closeModalBtn = document.getElementById('closeModalBtn');
+const modalPlayersList = document.getElementById('modalPlayersList'); const restartGameBtn = document.getElementById('restartGameBtn');
+const hostLeftModal = document.getElementById('hostLeftModal'); const kickedModal = document.getElementById('kickedModal');
+const leftRoomModal = document.getElementById('leftRoomModal'); const invalidRoomModal = document.getElementById('invalidRoomModal'); 
 const errorMsgText = document.getElementById('errorMsgText');
 
-// Voting & Guessing UI
+const selectRandomModeBtn = document.getElementById('selectRandomModeBtn'); const revokeRandomModeBtn = document.getElementById('revokeRandomModeBtn');
+const confirmStartGameBtn = document.getElementById('confirmStartGameBtn'); const selectedBadge = document.getElementById('selectedBadge');
+const randomModeCard = document.getElementById('randomModeCard'); const hostModeControls = document.getElementById('hostModeControls');
 const startVotingPhaseBtn = document.getElementById('startVotingPhaseBtn');
-const voteCounter = document.getElementById('voteCounter');
-const liveVoteLog = document.getElementById('liveVoteLog');
-const votingGrid = document.getElementById('votingGrid');
-const votingResultModal = document.getElementById('votingResultModal');
-const spyProceedBtn = document.getElementById('spyProceedBtn');
-const wordsGrid = document.getElementById('wordsGrid');
-const confirmGuessBtn = document.getElementById('confirmGuessBtn');
-const finalResultModal = document.getElementById('finalResultModal');
+const voteCounter = document.getElementById('voteCounter'); const liveVoteLog = document.getElementById('liveVoteLog');
+const votingGrid = document.getElementById('votingGrid'); const votingResultModal = document.getElementById('votingResultModal');
+const spyProceedBtn = document.getElementById('spyProceedBtn'); const wordsGrid = document.getElementById('wordsGrid');
+const confirmGuessBtn = document.getElementById('confirmGuessBtn'); const finalResultModal = document.getElementById('finalResultModal');
 const finalOkBtn = document.getElementById('finalOkBtn');
 
-// Mode Selection
-const selectRandomModeBtn = document.getElementById('selectRandomModeBtn');
-const revokeRandomModeBtn = document.getElementById('revokeRandomModeBtn');
-const confirmStartGameBtn = document.getElementById('confirmStartGameBtn');
-const selectedBadge = document.getElementById('selectedBadge');
-const randomModeCard = document.getElementById('randomModeCard');
-const hostModeControls = document.getElementById('hostModeControls');
+const customCursor = document.getElementById('customCursor'); const follow1 = document.getElementById('cursorFollow1'); const follow2 = document.getElementById('cursorFollow2');
 
-const customCursor = document.getElementById('customCursor');
-const follow1 = document.getElementById('cursorFollow1');
-const follow2 = document.getElementById('cursorFollow2');
+let isPcMode = false; let isHost = false; let myRoleData = null; let selectedSpyWord = null;
 
-let isPcMode = false;
-let isHost = false; 
-let myRoleData = null; // لحفظ بيانات الدور (جاسوس ولا لأ)
-let selectedSpyWord = null;
-
-// ==========================================
-// الماوس السلس (بدون تأثير المغناطيس بناءً على طلبك)
-// ==========================================
 let mouseX = window.innerWidth / 2, mouseY = window.innerHeight / 2;
 let f1X = mouseX, f1Y = mouseY, f2X = mouseX, f2Y = mouseY;
-
 document.addEventListener('mousemove', (e) => { mouseX = e.clientX; mouseY = e.clientY; });
 
 function animateCursor() {
     if (isPcMode) {
-        f1X += (mouseX - f1X) * 0.2; f1Y += (mouseY - f1Y) * 0.2;
-        f2X += (mouseX - f2X) * 0.1; f2Y += (mouseY - f2Y) * 0.1;
+        f1X += (mouseX - f1X) * 0.2; f1Y += (mouseY - f1Y) * 0.2; f2X += (mouseX - f2X) * 0.1; f2Y += (mouseY - f2Y) * 0.1;
         if(customCursor) customCursor.style.transform = `translate(${mouseX}px, ${mouseY}px)`;
         if(follow1) follow1.style.transform = `translate(${f1X}px, ${f1Y}px)`;
         if(follow2) follow2.style.transform = `translate(${f2X}px, ${f2Y}px)`;
@@ -85,12 +166,6 @@ function animateCursor() {
 }
 requestAnimationFrame(animateCursor);
 
-document.addEventListener('mouseover', (e) => { if (isPcMode && e.target.closest('button') && customCursor) customCursor.classList.add('hovering'); });
-document.addEventListener('mouseout', (e) => { if (isPcMode && e.target.closest('button') && customCursor) customCursor.classList.remove('hovering'); });
-
-// ==========================================
-// التهيئة والانضمام
-// ==========================================
 const urlParams = new URLSearchParams(window.location.search);
 const roomFromUrl = urlParams.get('room');
 const wasHostOfRoom = sessionStorage.getItem('hostRoomId');
@@ -107,21 +182,21 @@ if (roomFromUrl) {
         if (guestName) {
             isHost = false;
             playerNameInput.value = guestName;
-            socket.emit('joinRoom', { roomId: roomFromUrl, name: guestName });
+            socket.emit('joinRoom', { roomId: roomFromUrl, name: guestName, playerId: myPlayerId });
             showScreen('waiting');
-            if(leaveRoomBtn) leaveRoomBtn.classList.remove('hidden');
+            updateLeaveBtnState();
         }
     }
-} else { sessionStorage.clear(); }
+} else { sessionStorage.removeItem('hostRoomId'); sessionStorage.removeItem('guestName'); }
 
 if(goToWaitingBtn) goToWaitingBtn.addEventListener('click', () => {
     isHost = true;
     if(hostSettingsBtn) hostSettingsBtn.classList.remove('hidden'); 
-    if(copyInviteBtn) copyInviteBtn.classList.remove('hidden'); // إظهار الرابط للهوست فقط
+    if(copyInviteBtn) copyInviteBtn.classList.remove('hidden'); 
     const newRoomId = Math.random().toString(36).substring(2, 8);
     sessionStorage.setItem('hostRoomId', newRoomId);
     window.history.pushState({}, '', `?room=${newRoomId}`);
-    socket.emit('createRoom', { roomId: newRoomId }); 
+    socket.emit('createRoom', { roomId: newRoomId, playerId: myPlayerId }); 
     showScreen('waiting');
 });
 
@@ -129,11 +204,11 @@ if(joinRoomBtn) joinRoomBtn.addEventListener('click', () => {
     const enteredName = playerNameInput.value.trim();
     if(!enteredName) { alert("اكتب اسمك الأول يا بطل!"); return; }
     isHost = false;
-    if(copyInviteBtn) copyInviteBtn.classList.add('hidden'); // إخفاء الرابط عن الضيف
+    if(copyInviteBtn) copyInviteBtn.classList.add('hidden'); 
     sessionStorage.setItem('guestName', enteredName);
-    socket.emit('joinRoom', { roomId: roomFromUrl, name: enteredName });
+    socket.emit('joinRoom', { roomId: roomFromUrl, name: enteredName, playerId: myPlayerId });
     showScreen('waiting');
-    if(leaveRoomBtn) leaveRoomBtn.classList.remove('hidden');
+    updateLeaveBtnState();
 });
 
 if(leaveRoomBtn) leaveRoomBtn.addEventListener('click', () => {
@@ -159,7 +234,7 @@ socket.on('updatePlayers', (playersArray) => {
     if (playersListDiv) {
         let playersHTML = '';
         playersArray.forEach(player => {
-            const isMe = player.id === socket.id;
+            const isMe = player.id === myPlayerId;
             const crown = player.isHost ? '<span class="player-crown">👑</span>' : '';
             playersHTML += `<div class="player-slot ${player.isHost ? 'host' : ''}">
                 <div class="player-name-wrapper"><span class="player-name-text">${player.name}</span>${crown} ${isMe ? '<span style="color:#64748b; font-size:0.9rem;">(أنت)</span>' : ''}</div>
@@ -184,10 +259,7 @@ socket.on('updatePlayers', (playersArray) => {
     }
 });
 
-// ==========================================
-// بدء اللعبة والأدوار
-// ==========================================
-if(actualStartBtn) actualStartBtn.addEventListener('click', () => socket.emit('goToModeSelection'));
+if(actualStartBtn) actualStartBtn.addEventListener('click', () => { playSound('start'); socket.emit('goToModeSelection'); });
 socket.on('showModeSelection', () => {
     showScreen('modeSelection');
     if(isHost) { hostModeControls.classList.remove('hidden'); } else { hostModeControls.classList.add('hidden'); confirmStartGameBtn.classList.add('hidden'); }
@@ -195,7 +267,7 @@ socket.on('showModeSelection', () => {
 
 if(selectRandomModeBtn) selectRandomModeBtn.addEventListener('click', () => socket.emit('selectMode', 'random'));
 if(revokeRandomModeBtn) revokeRandomModeBtn.addEventListener('click', () => socket.emit('deselectMode', 'random'));
-if(confirmStartGameBtn) confirmStartGameBtn.addEventListener('click', () => socket.emit('startRandomMode'));
+if(confirmStartGameBtn) confirmStartGameBtn.addEventListener('click', () => { playSound('start'); socket.emit('startRandomMode'); });
 
 socket.on('modeSelected', (mode) => {
     if(mode === 'random') {
@@ -212,6 +284,7 @@ socket.on('modeDeselected', (mode) => {
 });
 
 socket.on('assignRole', (data) => {
+    playSound('start');
     myRoleData = data;
     const roleIcon = document.getElementById('roleIcon');
     const roleTitle = document.getElementById('roleTitle');
@@ -230,12 +303,10 @@ socket.on('gameStarted', () => {
     if (isHost && startVotingPhaseBtn) startVotingPhaseBtn.classList.remove('hidden');
 });
 
-// ==========================================
-// 🗳️ مرحلة التصويت
-// ==========================================
-if(startVotingPhaseBtn) startVotingPhaseBtn.addEventListener('click', () => socket.emit('startVotingPhase'));
+if(startVotingPhaseBtn) startVotingPhaseBtn.addEventListener('click', () => { playSound('start'); socket.emit('startVotingPhase'); });
 
 socket.on('votingStarted', (playersArray) => {
+    playSound('start');
     showScreen('voting');
     liveVoteLog.innerHTML = '';
     voteCounter.innerText = `0/${playersArray.length}`;
@@ -243,8 +314,7 @@ socket.on('votingStarted', (playersArray) => {
     
     let gridHTML = '';
     playersArray.forEach(p => {
-        // إنشاء كارت لكل لاعب ما عدا أنا
-        if (p.id !== socket.id) {
+        if (p.id !== myPlayerId) {
             gridHTML += `
                 <div class="vote-card" onclick="castVote('${p.id}', this)">
                     <div style="font-size: 2rem; margin-bottom:10px;">${p.isHost ? '👑' : '👤'}</div>
@@ -258,16 +328,14 @@ socket.on('votingStarted', (playersArray) => {
 
 window.castVote = function(targetId, cardElement) {
     socket.emit('submitVote', targetId);
-    
-    // تعطيل كل الكروت عشان يصوت مرة واحدة
     const allCards = document.querySelectorAll('.vote-card');
     allCards.forEach(c => c.classList.add('disabled'));
-    
     cardElement.classList.remove('disabled');
-    cardElement.classList.add('voted'); // تنوير الكارت
+    cardElement.classList.add('voted');
 };
 
 socket.on('voteRegistered', (data) => {
+    playSound('vote');
     voteCounter.innerText = `${data.currentVotes}/${data.totalRequired}`;
     if(data.currentVotes === data.totalRequired) {
         voteCounter.style.color = "var(--neon-green)";
@@ -288,46 +356,39 @@ socket.on('votingEnded', (data) => {
     if (!myRoleData.isSpy) {
         spyProceedBtn.classList.add('hidden');
         if (data.isSpyCaught) {
-            vTitle.innerText = "عمل جيد! 👏";
-            vTitle.style.color = "var(--neon-green)";
+            playSound('win');
+            vTitle.innerText = "عمل جيد! 👏"; vTitle.style.color = "var(--neon-green)";
             vDesc1.innerText = `لقد كان ${data.votedPlayerName} الجاسوس فعلاً، أحسنتم.`;
             vDesc2.innerText = "في انتظار تخمينه للكلمة...";
         } else {
-            vTitle.innerText = "اختيار خاطئ! ❌";
-            vTitle.style.color = "var(--neon-red)";
+            playSound('lose');
+            vTitle.innerText = "اختيار خاطئ! ❌"; vTitle.style.color = "var(--neon-red)";
             vDesc1.innerText = `لم يكن ${data.votedPlayerName} الجاسوس. لقد كان ${data.spyName}.`;
             vDesc2.innerText = "في انتظار تخمينه للكلمة...";
         }
     } else {
-        // رسائل الجاسوس
         spyProceedBtn.classList.remove('hidden');
         if (data.isSpyCaught) {
-            vTitle.innerText = "تم كشفك! 🚨";
-            vTitle.style.color = "var(--neon-red)";
-            vDesc1.innerText = `لقد تم كشفك يا ${data.spyName}.`;
-            vDesc2.innerText = "ابذل قصارى جهدك المرة القادمة!";
+            playSound('lose');
+            vTitle.innerText = "تم كشفك! 🚨"; vTitle.style.color = "var(--neon-red)";
+            vDesc1.innerText = `لقد تم كشفك يا ${data.spyName}.`; vDesc2.innerText = "ابذل قصارى جهدك المرة القادمة!";
             spyProceedBtn.innerText = "خمن الكلمة";
         } else {
-            vTitle.innerText = "نجاح باهر! 🕵️‍♂️";
-            vTitle.style.color = "var(--neon-green)";
-            vDesc1.innerText = `لقد اختاروا شخصاً خاطئاً، نجحت في التخفي يا ${data.spyName}.`;
-            vDesc2.innerText = "";
+            playSound('win');
+            vTitle.innerText = "نجاح باهر! 🕵️‍♂️"; vTitle.style.color = "var(--neon-green)";
+            vDesc1.innerText = `لقد اختاروا شخصاً خاطئاً، نجحت في التخفي يا ${data.spyName}.`; vDesc2.innerText = "";
             spyProceedBtn.innerText = "تخمين الكلمة";
         }
     }
-    
     votingResultModal.classList.remove('hidden');
 });
 
-// ==========================================
-// 🧠 مرحلة تخمين الكلمة
-// ==========================================
 if(spyProceedBtn) spyProceedBtn.addEventListener('click', () => {
-    votingResultModal.classList.add('hidden');
-    socket.emit('startGuessingPhase');
+    votingResultModal.classList.add('hidden'); socket.emit('startGuessingPhase');
 });
 
 socket.on('guessingPhaseStarted', (wordsArray) => {
+    playSound('start');
     votingResultModal.classList.add('hidden');
     showScreen('guessing');
     
@@ -340,11 +401,7 @@ socket.on('guessingPhaseStarted', (wordsArray) => {
     let wordsHTML = '';
     wordsArray.forEach(w => {
         const onClickAttr = myRoleData.isSpy ? `onclick="selectSpyWord('${w}')"` : '';
-        wordsHTML += `
-            <div class="word-card" id="word-${w}" ${onClickAttr}>
-                ${w}
-            </div>
-        `;
+        wordsHTML += `<div class="word-card" id="word-${w}" ${onClickAttr}>${w}</div>`;
     });
     wordsGrid.innerHTML = wordsHTML;
 });
@@ -357,14 +414,11 @@ window.selectSpyWord = function(word) {
 };
 
 socket.on('spySelectedWord', (data) => {
-    // إزالة التحديد من كل الكلمات
+    playSound('vote');
     document.querySelectorAll('.word-card').forEach(c => {
         c.classList.remove('spy-active');
-        const tag = c.querySelector('.spy-tag');
-        if(tag) tag.remove();
+        const tag = c.querySelector('.spy-tag'); if(tag) tag.remove();
     });
-
-    // إضافة التحديد للكلمة المختارة
     const activeCard = document.getElementById(`word-${data.word}`);
     if (activeCard) {
         activeCard.classList.add('spy-active');
@@ -373,67 +427,40 @@ socket.on('spySelectedWord', (data) => {
 });
 
 if(confirmGuessBtn) confirmGuessBtn.addEventListener('click', () => {
-    if(selectedSpyWord) {
-        socket.emit('spyConfirmWord', selectedSpyWord);
-    }
+    if(selectedSpyWord) socket.emit('spyConfirmWord', selectedSpyWord);
 });
 
-// ==========================================
-// 🏁 النتيجة النهائية
-// ==========================================
 socket.on('gameFinalResult', (data) => {
-    const t1 = document.getElementById('finalResultText1');
-    const t2 = document.getElementById('finalResultText2');
-    const t3 = document.getElementById('finalResultText3');
-    const t4 = document.getElementById('finalResultText4');
+    if(data.isCorrect) playSound('win'); else playSound('lose');
+    
+    const t1 = document.getElementById('finalResultText1'); const t2 = document.getElementById('finalResultText2');
+    const t3 = document.getElementById('finalResultText3'); const t4 = document.getElementById('finalResultText4');
 
-    t1.innerText = `لقد خمن الجاسوس ${data.spyName} الكلمة`;
-    t2.innerText = data.chosenWord;
+    t1.innerText = `لقد خمن الجاسوس ${data.spyName} الكلمة`; t2.innerText = data.chosenWord;
     
     if (data.isCorrect) {
-        t3.innerText = "وكانت الإجابة صحيحة! ✅";
-        t3.style.color = "var(--neon-green)";
-        t4.innerText = "";
+        t3.innerText = "وكانت الإجابة صحيحة! ✅"; t3.style.color = "var(--neon-green)"; t4.innerText = "";
     } else {
-        t3.innerText = "وكانت الإجابة خاطئة! ❌";
-        t3.style.color = "var(--neon-red)";
-        t4.innerText = `والكلمة الصحيحة كانت: ${data.correctWord}`;
+        t3.innerText = "وكانت الإجابة خاطئة! ❌"; t3.style.color = "var(--neon-red)"; t4.innerText = `والكلمة الصحيحة كانت: ${data.correctWord}`;
     }
-
     finalResultModal.classList.remove('hidden');
 });
 
 if(finalOkBtn) finalOkBtn.addEventListener('click', () => {
     finalResultModal.classList.add('hidden');
-    if (isHost) {
-        showScreen('waiting'); // الهوست يرجع لغرفة الانتظار عشان يقرر
-    } else {
-        alert("انتهت اللعبة، في انتظار قرار الهوست بإغلاق اللعبة أو إعادة اللعب");
-    }
+    if (isHost) showScreen('waiting'); 
+    else alert("انتهت اللعبة، في انتظار قرار الهوست بإغلاق اللعبة أو إعادة اللعب");
 });
 
-// ==========================================
-// إعادة اللعب
-// ==========================================
 socket.on('gameRestarted', () => {
+    playSound('start');
     showScreen('waiting');
-    
-    // تصفير الواجهات
-    selectedBadge.classList.add('hidden');
-    randomModeCard.style.borderColor = 'rgba(0, 243, 255, 0.3)';
-    randomModeCard.style.boxShadow = 'none';
-    selectRandomModeBtn.classList.remove('hidden');
-    revokeRandomModeBtn.classList.add('hidden');
-    confirmStartGameBtn.classList.add('hidden');
-    votingResultModal.classList.add('hidden');
-    finalResultModal.classList.add('hidden');
+    selectedBadge.classList.add('hidden'); randomModeCard.style.borderColor = 'rgba(0, 243, 255, 0.3)'; randomModeCard.style.boxShadow = 'none';
+    selectRandomModeBtn.classList.remove('hidden'); revokeRandomModeBtn.classList.add('hidden'); confirmStartGameBtn.classList.add('hidden');
+    votingResultModal.classList.add('hidden'); finalResultModal.classList.add('hidden');
     if(startVotingPhaseBtn) startVotingPhaseBtn.classList.add('hidden');
     if(confirmGuessBtn) confirmGuessBtn.classList.add('hidden');
-
-    if (isHost && restartGameBtn && hostSettingsModal) {
-        restartGameBtn.disabled = true;
-        hostSettingsModal.classList.add('hidden');
-    }
+    if (isHost && restartGameBtn && hostSettingsModal) { restartGameBtn.disabled = true; hostSettingsModal.classList.add('hidden'); }
 });
 
 window.editPlayerName = function(targetId) { const newName = prompt('أدخل الاسم الجديد:'); if (newName && newName.trim() !== '') socket.emit('changePlayerName', { targetId: targetId, newName: newName.trim() }); };
@@ -450,3 +477,6 @@ if(hostSettingsBtn) hostSettingsBtn.addEventListener('click', () => { if(hostSet
 if(closeModalBtn) closeModalBtn.addEventListener('click', () => { if(hostSettingsModal) hostSettingsModal.classList.add('hidden'); });
 if(restartGameBtn) restartGameBtn.addEventListener('click', () => { if(confirm('إعادة اللعب وإرجاع الجميع لغرفة الانتظار؟')) socket.emit('restartGame'); });
 if(copyInviteBtn) copyInviteBtn.addEventListener('click', () => { navigator.clipboard.writeText(window.location.href).then(() => { if(notificationToast) { notificationToast.classList.remove('hidden'); setTimeout(() => notificationToast.classList.add('hidden'), 2500); } }); });
+
+socket.on('hostDisconnected', () => { if(hostLeftModal) hostLeftModal.classList.remove('hidden'); if(leaveRoomBtn) leaveRoomBtn.classList.add('hidden'); sessionStorage.clear(); });
+socket.on('youAreKickedPermanently', () => { if(kickedModal) kickedModal.classList.remove('hidden'); if(leaveRoomBtn) leaveRoomBtn.classList.add('hidden'); sessionStorage.clear(); });

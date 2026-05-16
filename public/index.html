@@ -26,13 +26,18 @@
             100% { filter: hue-rotate(360deg); }
         }
 
+        /* إصلاح التوسيط الجذري لكل العناوين */
+        .logo-section { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; }
+        
         .rgb-title, #roleTitle, #roleCategory {
             color: #ff0055;
             text-shadow: 0 0 15px #ff0055, 0 0 30px #ff0055;
             animation: hueShift 4s linear infinite !important;
             display: block; 
-            text-align: center;
+            text-align: center !important;
             width: 100%;
+            margin-left: auto;
+            margin-right: auto;
         }
         
         .rgb-title { font-size: 2.8rem !important; margin-bottom: 25px !important; }

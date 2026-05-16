@@ -1,4 +1,3 @@
-// لا نقوم بمسح الذاكرة بالكامل لضمان عودة الضيف إذا قام بعمل Refresh
 const socket = io();
 
 const screens = {
@@ -9,6 +8,9 @@ const screens = {
 };
 
 const mainContainer = document.getElementById('mainContainer');
+const pcViewBtn = document.getElementById('pcViewBtn');
+const mobileViewBtn = document.getElementById('mobileViewBtn');
+
 const goToWaitingBtn = document.getElementById('goToWaitingBtn'); 
 const joinRoomBtn = document.getElementById('joinRoomBtn');       
 const playerNameInput = document.getElementById('playerNameInput'); 
@@ -32,6 +34,10 @@ const kickedModal = document.getElementById('kickedModal');
 
 const selectRandomModeBtn = document.getElementById('selectRandomModeBtn');
 const startVotingBtn = document.getElementById('startVotingBtn');
+
+const customCursor = document.getElementById('customCursor');
+const follow1 = document.getElementById('cursorFollow1');
+const follow2 = document.getElementById('cursorFollow2');
 
 let isPcMode = false;
 let isHost = false; 
@@ -59,10 +65,11 @@ if (roomFromUrl) {
             playerNameInput.value = guestName;
             socket.emit('joinRoom', { roomId: roomFromUrl, name: guestName });
             showScreen('waiting');
-            leaveRoomBtn.classList.remove('hidden');
+            if(leaveRoomBtn) leaveRoomBtn.classList.remove('hidden');
         }
     }
 } else {
+    // لو في الصفحة الرئيسية بيمسح الذاكرة المعلقة
     sessionStorage.clear();
 }
 
@@ -88,7 +95,7 @@ if(joinRoomBtn) joinRoomBtn.addEventListener('click', () => {
     sessionStorage.setItem('guestName', enteredName);
     socket.emit('joinRoom', { roomId: roomFromUrl, name: enteredName });
     showScreen('waiting');
-    leaveRoomBtn.classList.remove('hidden');
+    if(leaveRoomBtn) leaveRoomBtn.classList.remove('hidden');
 });
 
 // 🚪 مغادرة الضيف إرادياً
@@ -140,7 +147,7 @@ socket.on('updatePlayers', (playersArray) => {
     }
 
     if (isHost && actualStartBtn && startGameBtn) {
-        if (playersArray.length >= 3) { // يفضل 3 لاعبين للعبة الجاسوس
+        if (playersArray.length >= 3) { 
             startGameBtn.classList.add('hidden');
             actualStartBtn.classList.remove('hidden');
         } else {
@@ -166,7 +173,7 @@ socket.on('updatePlayers', (playersArray) => {
     }
 });
 
-// 🎮 بدء اللعبة -> اختيار المود (للهوست) أو انتظار (للضيوف)
+// 🎮 بدء اللعبة -> اختيار المود
 if(actualStartBtn) actualStartBtn.addEventListener('click', () => {
     socket.emit('goToModeSelection');
 });
@@ -175,7 +182,6 @@ socket.on('showModeSelection', () => {
     if(isHost) {
         showScreen('modeSelection');
     } else {
-        // الضيوف يفضلوا في شاشة الانتظار مع رسالة
         showScreen('waiting');
         if(actualStartBtn) actualStartBtn.classList.add('hidden');
         if(startGameBtn) {
@@ -220,7 +226,7 @@ socket.on('gameRestarted', () => {
     if (isHost && restartGameBtn && hostSettingsModal) {
         restartGameBtn.disabled = true;
         hostSettingsModal.classList.add('hidden');
-        startVotingBtn.classList.add('hidden');
+        if(startVotingBtn) startVotingBtn.classList.add('hidden');
     }
 });
 
@@ -247,25 +253,45 @@ function showScreen(screenName) {
     }
 }
 
-// 🖱️ التحكم في العرض (موبايل/كمبيوتر)
-const setupView = (btn, isPc) => {
-    if(btn) btn.addEventListener('click', () => {
-        isPcMode = isPc;
-        document.body.className = isPc ? 'pc-mode' : 'mobile-mode';
-        [customCursor, follow1, follow2].forEach(el => {
-            if(el) isPc ? el.classList.remove('hidden') : el.classList.add('hidden');
-        });
-        isPc ? mainContainer.classList.add('container-pc') : mainContainer.classList.remove('container-pc');
-        btn.classList.add('active-view');
-        const otherBtn = isPc ? mobileViewBtn : pcViewBtn;
-        if(otherBtn) otherBtn.classList.remove('active-view');
+// =====================================
+// 🖱️ التحكم المضمون في العرض (موبايل/كمبيوتر)
+// =====================================
+if(pcViewBtn) {
+    pcViewBtn.addEventListener('click', () => {
+        isPcMode = true;
+        document.body.className = 'pc-mode'; 
+        if(customCursor) customCursor.classList.remove('hidden');
+        if(follow1) follow1.classList.remove('hidden');
+        if(follow2) follow2.classList.remove('hidden');
+        if(mainContainer) mainContainer.classList.add('container-pc');
+        
+        pcViewBtn.classList.add('active-view');
+        if(mobileViewBtn) mobileViewBtn.classList.remove('active-view');
     });
-};
-setupView(pcViewBtn, true);
-setupView(mobileViewBtn, false);
+}
 
-if(hostSettingsBtn) hostSettingsBtn.addEventListener('click', () => hostSettingsModal.classList.remove('hidden'));
-if(closeModalBtn) closeModalBtn.addEventListener('click', () => hostSettingsModal.classList.add('hidden'));
+if(mobileViewBtn) {
+    mobileViewBtn.addEventListener('click', () => {
+        isPcMode = false;
+        document.body.className = 'mobile-mode'; 
+        if(customCursor) customCursor.classList.add('hidden');
+        if(follow1) follow1.classList.add('hidden');
+        if(follow2) follow2.classList.add('hidden');
+        if(mainContainer) mainContainer.classList.remove('container-pc');
+        
+        mobileViewBtn.classList.add('active-view');
+        if(pcViewBtn) pcViewBtn.classList.remove('active-view');
+    });
+}
+// =====================================
+
+if(hostSettingsBtn) hostSettingsBtn.addEventListener('click', () => {
+    if(hostSettingsModal) hostSettingsModal.classList.remove('hidden');
+});
+
+if(closeModalBtn) closeModalBtn.addEventListener('click', () => {
+    if(hostSettingsModal) hostSettingsModal.classList.add('hidden');
+});
 
 if(restartGameBtn) restartGameBtn.addEventListener('click', () => {
     if(confirm('إعادة اللعب وإرجاع الجميع لغرفة الانتظار؟')) socket.emit('restartGame');

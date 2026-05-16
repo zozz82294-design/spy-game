@@ -5,64 +5,43 @@ function applyRgbWaveToElement(element, text) {
     element.innerHTML = '';
     for (let i = 0; i < text.length; i++) {
         const span = document.createElement('span');
-        if (text[i] === ' ') {
-            span.innerHTML = '&nbsp;';
-        } else {
-            span.textContent = text[i];
-            span.style.setProperty('--char-index', i);
-        }
+        if (text[i] === ' ') span.innerHTML = '&nbsp;';
+        else { span.textContent = text[i]; span.style.setProperty('--char-index', i); }
         element.appendChild(span);
     }
 }
-
-function initRgbTitles() {
-    document.querySelectorAll('.rgb-title').forEach(el => {
-        if (!el.querySelector('span')) {
-            applyRgbWaveToElement(el, el.textContent);
-        }
-    });
-}
+function initRgbTitles() { document.querySelectorAll('.rgb-title').forEach(el => { if (!el.querySelector('span')) applyRgbWaveToElement(el, el.textContent); }); }
 initRgbTitles();
 
 const AudioContext = window.AudioContext || window.webkitAudioContext;
 let audioCtx;
-function initAudio() {
-    if (!audioCtx) audioCtx = new AudioContext();
-    if (audioCtx.state === 'suspended') audioCtx.resume();
-}
+function initAudio() { if (!audioCtx) audioCtx = new AudioContext(); if (audioCtx.state === 'suspended') audioCtx.resume(); }
 document.addEventListener('click', initAudio, { once: true });
 
 function playSound(type) {
     if (!audioCtx) return;
-    const osc = audioCtx.createOscillator();
-    const gainNode = audioCtx.createGain();
-    osc.connect(gainNode);
-    gainNode.connect(audioCtx.destination);
-    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator(); const gainNode = audioCtx.createGain();
+    osc.connect(gainNode); gainNode.connect(audioCtx.destination); const now = audioCtx.currentTime;
     
     if (type === 'click') {
         osc.type = 'sine'; osc.frequency.setValueAtTime(800, now); osc.frequency.exponentialRampToValueAtTime(300, now + 0.1);
-        gainNode.gain.setValueAtTime(0.1, now); gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-        osc.start(now); osc.stop(now + 0.1);
+        gainNode.gain.setValueAtTime(0.1, now); gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1); osc.start(now); osc.stop(now + 0.1);
     } else if (type === 'start') {
         osc.type = 'triangle'; osc.frequency.setValueAtTime(300, now); osc.frequency.exponentialRampToValueAtTime(800, now + 0.4);
-        gainNode.gain.setValueAtTime(0, now); gainNode.gain.linearRampToValueAtTime(0.2, now + 0.2); gainNode.gain.linearRampToValueAtTime(0, now + 0.4);
-        osc.start(now); osc.stop(now + 0.4);
+        gainNode.gain.setValueAtTime(0, now); gainNode.gain.linearRampToValueAtTime(0.2, now + 0.2); gainNode.gain.linearRampToValueAtTime(0, now + 0.4); osc.start(now); osc.stop(now + 0.4);
     } else if (type === 'vote') {
-        osc.type = 'square'; osc.frequency.setValueAtTime(400, now);
-        gainNode.gain.setValueAtTime(0.05, now); gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-        osc.start(now); osc.stop(now + 0.1);
+        osc.type = 'square'; osc.frequency.setValueAtTime(400, now); gainNode.gain.setValueAtTime(0.05, now); gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1); osc.start(now); osc.stop(now + 0.1);
     } else if (type === 'win') {
         osc.type = 'sine'; osc.frequency.setValueAtTime(400, now); osc.frequency.setValueAtTime(600, now + 0.1); osc.frequency.setValueAtTime(800, now + 0.2);
-        gainNode.gain.setValueAtTime(0.2, now); gainNode.gain.linearRampToValueAtTime(0, now + 0.5);
-        osc.start(now); osc.stop(now + 0.5);
+        gainNode.gain.setValueAtTime(0.2, now); gainNode.gain.linearRampToValueAtTime(0, now + 0.5); osc.start(now); osc.stop(now + 0.5);
     } else if (type === 'lose') {
         osc.type = 'sawtooth'; osc.frequency.setValueAtTime(300, now); osc.frequency.exponentialRampToValueAtTime(100, now + 0.5);
-        gainNode.gain.setValueAtTime(0.2, now); gainNode.gain.linearRampToValueAtTime(0, now + 0.5);
-        osc.start(now); osc.stop(now + 0.5);
+        gainNode.gain.setValueAtTime(0.2, now); gainNode.gain.linearRampToValueAtTime(0, now + 0.5); osc.start(now); osc.stop(now + 0.5);
     }
 }
 document.addEventListener('click', (e) => { if(e.target.tagName === 'BUTTON' || e.target.closest('button')) playSound('click'); });
+
+// 🔥 تم مسح كود beforeunload اللي كان بيطرد الناس من الموبايل
 
 let myPlayerId = sessionStorage.getItem('playerId');
 if (!myPlayerId) { myPlayerId = 'player_' + Math.random().toString(36).substr(2, 9); sessionStorage.setItem('playerId', myPlayerId); }
@@ -105,7 +84,7 @@ const spyProceedBtn = document.getElementById('spyProceedBtn'); const wordsGrid 
 const confirmGuessBtn = document.getElementById('confirmGuessBtn'); const finalResultModal = document.getElementById('finalResultModal'); const finalOkBtn = document.getElementById('finalOkBtn');
 const customCursor = document.getElementById('customCursor'); const follow1 = document.getElementById('cursorFollow1'); const follow2 = document.getElementById('cursorFollow2');
 
-let isPcMode = false; let isHost = false; let myRoleData = null; let selectedSpyWord = null;
+let isPcMode = false; let isHost = false; let myRoleData = null; let selectedSpyWord = null; let guessInterval;
 let mouseX = window.innerWidth / 2, mouseY = window.innerHeight / 2; let f1X = mouseX, f1Y = mouseY, f2X = mouseX, f2Y = mouseY;
 document.addEventListener('mousemove', (e) => { mouseX = e.clientX; mouseY = e.clientY; });
 
@@ -161,9 +140,7 @@ if(leaveRoomBtn) leaveRoomBtn.addEventListener('click', () => {
     if(confirm('هل أنت متأكد من مغادرة الغرفة؟')) { socket.emit('leaveRoom'); sessionStorage.clear(); leaveRoomBtn.classList.add('hidden'); if(leftRoomModal) leftRoomModal.classList.remove('hidden'); }
 });
 
-socket.on('errorMsg', (msg) => {
-    if(invalidRoomModal && errorMsgText) { errorMsgText.innerText = msg; invalidRoomModal.classList.remove('hidden'); if (mainContainer) mainContainer.classList.add('hidden'); }
-});
+socket.on('errorMsg', (msg) => { if(invalidRoomModal && errorMsgText) { errorMsgText.innerText = msg; invalidRoomModal.classList.remove('hidden'); if (mainContainer) mainContainer.classList.add('hidden'); } });
 
 socket.on('updatePlayers', (playersArray) => {
     if (!playersArray) return;
@@ -252,17 +229,19 @@ socket.on('votingStarted', (playersArray) => {
     playSound('start'); showScreen('voting'); liveVoteLog.innerHTML = ''; voteCounter.innerText = `0/${playersArray.length}`; voteCounter.style.textShadow = "none";
     let gridHTML = '';
     playersArray.forEach(p => {
-        if (p.id !== myPlayerId) {
-            gridHTML += `<div class="vote-card" onclick="castVote('${p.id}', this)" data-player-id="${p.id}"><div style="font-size: 2rem; margin-bottom:10px;">${p.isHost ? '👑' : '👤'}</div><div style="font-weight:bold; color:#fff;">${p.name}</div></div>`;
-        }
+        if (p.id !== myPlayerId) gridHTML += `<div class="vote-card" onclick="castVote('${p.id}', this)" data-player-id="${p.id}"><div style="font-size: 2rem; margin-bottom:10px;">${p.isHost ? '👑' : '👤'}</div><div style="font-weight:bold; color:#fff;">${p.name}</div></div>`;
     });
     votingGrid.innerHTML = gridHTML;
 });
 
-// 🔥 مسح كارت اللاعب لو انطرد أثناء التصويت
+socket.on('youAlreadyVoted', (targetId) => {
+    const allCards = document.querySelectorAll('.vote-card'); allCards.forEach(c => c.classList.add('disabled'));
+    const myCard = document.querySelector(`.vote-card[data-player-id="${targetId}"]`);
+    if(myCard) { myCard.classList.remove('disabled'); myCard.classList.add('voted'); }
+});
+
 socket.on('playerRemovedFromVoting', (playerId) => {
-    const card = document.querySelector(`.vote-card[data-player-id="${playerId}"]`);
-    if (card) card.remove();
+    const card = document.querySelector(`.vote-card[data-player-id="${playerId}"]`); if (card) card.remove();
 });
 
 window.castVote = function(targetId, cardElement) {
@@ -272,10 +251,9 @@ window.castVote = function(targetId, cardElement) {
 };
 
 socket.on('voteRegistered', (data) => {
-    playSound('vote'); voteCounter.innerText = `${data.currentVotes}/${data.totalRequired}`;
+    if(data.voterName !== "النظام") playSound('vote'); 
+    voteCounter.innerText = `${data.currentVotes}/${data.totalRequired}`;
     if(data.currentVotes === data.totalRequired) { voteCounter.style.color = "var(--neon-green)"; voteCounter.style.textShadow = "0 0 10px var(--neon-green)"; }
-    
-    // إظهار اللوج لو مش رسالة سيستم (بتاعت تحديث العدد)
     if (data.voterName !== "النظام") {
         const logP = document.createElement('div'); logP.className = 'log-entry'; logP.innerHTML = `${data.voterName} صوت على <span class="target-name">${data.targetName}</span>`;
         liveVoteLog.prepend(logP);
@@ -297,8 +275,6 @@ socket.on('votingEnded', (data) => {
 });
 
 if(spyProceedBtn) spyProceedBtn.addEventListener('click', () => { votingResultModal.classList.add('hidden'); socket.emit('startGuessingPhase'); });
-
-let guessInterval;
 
 socket.on('guessingPhaseStarted', (data) => {
     playSound('start'); votingResultModal.classList.add('hidden'); showScreen('guessing');

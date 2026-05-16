@@ -6,6 +6,33 @@
     <title>Spy Game - SASUKE</title>
     <link rel="stylesheet" href="styles/style.css">
     <script src="/socket.io/socket.io.js"></script>
+    <style>
+        .custom-cursor, .cursor-follow { top: 0 !important; left: 0 !important; z-index: 99999999 !important; transition: none !important; pointer-events: none; }
+        .btn-leave-room { position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%); width: 85%; max-width: 350px; background: rgba(255, 51, 102, 0.1); border: 1px solid var(--neon-red); color: #fff; padding: 15px; border-radius: 12px; font-size: 1.1rem; font-weight: bold; cursor: pointer; transition: 0.3s; z-index: 100; text-align: center; box-shadow: 0 0 15px rgba(255, 51, 102, 0.2); }
+        .btn-leave-room:hover { background: var(--neon-red); box-shadow: 0 0 25px var(--neon-red); }
+        .mode-card { background: rgba(2, 6, 23, 0.6); border: 1px solid rgba(0, 243, 255, 0.3); border-radius: 12px; padding: 20px; text-align: center; transition: 0.3s; }
+        
+        /* تنسيقات شاشة التصويت */
+        .voting-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; margin-top: 20px; }
+        .vote-card { background: rgba(15, 23, 42, 0.8); border: 1px solid #334155; border-radius: 10px; padding: 15px; text-align: center; cursor: pointer; transition: 0.3s; }
+        .vote-card:hover { border-color: var(--neon-blue); box-shadow: 0 0 15px rgba(0, 243, 255, 0.3); }
+        .vote-card.voted { border-color: var(--neon-green); box-shadow: 0 0 15px var(--neon-green); pointer-events: none; opacity: 0.8; }
+        .vote-card.disabled { pointer-events: none; opacity: 0.5; }
+        
+        /* تنسيقات سجل التصويت */
+        .live-log-container { background: rgba(0,0,0,0.5); border-radius: 10px; padding: 10px; height: 120px; overflow-y: auto; margin-top: 20px; border: 1px solid rgba(255,255,255,0.1); text-align: right; font-size: 0.9rem; }
+        .log-entry { margin-bottom: 5px; color: #ccc; animation: fadeIn 0.3s ease-in; }
+        .target-name { color: var(--neon-red); font-weight: bold; }
+        
+        /* تنسيقات شبكة الكلمات للجاسوس */
+        .words-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; margin-top: 20px; }
+        .word-card { background: rgba(15, 23, 42, 0.8); border: 1px solid #334155; border-radius: 8px; padding: 12px 5px; text-align: center; cursor: pointer; transition: 0.3s; position: relative; font-weight: bold; }
+        .word-card.spy-active { border-color: var(--neon-blue); box-shadow: 0 0 15px var(--neon-blue); }
+        .spy-tag { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: var(--neon-blue); color: #000; font-size: 0.65rem; padding: 2px 8px; border-radius: 10px; white-space: nowrap; animation: pop 0.3s ease; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes pop { 0% { transform: translateX(-50%) scale(0); } 100% { transform: translateX(-50%) scale(1); } }
+    </style>
 </head>
 <body class="mobile-mode">
 
@@ -23,99 +50,62 @@
 
     <div id="notificationToast" class="toast hidden">تم نسخ الرابط! 📋</div>
 
-    <div id="hostSettingsModal" class="modal-overlay hidden">
-        <div class="modal-content glass-container">
-            <h2 class="neon-text" style="margin-bottom: 20px;">إدارة اللاعبين ⚙️</h2>
-            <div id="modalPlayersList" class="modal-players-list"></div>
-            <button id="restartGameBtn" class="btn-restart-game" disabled>إعادة اللعب 🔄</button>
-            <button id="closeModalBtn" class="btn-close-modal" style="margin-top: 15px;">إغلاق اللوحة</button>
+    <div id="hostSettingsModal" class="modal-overlay hidden"><div class="modal-content glass-container"><h2 class="neon-text">إدارة اللاعبين ⚙️</h2><div id="modalPlayersList" class="modal-players-list"></div><button id="restartGameBtn" class="btn-restart-game" disabled>إعادة اللعب 🔄</button><button id="closeModalBtn" class="btn-close-modal" style="margin-top: 15px;">إغلاق اللوحة</button></div></div>
+    <div id="invalidRoomModal" class="modal-overlay hidden" style="z-index: 999999; background: #030712;"><div class="modal-content glass-container" style="text-align: center;"><div style="font-size: 4rem;">❌</div><h2 class="neon-text" style="color: var(--neon-red);">عذراً!</h2><p id="errorMsgText" style="color: #ccc;">الغرفة دي مش موجودة أو الهوست قفل اللعبة!</p></div></div>
+    <div id="hostLeftModal" class="modal-overlay hidden"><div class="modal-content glass-container" style="text-align: center;"><div style="font-size: 3rem;">⚠️</div><h2 class="neon-text" style="color: var(--neon-red);">توقفت اللعبة!</h2><p>لقد غادر الهوست لذلك توقفت اللعبه.</p></div></div>
+    <div id="kickedModal" class="modal-overlay hidden" style="z-index: 999999;"><div class="modal-content glass-container" style="text-align: center;"><div style="font-size: 4rem;">🚫</div><h2 class="neon-text" style="color: var(--neon-red);">تم طردك!</h2><p style="color: #ccc;">لقد طردك الهوست من الغرفة.</p></div></div>
+    <div id="leftRoomModal" class="modal-overlay hidden" style="z-index: 999999;"><div class="modal-content glass-container" style="text-align: center;"><div style="font-size: 4rem;">👋</div><h2 class="neon-text" style="color: var(--neon-blue);">لقد غادرت!</h2><p style="color: #ccc;">لقد غادرت الغرفة بنجاح.</p></div></div>
+
+    <div id="votingResultModal" class="modal-overlay hidden" style="backdrop-filter: blur(8px);">
+        <div class="modal-content glass-container" style="text-align: center;">
+            <div id="votingResultIcon" style="font-size: 4rem; margin-bottom: 10px;">🎭</div>
+            <h2 id="votingResultTitle" class="neon-text" style="margin-bottom: 20px;">النتيجة</h2>
+            <p id="votingResultDesc1" style="font-size: 1.1rem; color: #ccc; margin-bottom: 10px;"></p>
+            <p id="votingResultDesc2" style="font-size: 1.1rem; color: #ccc; margin-bottom: 20px;"></p>
+            <button id="spyProceedBtn" class="btn-start-game hidden">تخمين الكلمة 🧠</button>
         </div>
     </div>
 
-    <div id="invalidRoomModal" class="modal-overlay hidden" style="z-index: 999999; background: #030712;">
+    <div id="finalResultModal" class="modal-overlay hidden" style="backdrop-filter: blur(10px); z-index: 999;">
         <div class="modal-content glass-container" style="text-align: center;">
-            <div style="font-size: 4rem; margin-bottom: 10px;">❌</div>
-            <h2 class="neon-text" style="color: var(--neon-red); margin-bottom: 20px;">عذراً!</h2>
-            <p id="errorMsgText" style="font-size: 1.2rem; margin-bottom: 20px; color: #ccc;">الغرفة دي مش موجودة أو الهوست قفل اللعبة!</p>
-        </div>
-    </div>
-
-    <div id="hostLeftModal" class="modal-overlay hidden">
-        <div class="modal-content glass-container" style="text-align: center;">
-            <div style="font-size: 3rem; margin-bottom: 10px;">⚠️</div>
-            <h2 class="neon-text" style="color: var(--neon-red); margin-bottom: 20px;">توقفت اللعبة!</h2>
-            <p style="font-size: 1.2rem; margin-bottom: 20px;">لقد غادر الهوست لذلك توقفت اللعبه.</p>
-        </div>
-    </div>
-
-    <div id="kickedModal" class="modal-overlay hidden" style="z-index: 999999;">
-        <div class="modal-content glass-container" style="text-align: center;">
-            <div style="font-size: 4rem; margin-bottom: 10px;">🚫</div>
-            <h2 class="neon-text" style="color: var(--neon-red); margin-bottom: 20px;">تم طردك!</h2>
-            <p style="font-size: 1.2rem; margin-bottom: 20px; color: #ccc;">لقد طردك الهوست من الغرفة.</p>
-        </div>
-    </div>
-
-    <div id="leftRoomModal" class="modal-overlay hidden" style="z-index: 999999;">
-        <div class="modal-content glass-container" style="text-align: center;">
-            <div style="font-size: 4rem; margin-bottom: 10px;">👋</div>
-            <h2 class="neon-text" style="color: var(--neon-blue); margin-bottom: 20px;">لقد غادرت!</h2>
-            <p style="font-size: 1.2rem; margin-bottom: 20px; color: #ccc;">لقد غادرت الغرفة بنجاح.</p>
+            <h2 class="neon-text" style="margin-bottom: 20px;">نتيجة الجولة 🏁</h2>
+            <p id="finalResultText1" style="font-size: 1.1rem; margin-bottom: 10px;"></p>
+            <p id="finalResultText2" style="font-size: 1.3rem; color: var(--neon-blue); font-weight: bold; margin-bottom: 10px;"></p>
+            <p id="finalResultText3" style="font-size: 1.1rem; margin-bottom: 10px;"></p>
+            <p id="finalResultText4" style="font-size: 1.2rem; color: var(--neon-green); font-weight: bold; margin-bottom: 20px;"></p>
+            <button id="finalOkBtn" class="btn-create-room">حسناً 👍</button>
         </div>
     </div>
 
     <div class="glass-container" id="mainContainer">
         
         <div id="welcomeScreen" class="screen active">
-            <div class="logo-section">
-                <div class="spy-icon">🕵️‍♂️</div>
-                <h1 class="sasuke-title">SASUKE</h1>
-            </div>
+            <div class="logo-section"><div class="spy-icon">🕵️‍♂️</div><h1 class="sasuke-title">SASUKE</h1></div>
             <input type="text" id="playerNameInput" class="name-input hidden" placeholder="اكتب اسمك هنا يا بطل..." autocomplete="off">
-            <div class="view-options">
-                <button id="pcViewBtn" class="btn-view">كمبيوتر 💻</button>
-                <button id="mobileViewBtn" class="btn-view active-view">موبايل 📱</button>
-            </div>
+            <div class="view-options"><button id="pcViewBtn" class="btn-view">كمبيوتر 💻</button><button id="mobileViewBtn" class="btn-view active-view">موبايل 📱</button></div>
             <button id="goToWaitingBtn" class="btn-create-room">إنشاء غرفة لعبة الجاسوس 🏠</button>
             <button id="joinRoomBtn" class="btn-join-room hidden">انضمام للغرفة 🚀</button>
         </div>
 
         <div id="waitingScreen" class="screen hidden">
-            <div class="host-section">
-                <div class="avatar-glow">🕵️‍♂️</div>
-                <h2 class="game-main-title">لعبة الجاسوس</h2>
-                <p class="host-label">غرفة الانتظار الرئيسية</p>
-            </div>
-            <div class="invite-section">
-                <button id="copyInviteBtn" class="btn-invite" type="button">رابط الدعوة 🔗</button>
-            </div>
-            <div class="players-panel">
-                <h3>اللاعبين في الغرفة (<span id="playerCount">0</span>)</h3>
-                <div class="players-list" id="playersList"></div>
-            </div>
+            <div class="host-section"><div class="avatar-glow">🕵️‍♂️</div><h2 class="game-main-title">لعبة الجاسوس</h2><p class="host-label">غرفة الانتظار الرئيسية</p></div>
+            <div class="invite-section"><button id="copyInviteBtn" class="btn-invite hidden" type="button">رابط الدعوة 🔗</button></div>
+            <div class="players-panel"><h3>اللاعبين في الغرفة (<span id="playerCount">0</span>)</h3><div class="players-list" id="playersList"></div></div>
             <button id="actualStartBtn" class="btn-start-game active-start hidden" style="margin-bottom: 10px;">بدء اللعبة 🚀</button>
             <button id="startGameBtn" class="btn-start-game" disabled>في انتظار باقي اللاعبين... ⏳</button>
         </div>
 
         <div id="modeSelectionScreen" class="screen hidden">
             <h2 class="game-main-title" style="margin-bottom: 20px;">اختيار تصنيف اللعبة</h2>
-            
             <div class="mode-card" id="randomModeCard" style="position: relative;">
-                <div id="selectedBadge" class="hidden" style="position: absolute; top: -15px; right: -15px; background: var(--neon-green); color: #000; padding: 5px 15px; border-radius: 20px; font-weight: bold; font-size: 0.9rem; box-shadow: 0 0 10px var(--neon-green);">
-                    اختارها 𝐒𝐀𝐒𝐔𝐊𝐄
-                </div>
-
+                <div id="selectedBadge" class="hidden" style="position: absolute; top: -15px; right: -15px; background: var(--neon-green); color: #000; padding: 5px 15px; border-radius: 20px; font-weight: bold; font-size: 0.9rem; box-shadow: 0 0 10px var(--neon-green);">اختارها 𝐒𝐀𝐒𝐔𝐊𝐄</div>
                 <h3 style="color: var(--neon-blue); font-size: 1.5rem; margin-bottom: 10px;">عشوائي 🎲</h3>
-                <p style="color: #94a3b8; font-size: 0.9rem; line-height: 1.5; margin-bottom: 20px; text-align: right;">
-                    ميزة الأشياء العشوائية: تقدر تكشف الجاسوس بسهولة أكبر، وتسأله إذا كان مكان أو جماد أو شخص، وده يجعل النقاش أمتع وأسهل للكشف.
-                </p>
-                
+                <p style="color: #94a3b8; font-size: 0.9rem; line-height: 1.5; margin-bottom: 20px; text-align: right;">ميزة الأشياء العشوائية: تقدر تكشف الجاسوس بسهولة أكبر، وتسأله إذا كان مكان أو جماد أو شخص.</p>
                 <div id="hostModeControls" class="hidden">
                     <button id="selectRandomModeBtn" class="btn-create-room" style="padding: 10px; margin-bottom: 10px;">اختيار ✔️</button>
                     <button id="revokeRandomModeBtn" class="btn-create-room hidden" style="padding: 10px; background: rgba(255, 51, 102, 0.1); border-color: var(--neon-red); color: var(--neon-red); margin-bottom: 10px;">سحب الاختيار ❌</button>
                 </div>
             </div>
-
             <button id="confirmStartGameBtn" class="btn-start-game active-start hidden" style="margin-top: 20px;">تأكيد وبدء اللعب 🚀</button>
         </div>
 
@@ -123,38 +113,34 @@
             <div class="avatar-glow" id="roleIcon">🎭</div>
             <h2 class="game-main-title" id="roleTitle" style="margin-bottom: 5px;">...</h2>
             <p id="roleCategory" style="color: var(--neon-blue); font-size: 1rem; margin-bottom: 20px; font-weight: bold;">التصنيف: ...</p>
-            
             <div style="background: rgba(0,0,0,0.5); padding: 15px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1);">
                 <p style="color: #ccc; font-size: 1rem; margin-bottom: 10px;">ابحثوا عن الجاسوس!</p>
                 <p style="color: #64748b; font-size: 0.85rem;">تناقشوا الآن عبر الصوت واكتشفوا من لا يعرف الكلمة.</p>
             </div>
+            <button id="startVotingPhaseBtn" class="btn-start-game active-start hidden" style="margin-top: 20px;">بدء التصويت 🗳️</button>
+        </div>
+
+        <div id="votingScreen" class="screen hidden">
+            <h2 class="game-main-title" style="margin-bottom: 5px;">وقت التصويت!</h2>
+            <p style="color: var(--neon-blue); font-size: 1.2rem; font-weight: bold;" id="voteCounter">0/0</p>
             
-            <button id="startVotingBtn" class="btn-start-game active-start hidden" style="margin-top: 20px;">بدء التصويت 🗳️</button>
+            <div class="live-log-container" id="liveVoteLog">
+                <div style="color: #64748b; text-align: center; margin-top: 40px;">سجل التصويت المباشر...</div>
+            </div>
+
+            <div class="voting-grid" id="votingGrid"></div>
+        </div>
+
+        <div id="guessingScreen" class="screen hidden">
+            <h2 class="game-main-title" style="margin-bottom: 5px;">مرحلة التخمين</h2>
+            <p style="color: #ccc; font-size: 0.9rem; margin-bottom: 15px;" id="guessingSubtitle">الجاسوس يبحث عن الكلمة الصحيحة...</p>
+            
+            <div class="words-grid" id="wordsGrid"></div>
+            
+            <button id="confirmGuessBtn" class="btn-start-game active-start hidden" style="margin-top: 20px;">تأكيد الاختيار ✔️</button>
         </div>
 
     </div>
-
-    <style>
-        /* التعديل السحري للماوس لمنع التقطيع نهائياً */
-        .custom-cursor, .cursor-follow { 
-            top: 0 !important; 
-            left: 0 !important; 
-            z-index: 99999999 !important; 
-            transition: none !important; 
-            pointer-events: none; 
-        }
-        
-        .btn-leave-room { 
-            position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%); 
-            width: 85%; max-width: 350px; background: rgba(255, 51, 102, 0.1); 
-            border: 1px solid var(--neon-red); color: #fff; padding: 15px; 
-            border-radius: 12px; font-size: 1.1rem; font-weight: bold; 
-            cursor: pointer; transition: 0.3s; z-index: 100; text-align: center;
-            box-shadow: 0 0 15px rgba(255, 51, 102, 0.2);
-        }
-        .btn-leave-room:hover { background: var(--neon-red); box-shadow: 0 0 25px var(--neon-red); }
-        .mode-card { background: rgba(2, 6, 23, 0.6); border: 1px solid rgba(0, 243, 255, 0.3); border-radius: 12px; padding: 20px; text-align: center; transition: 0.3s; }
-    </style>
 
     <script src="scripts/main.js"></script>
 </body>

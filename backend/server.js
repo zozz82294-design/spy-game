@@ -59,7 +59,6 @@ io.on('connection', (socket) => {
                 socket.emit('gameStarted');
             }
         } else {
-            // إرسال الخطأ بشياكة
             socket.emit('errorMsg', 'الغرفة دي مش موجودة أو الهوست قفل اللعبة!');
         }
     });
@@ -93,7 +92,6 @@ io.on('connection', (socket) => {
         if(socket.roomId) io.to(socket.roomId).emit('showModeSelection');
     });
 
-    // أحداث اختيار وسحب المود
     socket.on('selectMode', (modeName) => {
         if(socket.roomId) io.to(socket.roomId).emit('modeSelected', modeName);
     });
@@ -147,6 +145,10 @@ io.on('connection', (socket) => {
             if (isHost) {
                 socket.to(roomId).emit('hostDisconnected');
                 delete rooms[roomId];
+            } else {
+                // ده الكود اللي بيمنع تكرار الاسم لما الضيف يعمل ريفريش
+                delete rooms[roomId].players[socket.id];
+                io.to(roomId).emit('updatePlayers', Object.values(rooms[roomId].players));
             }
         }
     });

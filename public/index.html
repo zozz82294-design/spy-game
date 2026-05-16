@@ -135,8 +135,14 @@
     </div>
 
     <style>
-        /* إجبار الماوس المخصص يكون فوق كل حاجة وإلغاء التقطيع */
-        .custom-cursor, .cursor-follow { z-index: 99999999 !important; transition: none !important; will-change: transform; pointer-events: none; }
+        /* التعديل السحري للماوس لمنع التقطيع نهائياً */
+        .custom-cursor, .cursor-follow { 
+            top: 0 !important; 
+            left: 0 !important; 
+            z-index: 99999999 !important; 
+            transition: none !important; 
+            pointer-events: none; 
+        }
         
         .btn-leave-room { 
             position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%); 

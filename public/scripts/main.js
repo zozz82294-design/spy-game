@@ -35,7 +35,6 @@ const leftRoomModal = document.getElementById('leftRoomModal');
 const invalidRoomModal = document.getElementById('invalidRoomModal'); 
 const errorMsgText = document.getElementById('errorMsgText');
 
-// أزرار الاختيار
 const selectRandomModeBtn = document.getElementById('selectRandomModeBtn');
 const revokeRandomModeBtn = document.getElementById('revokeRandomModeBtn');
 const confirmStartGameBtn = document.getElementById('confirmStartGameBtn');
@@ -51,14 +50,12 @@ const follow2 = document.getElementById('cursorFollow2');
 let isPcMode = false;
 let isHost = false; 
 
-// نظام الماوس السلس (بدون تقطيع)
+// ==========================================
+// 🚀 نظام الماوس السلس جداً
+// ==========================================
 let mouseX = window.innerWidth / 2, mouseY = window.innerHeight / 2;
 let f1X = mouseX, f1Y = mouseY, f2X = mouseX, f2Y = mouseY;
-
-document.addEventListener('mousemove', (e) => {
-    mouseX = e.clientX;
-    mouseY = e.clientY;
-});
+let activeMagneticButton = null; // متغير لحفظ الزرار اللي الماوس واقف عليه
 
 function animateCursor() {
     if (isPcMode) {
@@ -67,18 +64,71 @@ function animateCursor() {
         f2X += (mouseX - f2X) * 0.1;
         f2Y += (mouseY - f2Y) * 0.1;
         
-        if(customCursor) customCursor.style.left = mouseX + 'px';
-        if(customCursor) customCursor.style.top = mouseY + 'px';
-        
-        if(follow1) follow1.style.left = f1X + 'px';
-        if(follow1) follow1.style.top = f1Y + 'px';
-        
-        if(follow2) follow2.style.left = f2X + 'px';
-        if(follow2) follow2.style.top = f2Y + 'px';
+        if(customCursor) customCursor.style.transform = `translate(${mouseX}px, ${mouseY}px)`;
+        if(follow1) follow1.style.transform = `translate(${f1X}px, ${f1Y}px)`;
+        if(follow2) follow2.style.transform = `translate(${f2X}px, ${f2Y}px)`;
     }
     requestAnimationFrame(animateCursor);
 }
 requestAnimationFrame(animateCursor);
+
+// ==========================================
+// 🧲 تأثير المغناطيس الاحترافي للأزرار
+// ==========================================
+document.addEventListener('mousemove', (e) => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+    
+    if (!isPcMode) {
+        if (activeMagneticButton) {
+            activeMagneticButton.style.transform = '';
+            activeMagneticButton = null;
+        }
+        return;
+    }
+
+    const targetBtn = e.target.closest('button');
+    
+    // لو الماوس خرج من الزرار اللي كان عليه
+    if (activeMagneticButton && activeMagneticButton !== targetBtn) {
+        // إرجاع الزرار مكانه بتأثير "سوستة" مرن
+        activeMagneticButton.style.transition = 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+        activeMagneticButton.style.transform = '';
+        activeMagneticButton = null;
+    }
+
+    // لو الماوس دخل على زرار
+    if (targetBtn) {
+        activeMagneticButton = targetBtn;
+        const rect = targetBtn.getBoundingClientRect();
+        
+        // حساب المسافة بين الماوس ومركز الزرار
+        const x = mouseX - rect.left - rect.width / 2;
+        const y = mouseY - rect.top - rect.height / 2;
+        
+        // تحريك الزرار بنسبة بسيطة ناحية الماوس
+        targetBtn.style.transition = 'transform 0.1s ease-out';
+        targetBtn.style.transform = `translate(${x * 0.25}px, ${y * 0.25}px) scale(1.05)`;
+    }
+});
+
+document.addEventListener('mouseover', (e) => { 
+    if (isPcMode && e.target.closest('button') && customCursor) customCursor.classList.add('hovering'); 
+});
+
+document.addEventListener('mouseout', (e) => { 
+    if (isPcMode) {
+        const targetBtn = e.target.closest('button');
+        // التأكد إن الماوس خرج بره الزرار تماماً مش جواه
+        if (targetBtn && (!e.relatedTarget || !targetBtn.contains(e.relatedTarget))) {
+            if (customCursor) customCursor.classList.remove('hovering');
+            targetBtn.style.transition = 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+            targetBtn.style.transform = '';
+            if (activeMagneticButton === targetBtn) activeMagneticButton = null;
+        }
+    } 
+});
+// ==========================================
 
 const urlParams = new URLSearchParams(window.location.search);
 const roomFromUrl = urlParams.get('room');
@@ -139,12 +189,11 @@ if(leaveRoomBtn) leaveRoomBtn.addEventListener('click', () => {
     }
 });
 
-// رسالة الرابط البايظ الجديدة
 socket.on('errorMsg', (msg) => {
     if(invalidRoomModal && errorMsgText) {
         errorMsgText.innerText = msg;
         invalidRoomModal.classList.remove('hidden');
-        mainContainer.classList.add('hidden');
+        if (mainContainer) mainContainer.classList.add('hidden');
     }
 });
 
@@ -211,12 +260,10 @@ socket.on('updatePlayers', (playersArray) => {
     }
 });
 
-// 🎮 بدء اللعبة -> اختيار المود
 if(actualStartBtn) actualStartBtn.addEventListener('click', () => {
     socket.emit('goToModeSelection');
 });
 
-// إظهار الشاشة للكل وإخفاء أزرار التحكم عن الضيوف
 socket.on('showModeSelection', () => {
     showScreen('modeSelection');
     if(isHost) {
@@ -227,11 +274,9 @@ socket.on('showModeSelection', () => {
     }
 });
 
-// أزرار الاختيار
 if(selectRandomModeBtn) selectRandomModeBtn.addEventListener('click', () => socket.emit('selectMode', 'random'));
 if(revokeRandomModeBtn) revokeRandomModeBtn.addEventListener('click', () => socket.emit('deselectMode', 'random'));
 
-// لما الهوست يختار، كل الناس بتشوف إنه اختار
 socket.on('modeSelected', (mode) => {
     if(mode === 'random') {
         selectedBadge.classList.remove('hidden');
@@ -246,7 +291,6 @@ socket.on('modeSelected', (mode) => {
     }
 });
 
-// لما الهوست يسحب الاختيار
 socket.on('modeDeselected', (mode) => {
     if(mode === 'random') {
         selectedBadge.classList.add('hidden');
@@ -261,12 +305,10 @@ socket.on('modeDeselected', (mode) => {
     }
 });
 
-// تأكيد وبدء اللعب
 if(confirmStartGameBtn) confirmStartGameBtn.addEventListener('click', () => {
     socket.emit('startRandomMode');
 });
 
-// 🎭 استقبال الدور
 socket.on('assignRole', (data) => {
     const roleIcon = document.getElementById('roleIcon');
     const roleTitle = document.getElementById('roleTitle');
@@ -294,7 +336,6 @@ socket.on('gameStarted', () => {
 socket.on('gameRestarted', () => {
     showScreen('waiting');
     
-    // إعادة ضبط كارت الاختيار للوضعية الصفرية
     selectedBadge.classList.add('hidden');
     randomModeCard.style.borderColor = 'rgba(0, 243, 255, 0.3)';
     randomModeCard.style.boxShadow = 'none';
@@ -381,6 +422,3 @@ if(copyInviteBtn) copyInviteBtn.addEventListener('click', () => {
         }
     });
 });
-
-document.addEventListener('mouseover', (e) => { if (isPcMode && e.target.closest('button') && customCursor) customCursor.classList.add('hovering'); });
-document.addEventListener('mouseout', (e) => { if (isPcMode && e.target.closest('button') && customCursor) customCursor.classList.remove('hovering'); });

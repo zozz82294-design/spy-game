@@ -13,7 +13,6 @@ app.use(express.static(path.resolve(__dirname, '..', 'public')));
 
 let rooms = {};
 
-// 📚 القاموس الشامل
 const categorizedWords = {
     "مكان": ["مسجد", "مستشفى", "مدرسة", "جامعة", "مقهى", "مطعم", "حديقة", "فندق", "سينما", "مسرح", "ملعب", "مطار", "محطة قطار", "صيدلية", "سوبر ماركت", "متحف", "مكتبة", "شاطئ", "ملاهي", "بنك", "محكمة", "عيادة", "مخبز", "نادي", "مسبح", "محطة بنزين", "قسم شرطة", "سجن", "قصر", "قلعة", "خيمة", "كوخ", "كهف", "صحراء", "غابة", "جزيرة", "جبل", "بحر", "نهر", "شلال", "منزل", "شقة", "مصنع", "شركة", "ورشة", "صالون حلاقة", "صالة حديد", "استوديو", "مول", "سوق"],
     "جماد": ["ملعقة", "شوكة", "سكين", "طبق", "كأس", "طنجرة", "مقلاة", "إبريق", "خلاط", "ثلاجة", "غسالة", "شواية", "هاتف", "محفظة", "مفاتيح", "نظارة", "ساعة", "خاتم", "عطر", "حقيبة", "قلم", "دفتر", "شاحن", "سماعة", "منديل", "مرآة", "مشط", "ميدالية", "ولاعة", "سرير", "خزانة", "طاولة", "كرسي", "أريكة", "مكتب", "سجادة", "ستارة", "مصباح", "لوحة", "مزهرية", "تلفزيون", "تكييف", "مروحة", "لابتوب", "كيبورد", "ماوس", "طابعة", "كاميرا", "بامبرز", "فرشاة", "صابون", "شامبو", "منشفة", "مطرقة", "مسمار", "مفك", "منشار", "سلم", "كتاب", "مجلة", "جريدة", "ريموت", "بطارية", "لمبة", "سلك", "زجاجة", "كوب", "فنجان", "صينية", "وسادة", "بطانية", "مظلة", "قفل", "مقص", "دباسة", "مسطرة", "آلة حاسبة", "عجلة", "إطار", "موتور", "فرامل", "عصا", "حبل", "سلسلة", "صندوق", "علبة", "برميل", "دلو", "مكنسة", "ممسحة", "إسفنجة", "خرطوم", "مسدس", "بندقية", "سيف", "درع", "خنجر"],
@@ -34,6 +33,35 @@ function getSimilarWords(correctWord, categoryName) {
     return selected.sort(() => 0.5 - Math.random()); 
 }
 
+// 🎯 دالة مساعدة لحساب نتيجة التصويت
+function checkVotingResult(roomId) {
+    if (!rooms[roomId]) return;
+    rooms[roomId].gameState = 'voting_result';
+    
+    const voteCounts = {};
+    Object.values(rooms[roomId].votes).forEach(id => {
+        voteCounts[id] = (voteCounts[id] || 0) + 1;
+    });
+    
+    let maxVotes = 0; let topVotedId = null;
+    for (const [id, count] of Object.entries(voteCounts)) {
+        if (count > maxVotes) { maxVotes = count; topVotedId = id; }
+    }
+
+    const isSpyCaught = (topVotedId === rooms[roomId].spyId);
+    const votedPlayer = rooms[roomId].players[topVotedId];
+    const votedPlayerName = votedPlayer ? votedPlayer.name : "لاعب غادر";
+    const spyPlayer = rooms[roomId].players[rooms[roomId].spyId];
+    const spyName = spyPlayer ? spyPlayer.name : "الجاسوس";
+
+    io.to(roomId).emit('votingEnded', {
+        isSpyCaught: isSpyCaught,
+        votedPlayerName: votedPlayerName,
+        spyName: spyName,
+        spyId: rooms[roomId].spyId
+    });
+}
+
 io.on('connection', (socket) => {
 
     socket.on('createRoom', (data) => {
@@ -44,14 +72,8 @@ io.on('connection', (socket) => {
         socket.playerId = playerId;
         
         rooms[roomId] = { 
-            players: {}, 
-            gameState: 'waiting',
-            word: '',
-            category: '', 
-            spyId: null,
-            votes: {}, 
-            guessingWords: [],
-            guessTimer: null
+            players: {}, gameState: 'waiting', word: '', category: '', 
+            spyId: null, votes: {}, guessingWords: [], guessTimer: null
         };
         
         rooms[roomId].players[playerId] = { id: playerId, socketId: socket.id, name: '𝐒𝐀𝐒𝐔𝐊𝐄', isHost: true };
@@ -67,7 +89,6 @@ io.on('connection', (socket) => {
             socket.roomId = roomId;
             socket.playerId = playerId;
             
-            // 🔥 حل مشكلة تكرار الأسماء (Name Duplication Fix)
             let finalName = data.name;
             let suffix = 1;
             while(Object.values(rooms[roomId].players).some(p => p.name === finalName && p.id !== playerId)) {
@@ -84,9 +105,19 @@ io.on('connection', (socket) => {
             
             io.to(roomId).emit('updatePlayers', Object.values(rooms[roomId].players));
             
-            if(['playing', 'voting', 'guessing', 'voting_result'].includes(rooms[roomId].gameState)) {
+            // 🔥 حل مشكلة اختفاء الشاشات عند الـ Refresh
+            if (rooms[roomId].gameState === 'playing') {
                 socket.emit('gameStarted');
+            } else if (rooms[roomId].gameState === 'voting') {
+                socket.emit('votingStarted', Object.values(rooms[roomId].players));
+                // إرسال العداد الحالي
+                const totalVotes = Object.keys(rooms[roomId].votes).length;
+                const totalPlayers = Object.keys(rooms[roomId].players).length;
+                socket.emit('voteRegistered', { voterName: "النظام", targetName: "", currentVotes: totalVotes, totalRequired: totalPlayers });
+            } else if (rooms[roomId].gameState === 'guessing') {
+                socket.emit('guessingPhaseStarted', { words: rooms[roomId].guessingWords, duration: 30 });
             }
+
         } else {
             socket.emit('errorMsg', 'الغرفة دي مش موجودة أو الهوست قفل اللعبة!');
         }
@@ -104,8 +135,25 @@ io.on('connection', (socket) => {
         if(roomId && rooms[roomId] && rooms[roomId].players[targetId]) {
             const targetSocketId = rooms[roomId].players[targetId].socketId;
             io.to(targetSocketId).emit('youAreKickedPermanently');
+            
+            // 🔥 معالجة الطرد أثناء التصويت
+            const wasVoting = (rooms[roomId].gameState === 'voting');
+            
             delete rooms[roomId].players[targetId];
             io.to(roomId).emit('updatePlayers', Object.values(rooms[roomId].players));
+
+            if (wasVoting) {
+                if (rooms[roomId].votes[targetId]) delete rooms[roomId].votes[targetId];
+                const totalVotes = Object.keys(rooms[roomId].votes).length;
+                const totalPlayers = Object.keys(rooms[roomId].players).length;
+                
+                io.to(roomId).emit('playerRemovedFromVoting', targetId); // إخفاء بطاقته
+                io.to(roomId).emit('voteRegistered', { voterName: "النظام", targetName: "", currentVotes: totalVotes, totalRequired: totalPlayers }); // تحديث العداد
+                
+                if (totalVotes >= totalPlayers && totalPlayers > 0) {
+                    checkVotingResult(roomId); // إنهاء التصويت لو اكتمل
+                }
+            }
         }
     });
 
@@ -121,9 +169,25 @@ io.on('connection', (socket) => {
                 rooms[roomId].gameState = 'waiting';
             }
 
+            const wasVoting = (rooms[roomId].gameState === 'voting');
+            
             delete rooms[roomId].players[playerId];
             io.to(roomId).emit('updatePlayers', Object.values(rooms[roomId].players));
             socket.leave(roomId);
+
+            // 🔥 تحديث التصويت لو خرج بمزاجه
+            if (wasVoting) {
+                if (rooms[roomId].votes[playerId]) delete rooms[roomId].votes[playerId];
+                const totalVotes = Object.keys(rooms[roomId].votes).length;
+                const totalPlayers = Object.keys(rooms[roomId].players).length;
+                
+                io.to(roomId).emit('playerRemovedFromVoting', playerId);
+                io.to(roomId).emit('voteRegistered', { voterName: "النظام", targetName: "", currentVotes: totalVotes, totalRequired: totalPlayers });
+                
+                if (totalVotes >= totalPlayers && totalPlayers > 0) {
+                    checkVotingResult(roomId);
+                }
+            }
         }
     });
 
@@ -179,7 +243,7 @@ io.on('connection', (socket) => {
         const playerId = socket.playerId;
         if(roomId && rooms[roomId] && rooms[roomId].gameState === 'voting') {
             const voterName = rooms[roomId].players[playerId].name;
-            const targetName = rooms[roomId].players[targetId].name;
+            const targetName = rooms[roomId].players[targetId] ? rooms[roomId].players[targetId].name : "لاعب غادر";
             
             rooms[roomId].votes[playerId] = targetId;
             const totalVotes = Object.keys(rooms[roomId].votes).length;
@@ -193,49 +257,26 @@ io.on('connection', (socket) => {
             });
 
             if(totalVotes >= totalPlayers) {
-                rooms[roomId].gameState = 'voting_result';
-                const voteCounts = {};
-                Object.values(rooms[roomId].votes).forEach(id => {
-                    voteCounts[id] = (voteCounts[id] || 0) + 1;
-                });
-                
-                let maxVotes = 0; let topVotedId = null;
-                for (const [id, count] of Object.entries(voteCounts)) {
-                    if (count > maxVotes) { maxVotes = count; topVotedId = id; }
-                }
-
-                const isSpyCaught = (topVotedId === rooms[roomId].spyId);
-                const votedPlayerName = rooms[roomId].players[topVotedId].name;
-                const spyName = rooms[roomId].players[rooms[roomId].spyId].name;
-
-                io.to(roomId).emit('votingEnded', {
-                    isSpyCaught: isSpyCaught,
-                    votedPlayerName: votedPlayerName,
-                    spyName: spyName,
-                    spyId: rooms[roomId].spyId
-                });
+                checkVotingResult(roomId);
             }
         }
     });
 
-    // ⏱️ نظام التايمر للتخمين
     socket.on('startGuessingPhase', () => {
         const roomId = socket.roomId;
         if(roomId && rooms[roomId]) {
             rooms[roomId].gameState = 'guessing';
             rooms[roomId].guessingWords = getSimilarWords(rooms[roomId].word, rooms[roomId].category);
             
-            // إرسال الكلمات مع مدة التايمر
             io.to(roomId).emit('guessingPhaseStarted', { words: rooms[roomId].guessingWords, duration: 30 });
 
-            // تشغيل العداد على السيرفر
             if(rooms[roomId].guessTimer) clearTimeout(rooms[roomId].guessTimer);
             rooms[roomId].guessTimer = setTimeout(() => {
                 if(rooms[roomId] && rooms[roomId].gameState === 'guessing') {
                     io.to(roomId).emit('spyTimeOut');
                     rooms[roomId].gameState = 'waiting';
                 }
-            }, 30000); // 30 ثانية
+            }, 30000); 
         }
     });
 
@@ -252,7 +293,7 @@ io.on('connection', (socket) => {
         const roomId = socket.roomId;
         const playerId = socket.playerId;
         if(roomId && rooms[roomId]) {
-            if(rooms[roomId].guessTimer) clearTimeout(rooms[roomId].guessTimer); // إيقاف التايمر لو جاوب
+            if(rooms[roomId].guessTimer) clearTimeout(rooms[roomId].guessTimer); 
 
             const correctWord = rooms[roomId].word;
             const isCorrect = (chosenWord === correctWord);
@@ -288,9 +329,27 @@ io.on('connection', (socket) => {
                 rooms[roomId].gameState = 'waiting';
             }
 
+            const wasVoting = (rooms[roomId].gameState === 'voting');
+
             if (rooms[roomId].players[playerId].isHost) {
                 socket.to(roomId).emit('hostDisconnected');
                 delete rooms[roomId];
+            } else {
+                // تحديث التصويت لو الضيف قفل المتصفح
+                if (wasVoting) {
+                    if (rooms[roomId].votes[playerId]) delete rooms[roomId].votes[playerId];
+                    const totalVotes = Object.keys(rooms[roomId].votes).length;
+                    
+                    // المتصلين حالياً بعد خروجه
+                    const remainingPlayersCount = Object.keys(rooms[roomId].players).length - 1; 
+                    
+                    io.to(roomId).emit('playerRemovedFromVoting', playerId);
+                    io.to(roomId).emit('voteRegistered', { voterName: "النظام", targetName: "", currentVotes: totalVotes, totalRequired: remainingPlayersCount });
+                    
+                    if (totalVotes >= remainingPlayersCount && remainingPlayersCount > 0) {
+                        checkVotingResult(roomId);
+                    }
+                }
             }
         }
     });

@@ -89,37 +89,73 @@ function handlePlayerLeave(roomId, playerId) {
 io.on('connection', (socket) => {
 
     socket.on('createRoom', (data) => {
-        const roomId = data.roomId; const playerId = data.playerId; 
+        const roomId = data.roomId;
+        const playerId = data.playerId; 
         socket.join(roomId); socket.roomId = roomId; socket.playerId = playerId;
-        rooms[roomId] = { players: {}, gameState: 'waiting', word: '', category: '', spyId: null, votes: {}, guessingWords: [], guessTimer: null, guessEndTime: 0 };
-        rooms[roomId].players[playerId] = { id: playerId, socketId: socket.id, name: '𝐒𝐀𝐒𝐔𝐊𝐄', isHost: true };
+        
+        // لو الغرفة مش موجودة نعملها (عشان لو الهوست عمل ريفرش الغرفة ماتتمسحش)
+        if (!rooms[roomId]) {
+            rooms[roomId] = { players: {}, gameState: 'waiting', word: '', category: '', spyId: null, votes: {}, guessingWords: [], guessTimer: null, guessEndTime: 0 };
+        }
+        
+        // إلغاء مؤقت الطرد لو الهوست رجع
+        if (rooms[roomId].players[playerId] && rooms[roomId].players[playerId].disconnectTimeout) {
+            clearTimeout(rooms[roomId].players[playerId].disconnectTimeout);
+            rooms[roomId].players[playerId].disconnectTimeout = null;
+        }
+
+        const existingName = rooms[roomId].players[playerId] ? rooms[roomId].players[playerId].name : '𝐒𝐀𝐒𝐔𝐊𝐄';
+        rooms[roomId].players[playerId] = { id: playerId, socketId: socket.id, name: existingName, isHost: true };
+        
         io.to(roomId).emit('updatePlayers', Object.values(rooms[roomId].players));
+        
+        // مزامنة الشاشات للهوست لو رجع أثناء اللعب
+        const state = rooms[roomId].gameState;
+        if(['playing', 'voting', 'guessing', 'voting_result'].includes(state)) {
+            const isSpy = rooms[roomId].spyId === playerId;
+            socket.emit('assignRole', { word: rooms[roomId].word, isSpy: isSpy, category: rooms[roomId].category });
+            socket.emit('gameStarted');
+            if (state === 'voting' || state === 'voting_result') {
+                socket.emit('votingStarted', Object.values(rooms[roomId].players));
+                const totalVotes = Object.keys(rooms[roomId].votes).length;
+                const totalRequired = Object.keys(rooms[roomId].players).length;
+                socket.emit('voteRegistered', { voterName: "النظام", targetName: "", currentVotes: totalVotes, totalRequired: totalRequired });
+                if (rooms[roomId].votes[playerId]) socket.emit('youAlreadyVoted', rooms[roomId].votes[playerId]);
+            } else if (state === 'guessing') {
+                let timeLeft = 30;
+                if (rooms[roomId].guessEndTime) timeLeft = Math.max(1, Math.ceil((rooms[roomId].guessEndTime - Date.now()) / 1000));
+                socket.emit('guessingPhaseStarted', { words: rooms[roomId].guessingWords, duration: timeLeft });
+            }
+        }
     });
 
     socket.on('joinRoom', (data) => {
-        const roomId = data.roomId; const playerId = data.playerId;
+        const roomId = data.roomId;
+        const playerId = data.playerId;
 
         if (rooms[roomId]) {
             socket.join(roomId); socket.roomId = roomId; socket.playerId = playerId;
             
-            let finalName = data.name; let suffix = 1;
-            while(Object.values(rooms[roomId].players).some(p => p.name === finalName && p.id !== playerId)) {
-                finalName = `${data.name} (${suffix})`; suffix++;
-            }
-
             if (rooms[roomId].players[playerId]) {
+                // 🔥 اللاعب ده موجود وبيعمل Reconnect (رجع من تيك توك مثلاً)
                 if (rooms[roomId].players[playerId].disconnectTimeout) {
                     clearTimeout(rooms[roomId].players[playerId].disconnectTimeout);
                     rooms[roomId].players[playerId].disconnectTimeout = null;
                 }
                 rooms[roomId].players[playerId].socketId = socket.id;
-                rooms[roomId].players[playerId].name = finalName;
+                // نحافظ على اسمه زي ما هو بدون تكرار
             } else {
+                // 🔥 لاعب جديد تماماً، نتأكد إن اسمه مش مكرر
+                let finalName = data.name.trim(); let suffix = 1;
+                while(Object.values(rooms[roomId].players).some(p => p.name === finalName)) {
+                    finalName = `${data.name.trim()} (${suffix})`; suffix++;
+                }
                 rooms[roomId].players[playerId] = { id: playerId, socketId: socket.id, name: finalName, isHost: false };
             }
             
             io.to(roomId).emit('updatePlayers', Object.values(rooms[roomId].players));
             
+            // مزامنة الشاشات للضيوف لو رجعوا أثناء اللعب
             const state = rooms[roomId].gameState;
             if(['playing', 'voting', 'guessing', 'voting_result'].includes(state)) {
                 const isSpy = rooms[roomId].spyId === playerId;
@@ -160,7 +196,6 @@ io.on('connection', (socket) => {
         }
     });
 
-    // الطرد الإرادي فقط (لما تضغط على زر مغادرة الغرفة)
     socket.on('leaveRoom', () => {
         const roomId = socket.roomId;
         const playerId = socket.playerId;
@@ -267,15 +302,14 @@ io.on('connection', (socket) => {
         }
     });
 
-    // 🔥 حل مشكلة الموبايل (إعطاء مهلة 30 ثانية قبل الطرد)
+    // 🔥 مهلة 60 ثانية للموبايلات لو قطع الاتصال
     socket.on('disconnect', () => {
         const roomId = socket.roomId;
         const playerId = socket.playerId;
         if (roomId && rooms[roomId] && rooms[roomId].players[playerId]) {
-            // ننتظر 30 ثانية بالتمام والكمال قبل الطرد
             rooms[roomId].players[playerId].disconnectTimeout = setTimeout(() => {
                 handlePlayerLeave(roomId, playerId);
-            }, 30000); // 30 seconds
+            }, 60000); // 60 ثانية بدل 30
         }
     });
 });

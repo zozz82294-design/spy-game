@@ -41,8 +41,6 @@ function playSound(type) {
 }
 document.addEventListener('click', (e) => { if(e.target.tagName === 'BUTTON' || e.target.closest('button')) playSound('click'); });
 
-// 🔥 تم مسح كود beforeunload اللي كان بيطرد الناس من الموبايل
-
 let myPlayerId = sessionStorage.getItem('playerId');
 if (!myPlayerId) { myPlayerId = 'player_' + Math.random().toString(36).substr(2, 9); sessionStorage.setItem('playerId', myPlayerId); }
 
@@ -100,28 +98,41 @@ requestAnimationFrame(animateCursor);
 document.addEventListener('mouseover', (e) => { if (isPcMode && e.target.closest('button') && customCursor) customCursor.classList.add('hovering'); });
 document.addEventListener('mouseout', (e) => { if (isPcMode && e.target.closest('button') && customCursor) customCursor.classList.remove('hovering'); });
 
-const urlParams = new URLSearchParams(window.location.search);
-const roomFromUrl = urlParams.get('room');
-const wasHostOfRoom = sessionStorage.getItem('hostRoomId');
-const guestName = sessionStorage.getItem('guestName');
+// 🔥 الحل الجذري لمشكلة الموبايل والتزامن: ربط الدخول بحدث connect الخاص بالـ socket
+socket.on('connect', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomFromUrl = urlParams.get('room');
+    const wasHostOfRoom = sessionStorage.getItem('hostRoomId');
+    const guestName = sessionStorage.getItem('guestName');
 
-if (roomFromUrl) {
-    if (wasHostOfRoom === roomFromUrl) {
-        sessionStorage.removeItem('hostRoomId'); window.location.href = '/';
-    } else {
-        if(goToWaitingBtn) goToWaitingBtn.classList.add('hidden'); 
-        if(playerNameInput) playerNameInput.classList.remove('hidden'); 
-        if(joinRoomBtn) joinRoomBtn.classList.remove('hidden'); 
-        const welcomeTitle = document.querySelector('#welcomeScreen .sasuke-title');
-        if (welcomeTitle) applyRgbWaveToElement(welcomeTitle, "انضمام للعبه الجاسوس");
-
-        if (guestName) {
-            isHost = false; playerNameInput.value = guestName;
+    if (roomFromUrl) {
+        if (wasHostOfRoom === roomFromUrl) {
+            isHost = true;
+            if(hostSettingsBtn) hostSettingsBtn.classList.remove('hidden');
+            if(copyInviteBtn) copyInviteBtn.classList.remove('hidden');
+            socket.emit('createRoom', { roomId: roomFromUrl, playerId: myPlayerId });
+        } else if (guestName) {
+            isHost = false;
+            if(goToWaitingBtn) goToWaitingBtn.classList.add('hidden'); 
+            if(playerNameInput) playerNameInput.classList.remove('hidden'); 
+            if(joinRoomBtn) joinRoomBtn.classList.remove('hidden');
+            const welcomeTitle = document.querySelector('#welcomeScreen .sasuke-title');
+            if (welcomeTitle) applyRgbWaveToElement(welcomeTitle, "انضمام للعبه الجاسوس");
+            
+            playerNameInput.value = guestName;
             socket.emit('joinRoom', { roomId: roomFromUrl, name: guestName, playerId: myPlayerId });
-            showScreen('waiting'); updateLeaveBtnState();
+            updateLeaveBtnState();
+        } else {
+            if(goToWaitingBtn) goToWaitingBtn.classList.add('hidden'); 
+            if(playerNameInput) playerNameInput.classList.remove('hidden'); 
+            if(joinRoomBtn) joinRoomBtn.classList.remove('hidden');
+            const welcomeTitle = document.querySelector('#welcomeScreen .sasuke-title');
+            if (welcomeTitle) applyRgbWaveToElement(welcomeTitle, "انضمام للعبه الجاسوس");
         }
+    } else {
+        sessionStorage.removeItem('hostRoomId'); sessionStorage.removeItem('guestName');
     }
-} else { sessionStorage.removeItem('hostRoomId'); sessionStorage.removeItem('guestName'); }
+});
 
 if(goToWaitingBtn) goToWaitingBtn.addEventListener('click', () => {
     isHost = true; if(hostSettingsBtn) hostSettingsBtn.classList.remove('hidden'); if(copyInviteBtn) copyInviteBtn.classList.remove('hidden'); 
@@ -133,7 +144,7 @@ if(joinRoomBtn) joinRoomBtn.addEventListener('click', () => {
     const enteredName = playerNameInput.value.trim();
     if(!enteredName) { alert("اكتب اسمك الأول يا بطل!"); return; }
     isHost = false; if(copyInviteBtn) copyInviteBtn.classList.add('hidden'); sessionStorage.setItem('guestName', enteredName);
-    socket.emit('joinRoom', { roomId: roomFromUrl, name: enteredName, playerId: myPlayerId }); showScreen('waiting'); updateLeaveBtnState();
+    socket.emit('joinRoom', { roomId: new URLSearchParams(window.location.search).get('room'), name: enteredName, playerId: myPlayerId }); showScreen('waiting'); updateLeaveBtnState();
 });
 
 if(leaveRoomBtn) leaveRoomBtn.addEventListener('click', () => {

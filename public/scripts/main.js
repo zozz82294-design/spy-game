@@ -32,8 +32,16 @@ const restartGameBtn = document.getElementById('restartGameBtn');
 const hostLeftModal = document.getElementById('hostLeftModal');
 const kickedModal = document.getElementById('kickedModal');
 const leftRoomModal = document.getElementById('leftRoomModal'); 
+const invalidRoomModal = document.getElementById('invalidRoomModal'); 
+const errorMsgText = document.getElementById('errorMsgText');
 
+// أزرار الاختيار
 const selectRandomModeBtn = document.getElementById('selectRandomModeBtn');
+const revokeRandomModeBtn = document.getElementById('revokeRandomModeBtn');
+const confirmStartGameBtn = document.getElementById('confirmStartGameBtn');
+const selectedBadge = document.getElementById('selectedBadge');
+const randomModeCard = document.getElementById('randomModeCard');
+const hostModeControls = document.getElementById('hostModeControls');
 const startVotingBtn = document.getElementById('startVotingBtn');
 
 const customCursor = document.getElementById('customCursor');
@@ -43,9 +51,34 @@ const follow2 = document.getElementById('cursorFollow2');
 let isPcMode = false;
 let isHost = false; 
 
-// حفظ مكان الماوس دايماً عشان نمنع الـ Teleport
-let currentMouseX = window.innerWidth / 2;
-let currentMouseY = window.innerHeight / 2;
+// نظام الماوس السلس (بدون تقطيع)
+let mouseX = window.innerWidth / 2, mouseY = window.innerHeight / 2;
+let f1X = mouseX, f1Y = mouseY, f2X = mouseX, f2Y = mouseY;
+
+document.addEventListener('mousemove', (e) => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+});
+
+function animateCursor() {
+    if (isPcMode) {
+        f1X += (mouseX - f1X) * 0.2;
+        f1Y += (mouseY - f1Y) * 0.2;
+        f2X += (mouseX - f2X) * 0.1;
+        f2Y += (mouseY - f2Y) * 0.1;
+        
+        if(customCursor) customCursor.style.left = mouseX + 'px';
+        if(customCursor) customCursor.style.top = mouseY + 'px';
+        
+        if(follow1) follow1.style.left = f1X + 'px';
+        if(follow1) follow1.style.top = f1Y + 'px';
+        
+        if(follow2) follow2.style.left = f2X + 'px';
+        if(follow2) follow2.style.top = f2Y + 'px';
+    }
+    requestAnimationFrame(animateCursor);
+}
+requestAnimationFrame(animateCursor);
 
 const urlParams = new URLSearchParams(window.location.search);
 const roomFromUrl = urlParams.get('room');
@@ -53,7 +86,6 @@ const roomFromUrl = urlParams.get('room');
 const wasHostOfRoom = sessionStorage.getItem('hostRoomId');
 const guestName = sessionStorage.getItem('guestName');
 
-// معالجة الريفريش القوي
 if (roomFromUrl) {
     if (wasHostOfRoom === roomFromUrl) {
         sessionStorage.removeItem('hostRoomId');
@@ -75,7 +107,6 @@ if (roomFromUrl) {
     sessionStorage.clear();
 }
 
-// 👑 الهوست ينشئ الغرفة
 if(goToWaitingBtn) goToWaitingBtn.addEventListener('click', () => {
     isHost = true;
     if(hostSettingsBtn) hostSettingsBtn.classList.remove('hidden'); 
@@ -88,7 +119,6 @@ if(goToWaitingBtn) goToWaitingBtn.addEventListener('click', () => {
     showScreen('waiting');
 });
 
-// 👤 الضيف ينضم
 if(joinRoomBtn) joinRoomBtn.addEventListener('click', () => {
     const enteredName = playerNameInput.value.trim();
     if(!enteredName) { alert("اكتب اسمك الأول يا بطل!"); return; }
@@ -100,7 +130,6 @@ if(joinRoomBtn) joinRoomBtn.addEventListener('click', () => {
     if(leaveRoomBtn) leaveRoomBtn.classList.remove('hidden');
 });
 
-// 🚪 مغادرة الضيف إرادياً
 if(leaveRoomBtn) leaveRoomBtn.addEventListener('click', () => {
     if(confirm('هل أنت متأكد من مغادرة الغرفة؟')) {
         socket.emit('leaveRoom');
@@ -110,9 +139,13 @@ if(leaveRoomBtn) leaveRoomBtn.addEventListener('click', () => {
     }
 });
 
+// رسالة الرابط البايظ الجديدة
 socket.on('errorMsg', (msg) => {
-    alert(msg);
-    window.location.href = '/'; 
+    if(invalidRoomModal && errorMsgText) {
+        errorMsgText.innerText = msg;
+        invalidRoomModal.classList.remove('hidden');
+        mainContainer.classList.add('hidden');
+    }
 });
 
 socket.on('hostDisconnected', () => {
@@ -121,7 +154,6 @@ socket.on('hostDisconnected', () => {
     sessionStorage.clear();
 });
 
-// 🚫 طرد الضيف
 socket.on('youAreKickedPermanently', () => {
     if(kickedModal) kickedModal.classList.remove('hidden');
     if(leaveRoomBtn) leaveRoomBtn.classList.add('hidden');
@@ -184,21 +216,53 @@ if(actualStartBtn) actualStartBtn.addEventListener('click', () => {
     socket.emit('goToModeSelection');
 });
 
+// إظهار الشاشة للكل وإخفاء أزرار التحكم عن الضيوف
 socket.on('showModeSelection', () => {
+    showScreen('modeSelection');
     if(isHost) {
-        showScreen('modeSelection');
+        hostModeControls.classList.remove('hidden');
     } else {
-        showScreen('waiting');
-        if(actualStartBtn) actualStartBtn.classList.add('hidden');
-        if(startGameBtn) {
-            startGameBtn.classList.remove('hidden');
-            startGameBtn.innerText = "الهوست يختار تصنيف اللعبة... ⏳";
+        hostModeControls.classList.add('hidden');
+        confirmStartGameBtn.classList.add('hidden');
+    }
+});
+
+// أزرار الاختيار
+if(selectRandomModeBtn) selectRandomModeBtn.addEventListener('click', () => socket.emit('selectMode', 'random'));
+if(revokeRandomModeBtn) revokeRandomModeBtn.addEventListener('click', () => socket.emit('deselectMode', 'random'));
+
+// لما الهوست يختار، كل الناس بتشوف إنه اختار
+socket.on('modeSelected', (mode) => {
+    if(mode === 'random') {
+        selectedBadge.classList.remove('hidden');
+        randomModeCard.style.borderColor = 'var(--neon-green)';
+        randomModeCard.style.boxShadow = '0 0 20px rgba(0, 255, 136, 0.2)';
+        
+        if(isHost) {
+            selectRandomModeBtn.classList.add('hidden');
+            revokeRandomModeBtn.classList.remove('hidden');
+            confirmStartGameBtn.classList.remove('hidden');
         }
     }
 });
 
-// 🎲 الهوست يختار عشوائي
-if(selectRandomModeBtn) selectRandomModeBtn.addEventListener('click', () => {
+// لما الهوست يسحب الاختيار
+socket.on('modeDeselected', (mode) => {
+    if(mode === 'random') {
+        selectedBadge.classList.add('hidden');
+        randomModeCard.style.borderColor = 'rgba(0, 243, 255, 0.3)';
+        randomModeCard.style.boxShadow = 'none';
+        
+        if(isHost) {
+            selectRandomModeBtn.classList.remove('hidden');
+            revokeRandomModeBtn.classList.add('hidden');
+            confirmStartGameBtn.classList.add('hidden');
+        }
+    }
+});
+
+// تأكيد وبدء اللعب
+if(confirmStartGameBtn) confirmStartGameBtn.addEventListener('click', () => {
     socket.emit('startRandomMode');
 });
 
@@ -229,6 +293,15 @@ socket.on('gameStarted', () => {
 
 socket.on('gameRestarted', () => {
     showScreen('waiting');
+    
+    // إعادة ضبط كارت الاختيار للوضعية الصفرية
+    selectedBadge.classList.add('hidden');
+    randomModeCard.style.borderColor = 'rgba(0, 243, 255, 0.3)';
+    randomModeCard.style.boxShadow = 'none';
+    selectRandomModeBtn.classList.remove('hidden');
+    revokeRandomModeBtn.classList.add('hidden');
+    confirmStartGameBtn.classList.add('hidden');
+
     if (isHost && restartGameBtn && hostSettingsModal) {
         restartGameBtn.disabled = true;
         hostSettingsModal.classList.add('hidden');
@@ -259,22 +332,10 @@ function showScreen(screenName) {
     }
 }
 
-// دالة تحديث مكان الماوس عشان التيليبورت
-function updateCursorPos() {
-    const x = currentMouseX + 'px';
-    const y = currentMouseY + 'px';
-    if(customCursor) { customCursor.style.left = x; customCursor.style.top = y; }
-    if(follow1) { follow1.style.left = x; follow1.style.top = y; }
-    if(follow2) { follow2.style.left = x; follow2.style.top = y; }
-}
-
 if(pcViewBtn) {
     pcViewBtn.addEventListener('click', () => {
         isPcMode = true;
         document.body.className = 'pc-mode'; 
-        
-        // تحديث المكان قبل ما نظهر الماوس عشان ميطيرش
-        updateCursorPos();
         
         if(customCursor) customCursor.classList.remove('hidden');
         if(follow1) follow1.classList.remove('hidden');
@@ -319,15 +380,6 @@ if(copyInviteBtn) copyInviteBtn.addEventListener('click', () => {
             setTimeout(() => notificationToast.classList.add('hidden'), 2500);
         }
     });
-});
-
-// تسجيل مكان الماوس الحقيقي دايماً، وتحديث الشاشة لو إحنا في وضع الـ PC
-document.addEventListener('mousemove', (e) => {
-    currentMouseX = e.clientX;
-    currentMouseY = e.clientY;
-    
-    if (!isPcMode) return;
-    updateCursorPos();
 });
 
 document.addEventListener('mouseover', (e) => { if (isPcMode && e.target.closest('button') && customCursor) customCursor.classList.add('hovering'); });

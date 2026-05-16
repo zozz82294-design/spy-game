@@ -32,6 +32,14 @@
         </div>
     </div>
 
+    <div id="invalidRoomModal" class="modal-overlay hidden" style="z-index: 999999; background: #030712;">
+        <div class="modal-content glass-container" style="text-align: center;">
+            <div style="font-size: 4rem; margin-bottom: 10px;">❌</div>
+            <h2 class="neon-text" style="color: var(--neon-red); margin-bottom: 20px;">عذراً!</h2>
+            <p id="errorMsgText" style="font-size: 1.2rem; margin-bottom: 20px; color: #ccc;">الغرفة دي مش موجودة أو الهوست قفل اللعبة!</p>
+        </div>
+    </div>
+
     <div id="hostLeftModal" class="modal-overlay hidden">
         <div class="modal-content glass-container" style="text-align: center;">
             <div style="font-size: 3rem; margin-bottom: 10px;">⚠️</div>
@@ -92,13 +100,23 @@
         <div id="modeSelectionScreen" class="screen hidden">
             <h2 class="game-main-title" style="margin-bottom: 20px;">اختيار تصنيف اللعبة</h2>
             
-            <div class="mode-card">
+            <div class="mode-card" id="randomModeCard" style="position: relative;">
+                <div id="selectedBadge" class="hidden" style="position: absolute; top: -15px; right: -15px; background: var(--neon-green); color: #000; padding: 5px 15px; border-radius: 20px; font-weight: bold; font-size: 0.9rem; box-shadow: 0 0 10px var(--neon-green);">
+                    اختارها 𝐒𝐀𝐒𝐔𝐊𝐄
+                </div>
+
                 <h3 style="color: var(--neon-blue); font-size: 1.5rem; margin-bottom: 10px;">عشوائي 🎲</h3>
                 <p style="color: #94a3b8; font-size: 0.9rem; line-height: 1.5; margin-bottom: 20px; text-align: right;">
                     ميزة الأشياء العشوائية: تقدر تكشف الجاسوس بسهولة أكبر، وتسأله إذا كان مكان أو جماد أو شخص، وده يجعل النقاش أمتع وأسهل للكشف.
                 </p>
-                <button id="selectRandomModeBtn" class="btn-create-room" style="padding: 10px;">اختيار ✔️</button>
+                
+                <div id="hostModeControls" class="hidden">
+                    <button id="selectRandomModeBtn" class="btn-create-room" style="padding: 10px; margin-bottom: 10px;">اختيار ✔️</button>
+                    <button id="revokeRandomModeBtn" class="btn-create-room hidden" style="padding: 10px; background: rgba(255, 51, 102, 0.1); border-color: var(--neon-red); color: var(--neon-red); margin-bottom: 10px;">سحب الاختيار ❌</button>
+                </div>
             </div>
+
+            <button id="confirmStartGameBtn" class="btn-start-game active-start hidden" style="margin-top: 20px;">تأكيد وبدء اللعب 🚀</button>
         </div>
 
         <div id="gameScreen" class="screen hidden">
@@ -117,8 +135,8 @@
     </div>
 
     <style>
-        /* إجبار الماوس المخصص يكون فوق كل حاجة في الموقع بلا استثناء */
-        .custom-cursor, .cursor-follow { z-index: 99999999 !important; }
+        /* إجبار الماوس المخصص يكون فوق كل حاجة وإلغاء التقطيع */
+        .custom-cursor, .cursor-follow { z-index: 99999999 !important; transition: none !important; will-change: transform; pointer-events: none; }
         
         .btn-leave-room { 
             position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%); 
@@ -130,7 +148,6 @@
         }
         .btn-leave-room:hover { background: var(--neon-red); box-shadow: 0 0 25px var(--neon-red); }
         .mode-card { background: rgba(2, 6, 23, 0.6); border: 1px solid rgba(0, 243, 255, 0.3); border-radius: 12px; padding: 20px; text-align: center; transition: 0.3s; }
-        .mode-card:hover { border-color: var(--neon-blue); box-shadow: 0 0 20px rgba(0, 243, 255, 0.2); }
     </style>
 
     <script src="scripts/main.js"></script>

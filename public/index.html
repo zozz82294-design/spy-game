@@ -15,12 +15,13 @@
     </div>
 
     <button id="hostSettingsBtn" class="host-settings-icon hidden" title="إعدادات الغرفة">⚙️</button>
+    <button id="leaveRoomBtn" class="btn-leave-room hidden" title="مغادرة الغرفة">🚪 مغادرة</button>
 
     <div id="customCursor" class="custom-cursor hidden"></div>
     <div id="cursorFollow1" class="cursor-follow hidden"></div>
     <div id="cursorFollow2" class="cursor-follow hidden"></div>
 
-    <div id="notificationToast" class="toast hidden">تم نسخ رابط الدعوة بنجاح! 📋</div>
+    <div id="notificationToast" class="toast hidden">تم نسخ الرابط! 📋</div>
 
     <div id="hostSettingsModal" class="modal-overlay hidden">
         <div class="modal-content glass-container">
@@ -34,9 +35,18 @@
     <div id="hostLeftModal" class="modal-overlay hidden">
         <div class="modal-content glass-container" style="text-align: center;">
             <div style="font-size: 3rem; margin-bottom: 10px;">⚠️</div>
-            <h2 class="neon-text" style="color: var(--neon-red, #ff3366); margin-bottom: 20px;">توقفت اللعبة!</h2>
+            <h2 class="neon-text" style="color: var(--neon-red); margin-bottom: 20px;">توقفت اللعبة!</h2>
             <p style="font-size: 1.2rem; margin-bottom: 20px;">لقد غادر الهوست لذلك توقفت اللعبه.</p>
-            <button onclick="window.location.href='/'" class="btn-close-modal" style="background: var(--neon-red, #ff3366); border: none;">العودة للرئيسية 🏠</button>
+            <button onclick="window.location.href='/'" class="btn-close-modal" style="background: var(--neon-red); border: none;">العودة للرئيسية 🏠</button>
+        </div>
+    </div>
+
+    <div id="kickedModal" class="modal-overlay hidden" style="z-index: 999999;">
+        <div class="modal-content glass-container" style="text-align: center;">
+            <div style="font-size: 4rem; margin-bottom: 10px;">🚫</div>
+            <h2 class="neon-text" style="color: var(--neon-red); margin-bottom: 20px;">تم طردك!</h2>
+            <p style="font-size: 1.2rem; margin-bottom: 20px; color: #ccc;">لقد طردك الهوست من الغرفة.</p>
+            <button onclick="sessionStorage.clear(); window.location.href='/'" class="btn-close-modal" style="background: var(--neon-red); border: none;">العودة للرئيسية 🏠</button>
         </div>
     </div>
 
@@ -47,22 +57,13 @@
                 <div class="spy-icon">🕵️‍♂️</div>
                 <h1 class="sasuke-title">SASUKE</h1>
             </div>
-            
             <input type="text" id="playerNameInput" class="name-input hidden" placeholder="اكتب اسمك هنا يا بطل..." autocomplete="off">
-            
-            <p class="view-text">اختر نوع العرض</p>
             <div class="view-options">
                 <button id="pcViewBtn" class="btn-view">كمبيوتر 💻</button>
                 <button id="mobileViewBtn" class="btn-view active-view">موبايل 📱</button>
             </div>
-            
-            <button id="goToWaitingBtn" class="btn-create-room">
-                إنشاء غرفة لعبة الجاسوس 🏠
-            </button>
-
-            <button id="joinRoomBtn" class="btn-join-room hidden">
-                انضمام للغرفة 🚀
-            </button>
+            <button id="goToWaitingBtn" class="btn-create-room">إنشاء غرفة لعبة الجاسوس 🏠</button>
+            <button id="joinRoomBtn" class="btn-join-room hidden">انضمام للغرفة 🚀</button>
         </div>
 
         <div id="waitingScreen" class="screen hidden">
@@ -71,35 +72,50 @@
                 <h2 class="game-main-title">لعبة الجاسوس</h2>
                 <p class="host-label">غرفة الانتظار الرئيسية</p>
             </div>
-
             <div class="invite-section">
-                <button id="copyInviteBtn" class="btn-invite" type="button">
-                     رابط الدعوة 🔗
-                </button>
+                <button id="copyInviteBtn" class="btn-invite" type="button">رابط الدعوة 🔗</button>
             </div>
-
             <div class="players-panel">
                 <h3>اللاعبين في الغرفة (<span id="playerCount">0</span>)</h3>
-                <div class="players-list" id="playersList">
-                    <div style="text-align: center; color: #64748b; padding: 10px;">جاري تحميل اللاعبين...</div>
-                </div>
+                <div class="players-list" id="playersList"></div>
             </div>
+            <button id="actualStartBtn" class="btn-start-game active-start hidden" style="margin-bottom: 10px;">بدء اللعبة 🚀</button>
+            <button id="startGameBtn" class="btn-start-game" disabled>في انتظار باقي اللاعبين... ⏳</button>
+        </div>
 
-            <button id="actualStartBtn" class="btn-start-game active-start hidden" style="margin-bottom: 10px;">
-                بدء اللعبة 🚀
-            </button>
-            <button id="startGameBtn" class="btn-start-game" disabled>
-                في انتظار باقي اللاعبين... ⏳
-            </button>
+        <div id="modeSelectionScreen" class="screen hidden">
+            <h2 class="game-main-title" style="margin-bottom: 20px;">اختيار تصنيف اللعبة</h2>
+            
+            <div class="mode-card">
+                <h3 style="color: var(--neon-blue); font-size: 1.5rem; margin-bottom: 10px;">عشوائي 🎲</h3>
+                <p style="color: #94a3b8; font-size: 0.9rem; line-height: 1.5; margin-bottom: 20px; text-align: right;">
+                    ميزة الأشياء العشوائية: تقدر تكشف الجاسوس بسهولة أكبر، وتسأله إذا كان مكان أو جماد أو شخص، وده يجعل النقاش أمتع وأسهل للكشف.
+                </p>
+                <button id="selectRandomModeBtn" class="btn-create-room" style="padding: 10px;">اختيار ✔️</button>
+            </div>
         </div>
 
         <div id="gameScreen" class="screen hidden">
-            <div class="avatar-glow">🎭</div>
-            <h2 class="game-main-title">اللعبة بدأت!</h2>
-            <p style="color: #ccc; margin-top: 15px; font-size: 1.2rem;">جاري إعداد أدوار الجاسوس...</p>
+            <div class="avatar-glow" id="roleIcon">🎭</div>
+            <h2 class="game-main-title" id="roleTitle" style="margin-bottom: 5px;">...</h2>
+            <p id="roleCategory" style="color: var(--neon-blue); font-size: 1rem; margin-bottom: 20px; font-weight: bold;">التصنيف: ...</p>
+            
+            <div style="background: rgba(0,0,0,0.5); padding: 15px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1);">
+                <p style="color: #ccc; font-size: 1rem; margin-bottom: 10px;">ابحثوا عن الجاسوس!</p>
+                <p style="color: #64748b; font-size: 0.85rem;">تناقشوا الآن عبر الصوت (Discord) واكتشفوا من لا يعرف الكلمة.</p>
+            </div>
+            
+            <button id="startVotingBtn" class="btn-start-game active-start hidden" style="margin-top: 20px;">بدء التصويت 🗳️</button>
         </div>
 
     </div>
+
+    <style>
+        .btn-leave-room { position: fixed; top: 25px; right: 25px; background: rgba(255, 51, 102, 0.1); border: 1px solid var(--neon-red); color: #fff; padding: 10px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; z-index: 100; }
+        .btn-leave-room:hover { background: var(--neon-red); box-shadow: 0 0 15px var(--neon-red); }
+        .mode-card { background: rgba(2, 6, 23, 0.6); border: 1px solid rgba(0, 243, 255, 0.3); border-radius: 12px; padding: 20px; text-align: center; transition: 0.3s; }
+        .mode-card:hover { border-color: var(--neon-blue); box-shadow: 0 0 20px rgba(0, 243, 255, 0.2); }
+    </style>
 
     <script src="scripts/main.js"></script>
 </body>

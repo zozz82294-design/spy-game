@@ -31,6 +31,7 @@ const modalPlayersList = document.getElementById('modalPlayersList');
 const restartGameBtn = document.getElementById('restartGameBtn');
 const hostLeftModal = document.getElementById('hostLeftModal');
 const kickedModal = document.getElementById('kickedModal');
+const leftRoomModal = document.getElementById('leftRoomModal'); // النافذة الجديدة
 
 const selectRandomModeBtn = document.getElementById('selectRandomModeBtn');
 const startVotingBtn = document.getElementById('startVotingBtn');
@@ -51,11 +52,9 @@ const guestName = sessionStorage.getItem('guestName');
 // معالجة الريفريش القوي
 if (roomFromUrl) {
     if (wasHostOfRoom === roomFromUrl) {
-        // الهوست عمل ريفريش -> يرجع للرئيسية فوراً ويمسح الروم
         sessionStorage.removeItem('hostRoomId');
         window.location.href = '/';
     } else {
-        // الضيف عمل ريفريش -> يدخل الروم تلقائي بنفس اسمه لو متسجل
         if(goToWaitingBtn) goToWaitingBtn.classList.add('hidden'); 
         if(playerNameInput) playerNameInput.classList.remove('hidden'); 
         if(joinRoomBtn) joinRoomBtn.classList.remove('hidden'); 
@@ -69,7 +68,6 @@ if (roomFromUrl) {
         }
     }
 } else {
-    // لو في الصفحة الرئيسية بيمسح الذاكرة المعلقة
     sessionStorage.clear();
 }
 
@@ -98,12 +96,15 @@ if(joinRoomBtn) joinRoomBtn.addEventListener('click', () => {
     if(leaveRoomBtn) leaveRoomBtn.classList.remove('hidden');
 });
 
-// 🚪 مغادرة الضيف إرادياً
+// 🚪 مغادرة الضيف إرادياً (تعديل لإظهار الشاشة الثابتة بدلاً من الرئيسية)
 if(leaveRoomBtn) leaveRoomBtn.addEventListener('click', () => {
     if(confirm('هل أنت متأكد من مغادرة الغرفة؟')) {
         socket.emit('leaveRoom');
         sessionStorage.clear();
-        window.location.href = '/';
+        
+        // إخفاء زر المغادرة وإظهار شاشة "لقد غادرت"
+        leaveRoomBtn.classList.add('hidden');
+        if(leftRoomModal) leftRoomModal.classList.remove('hidden');
     }
 });
 
@@ -117,9 +118,10 @@ socket.on('hostDisconnected', () => {
     sessionStorage.clear();
 });
 
-// 🚫 طرد الضيف (رسالة ثابتة)
+// 🚫 طرد الضيف
 socket.on('youAreKickedPermanently', () => {
     if(kickedModal) kickedModal.classList.remove('hidden');
+    if(leaveRoomBtn) leaveRoomBtn.classList.add('hidden');
 });
 
 socket.on('updatePlayers', (playersArray) => {
@@ -196,7 +198,7 @@ if(selectRandomModeBtn) selectRandomModeBtn.addEventListener('click', () => {
     socket.emit('startRandomMode');
 });
 
-// 🎭 استقبال الدور (جاسوس أم لاعب عادي)
+// 🎭 استقبال الدور
 socket.on('assignRole', (data) => {
     const roleIcon = document.getElementById('roleIcon');
     const roleTitle = document.getElementById('roleTitle');
@@ -253,9 +255,6 @@ function showScreen(screenName) {
     }
 }
 
-// =====================================
-// 🖱️ التحكم المضمون في العرض (موبايل/كمبيوتر)
-// =====================================
 if(pcViewBtn) {
     pcViewBtn.addEventListener('click', () => {
         isPcMode = true;
@@ -283,7 +282,6 @@ if(mobileViewBtn) {
         if(pcViewBtn) pcViewBtn.classList.remove('active-view');
     });
 }
-// =====================================
 
 if(hostSettingsBtn) hostSettingsBtn.addEventListener('click', () => {
     if(hostSettingsModal) hostSettingsModal.classList.remove('hidden');

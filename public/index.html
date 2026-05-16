@@ -15,7 +15,8 @@
     </div>
 
     <button id="hostSettingsBtn" class="host-settings-icon hidden" title="إعدادات الغرفة">⚙️</button>
-    <button id="leaveRoomBtn" class="btn-leave-room hidden" title="مغادرة الغرفة">🚪 مغادرة</button>
+    
+    <button id="leaveRoomBtn" class="btn-leave-room hidden" title="مغادرة الغرفة">🚪 مغادرة الغرفة</button>
 
     <div id="customCursor" class="custom-cursor hidden"></div>
     <div id="cursorFollow1" class="cursor-follow hidden"></div>
@@ -47,6 +48,15 @@
             <h2 class="neon-text" style="color: var(--neon-red); margin-bottom: 20px;">تم طردك!</h2>
             <p style="font-size: 1.2rem; margin-bottom: 20px; color: #ccc;">لقد طردك الهوست من الغرفة.</p>
             <button onclick="sessionStorage.clear(); window.location.href='/'" class="btn-close-modal" style="background: var(--neon-red); border: none;">العودة للرئيسية 🏠</button>
+        </div>
+    </div>
+
+    <div id="leftRoomModal" class="modal-overlay hidden" style="z-index: 999999;">
+        <div class="modal-content glass-container" style="text-align: center;">
+            <div style="font-size: 4rem; margin-bottom: 10px;">👋</div>
+            <h2 class="neon-text" style="color: var(--neon-blue); margin-bottom: 20px;">لقد غادرت!</h2>
+            <p style="font-size: 1.2rem; margin-bottom: 20px; color: #ccc;">لقد غادرت الغرفة بنجاح.</p>
+            <button onclick="window.location.href='/'" class="btn-close-modal" style="background: var(--neon-blue); color: #000; border: none;">العودة للرئيسية 🏠</button>
         </div>
     </div>
 
@@ -102,7 +112,7 @@
             
             <div style="background: rgba(0,0,0,0.5); padding: 15px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1);">
                 <p style="color: #ccc; font-size: 1rem; margin-bottom: 10px;">ابحثوا عن الجاسوس!</p>
-                <p style="color: #64748b; font-size: 0.85rem;">تناقشوا الآن عبر الصوت (Discord) واكتشفوا من لا يعرف الكلمة.</p>
+                <p style="color: #64748b; font-size: 0.85rem;">تناقشوا الآن عبر الصوت واكتشفوا من لا يعرف الكلمة.</p>
             </div>
             
             <button id="startVotingBtn" class="btn-start-game active-start hidden" style="margin-top: 20px;">بدء التصويت 🗳️</button>
@@ -111,8 +121,30 @@
     </div>
 
     <style>
-        .btn-leave-room { position: fixed; top: 25px; right: 25px; background: rgba(255, 51, 102, 0.1); border: 1px solid var(--neon-red); color: #fff; padding: 10px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; z-index: 100; }
-        .btn-leave-room:hover { background: var(--neon-red); box-shadow: 0 0 15px var(--neon-red); }
+        .btn-leave-room { 
+            position: fixed; 
+            bottom: 25px; 
+            left: 50%; 
+            transform: translateX(-50%); 
+            width: 85%; 
+            max-width: 350px; 
+            background: rgba(255, 51, 102, 0.1); 
+            border: 1px solid var(--neon-red); 
+            color: #fff; 
+            padding: 15px; 
+            border-radius: 12px; 
+            font-size: 1.1rem;
+            font-weight: bold; 
+            cursor: pointer; 
+            transition: 0.3s; 
+            z-index: 100; 
+            text-align: center;
+            box-shadow: 0 0 15px rgba(255, 51, 102, 0.2);
+        }
+        .btn-leave-room:hover { 
+            background: var(--neon-red); 
+            box-shadow: 0 0 25px var(--neon-red); 
+        }
         .mode-card { background: rgba(2, 6, 23, 0.6); border: 1px solid rgba(0, 243, 255, 0.3); border-radius: 12px; padding: 20px; text-align: center; transition: 0.3s; }
         .mode-card:hover { border-color: var(--neon-blue); box-shadow: 0 0 20px rgba(0, 243, 255, 0.2); }
     </style>

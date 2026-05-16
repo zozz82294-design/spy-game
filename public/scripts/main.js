@@ -1,6 +1,33 @@
 const socket = io();
 
 // ==========================================
+// 🎨 نظام تقطيع الحروف لتموج الألوان (RGB Wave)
+// ==========================================
+function applyRgbWaveToElement(element, text) {
+    if (!element) return;
+    element.innerHTML = '';
+    for (let i = 0; i < text.length; i++) {
+        const span = document.createElement('span');
+        if (text[i] === ' ') {
+            span.innerHTML = '&nbsp;';
+        } else {
+            span.textContent = text[i];
+            span.style.setProperty('--char-index', i);
+        }
+        element.appendChild(span);
+    }
+}
+
+function initRgbTitles() {
+    document.querySelectorAll('.rgb-title').forEach(el => {
+        if (!el.querySelector('span')) {
+            applyRgbWaveToElement(el, el.textContent);
+        }
+    });
+}
+initRgbTitles(); // تفعيل التموج فور تحميل الصفحة
+
+// ==========================================
 // 🎧 نظام الصوتيات الاحترافي
 // ==========================================
 const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -112,7 +139,7 @@ if(toggleLeaveBtn) toggleLeaveBtn.addEventListener('click', () => {
 });
 
 // ==========================================
-// باقي أكواد اللعبة الأساسية
+// أكواد اللعبة الأساسية
 // ==========================================
 const screens = {
     welcome: document.getElementById('welcomeScreen'), waiting: document.getElementById('waitingScreen'),
@@ -179,9 +206,9 @@ if (roomFromUrl) {
         if(playerNameInput) playerNameInput.classList.remove('hidden'); 
         if(joinRoomBtn) joinRoomBtn.classList.remove('hidden'); 
         
-        // 🔥 تعديل الاسم في واجهة الانضمام للعبه الجاسوس
+        // 🔥 تغيير عنوان الشاشة الرئيسية للضيوف وتطبيق موجة الألوان
         const welcomeTitle = document.querySelector('#welcomeScreen .sasuke-title');
-        if (welcomeTitle) welcomeTitle.innerText = "انضمام للعبه الجاسوس";
+        if (welcomeTitle) applyRgbWaveToElement(welcomeTitle, "انضمام للعبه الجاسوس");
 
         if (guestName) {
             isHost = false;
@@ -253,7 +280,6 @@ socket.on('updatePlayers', (playersArray) => {
             startGameBtn.classList.remove('hidden'); actualStartBtn.classList.add('hidden');
         }
     }
-    // 🔥 تحديث HTML لوحة الهوست عشان نضمن توزيع المسافات الجديد
     if (isHost && modalPlayersList) {
         let modalHTML = '';
         playersArray.forEach(player => {
@@ -291,18 +317,22 @@ socket.on('modeDeselected', (mode) => {
     }
 });
 
+// 🔥 تطبيق موجة الألوان على الكلمة ودور الجاسوس ديناميكياً
 socket.on('assignRole', (data) => {
     playSound('start');
     myRoleData = data;
     const roleIcon = document.getElementById('roleIcon');
     const roleTitle = document.getElementById('roleTitle');
     const roleCategory = document.getElementById('roleCategory');
+    
     if(data.isSpy) {
-        roleIcon.innerText = "🕵️‍♂️"; roleTitle.innerText = "أنت الجاسوس!"; roleTitle.style.color = "var(--neon-red)";
+        roleIcon.innerText = "🕵️‍♂️"; 
+        applyRgbWaveToElement(roleTitle, "أنت الجاسوس!"); 
     } else {
-        roleIcon.innerText = "🎯"; roleTitle.innerText = data.word; roleTitle.style.color = "var(--neon-blue)";
+        roleIcon.innerText = "🎯"; 
+        applyRgbWaveToElement(roleTitle, data.word);
     }
-    roleCategory.innerText = `التصنيف: ${data.category}`;
+    applyRgbWaveToElement(roleCategory, `التصنيف: ${data.category}`);
 });
 
 socket.on('gameStarted', () => {

@@ -7,13 +7,11 @@
     <link rel="stylesheet" href="styles/style.css">
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        /* إصلاح السكرول في الموبايل وضمان النعومة */
         body, html { overflow-x: hidden; overflow-y: auto; height: 100%; min-height: 100vh; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; }
         .glass-container { max-height: none; overflow-y: visible; margin-bottom: 80px; padding: 25px; }
-        
         .custom-cursor, .cursor-follow { top: 0 !important; left: 0 !important; z-index: 99999999 !important; transition: none !important; pointer-events: none; }
         
-        /* 🔥 أنيميشن الـ RGB Aura (سايبربانك) */
+        /* 🔥 أنيميشن الـ RGB Aura للزراير */
         @keyframes rgbGlow {
             0% { box-shadow: 0 0 12px #ff0055, inset 0 0 8px #ff0055; border-color: #ff0055; }
             25% { box-shadow: 0 0 12px #00f3ff, inset 0 0 8px #00f3ff; border-color: #00f3ff; }
@@ -21,20 +19,29 @@
             75% { box-shadow: 0 0 12px #ffe600, inset 0 0 8px #ffe600; border-color: #ffe600; }
             100% { box-shadow: 0 0 12px #b000ff, inset 0 0 8px #b000ff; border-color: #b000ff; }
         }
-        @keyframes rgbTextGlow {
-            0% { text-shadow: 0 0 15px #ff0055, 0 0 30px #ff0055; color: #fff; }
-            33% { text-shadow: 0 0 15px #00f3ff, 0 0 30px #00f3ff; color: #fff; }
-            66% { text-shadow: 0 0 15px #00ff88, 0 0 30px #00ff88; color: #fff; }
-            100% { text-shadow: 0 0 15px #b000ff, 0 0 30px #b000ff; color: #fff; }
+
+        /* 🔥 أنيميشن موجة الألوان للحروف (RGB Wave) */
+        @keyframes colorWave {
+            0% { color: #ff0055; text-shadow: 0 0 15px #ff0055; }
+            25% { color: #00f3ff; text-shadow: 0 0 15px #00f3ff; }
+            50% { color: #00ff88; text-shadow: 0 0 15px #00ff88; }
+            75% { color: #ffe600; text-shadow: 0 0 15px #ffe600; }
+            100% { color: #b000ff; text-shadow: 0 0 15px #b000ff; }
         }
+
+        /* تطبيق موجة الألوان على حروف العناوين المحددة */
+        .rgb-title span, #roleTitle span, #roleCategory span {
+            animation: colorWave 4s infinite alternate ease-in-out;
+            animation-delay: calc(0.15s * var(--char-index)); /* تأخير زمني متسلسل لكل حرف */
+            display: inline-block;
+        }
+        
+        .rgb-title { font-size: 2.8rem !important; margin-bottom: 25px !important; }
 
         /* تطبيق الـ RGB Aura على *كل* زرار في اللعبة */
         button { animation: rgbGlow 6s infinite alternate !important; transition: transform 0.2s, box-shadow 0.2s !important; }
         button:hover { transform: scale(1.05); }
 
-        .rgb-title { animation: rgbTextGlow 6s infinite alternate; font-size: 2.8rem !important; margin-bottom: 25px !important; }
-
-        /* تعديلات زراير الـ View-Options عشان متبقاش متوهجة بزيادة وهي ملغية */
         .view-options .btn-view { animation: none !important; border-color: rgba(255,255,255,0.1); box-shadow: none; opacity: 0.6; }
         .view-options .btn-view.active-view { animation: rgbGlow 6s infinite alternate !important; opacity: 1; border-color: #00f3ff; }
 
@@ -63,7 +70,6 @@
         .toggle-btn.active { background: var(--neon-green); color: #000; box-shadow: 0 0 15px var(--neon-green); }
         .toggle-btn.inactive { background: var(--neon-red); color: #fff; box-shadow: 0 0 15px var(--neon-red); }
 
-        /* 🔥 توسيع المسافة في لوحة الهوست لمنع التداخل */
         .modal-player-item { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); padding: 12px 18px; border-radius: 10px; margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.05); }
         .modal-player-actions { display: flex; gap: 8px; margin-left: 0; }
         .player-name-wrapper { flex: 1; display: flex; align-items: center; gap: 8px; overflow: hidden; padding-right: 10px; }
@@ -163,7 +169,7 @@
         <div id="gameScreen" class="screen hidden">
             <div class="avatar-glow" id="roleIcon">🎭</div>
             <h2 class="game-main-title rgb-title" id="roleTitle" style="margin-bottom: 5px;">...</h2>
-            <p id="roleCategory" style="color: var(--neon-blue); font-size: 1rem; margin-bottom: 20px; font-weight: bold;">التصنيف: ...</p>
+            <p id="roleCategory" style="color: var(--neon-blue); font-size: 1.2rem; margin-bottom: 20px; font-weight: bold;">التصنيف: ...</p>
             <div style="background: rgba(0,0,0,0.5); padding: 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 25px;">
                 <p style="color: #ccc; font-size: 1.1rem; margin-bottom: 12px;">ابحثوا عن الجاسوس!</p>
                 <p style="color: #64748b; font-size: 0.9rem; line-height: 1.5;">تناقشوا الآن عبر الصوت واكتشفوا من لا يعرف الكلمة.</p>

@@ -34,7 +34,7 @@ io.on('connection', (socket) => {
 
     socket.on('createRoom', (data) => {
         const roomId = data.roomId;
-        const playerId = data.playerId; // الاعتماد على الـ ID الثابت
+        const playerId = data.playerId; 
         socket.join(roomId);
         socket.roomId = roomId;
         socket.playerId = playerId;
@@ -61,7 +61,6 @@ io.on('connection', (socket) => {
             socket.roomId = roomId;
             socket.playerId = playerId;
             
-            // لو اللاعب موجود بالفعل (عمل ريفريش)، نحدث بياناته بس بدل ما نكرره
             if (rooms[roomId].players[playerId]) {
                 rooms[roomId].players[playerId].socketId = socket.id;
                 rooms[roomId].players[playerId].name = data.name;
@@ -246,9 +245,6 @@ io.on('connection', (socket) => {
             if (rooms[roomId].players[playerId].isHost) {
                 socket.to(roomId).emit('hostDisconnected');
                 delete rooms[roomId];
-            } else {
-                // إحنا مش هنمسح الضيف فوراً عشان نديله فرصة لو عمل ريفريش
-                // الـ Reconnect هيتعامل معاه بنفس الـ playerId
             }
         }
     });

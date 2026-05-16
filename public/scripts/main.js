@@ -72,7 +72,8 @@ const modalPlayersList = document.getElementById('modalPlayersList'); const rest
 const hostLeftModal = document.getElementById('hostLeftModal'); const kickedModal = document.getElementById('kickedModal');
 const leftRoomModal = document.getElementById('leftRoomModal'); const invalidRoomModal = document.getElementById('invalidRoomModal'); 
 const errorMsgText = document.getElementById('errorMsgText');
-const spyLeftModal = document.getElementById('spyLeftModal'); const spyLeftText = document.getElementById('spyLeftText'); const closeSpyLeftBtn = document.getElementById('closeSpyLeftBtn');
+
+// 🔥 المودال اتمسح من المتغيرات
 const selectRandomModeBtn = document.getElementById('selectRandomModeBtn'); const revokeRandomModeBtn = document.getElementById('revokeRandomModeBtn');
 const confirmStartGameBtn = document.getElementById('confirmStartGameBtn'); const selectedBadge = document.getElementById('selectedBadge');
 const randomModeCard = document.getElementById('randomModeCard'); const hostModeControls = document.getElementById('hostModeControls');
@@ -98,7 +99,6 @@ requestAnimationFrame(animateCursor);
 document.addEventListener('mouseover', (e) => { if (isPcMode && e.target.closest('button') && customCursor) customCursor.classList.add('hovering'); });
 document.addEventListener('mouseout', (e) => { if (isPcMode && e.target.closest('button') && customCursor) customCursor.classList.remove('hovering'); });
 
-// 🔥 الحل الجذري لمشكلة الموبايل والتزامن: ربط الدخول بحدث connect الخاص بالـ socket
 socket.on('connect', () => {
     const urlParams = new URLSearchParams(window.location.search);
     const roomFromUrl = urlParams.get('room');
@@ -186,16 +186,9 @@ socket.on('updatePlayers', (playersArray) => {
     }
 });
 
+// 🔥 رسالة المودال اتمسحت من هنا، وبقينا بنقفل اللعبة في صمت
 socket.on('spyDisconnected', (spyName) => {
-    playSound('lose'); if(typeof guessInterval !== 'undefined') clearInterval(guessInterval); 
-    if (spyLeftText) spyLeftText.innerText = `لقد توقفت اللعبه لان الجاسوس (${spyName}) غادر اللعبه`;
-    if (spyLeftModal) spyLeftModal.classList.remove('hidden');
-    if (isHost) { if(closeSpyLeftBtn) closeSpyLeftBtn.classList.remove('hidden'); if(restartGameBtn) restartGameBtn.disabled = false; } 
-    else { if(closeSpyLeftBtn) closeSpyLeftBtn.classList.add('hidden'); }
-});
-
-if(closeSpyLeftBtn) closeSpyLeftBtn.addEventListener('click', () => {
-    if (spyLeftModal) spyLeftModal.classList.add('hidden'); if(hostSettingsModal) hostSettingsModal.classList.remove('hidden');
+    // مفيش رسايل هتطلع هنا خلاص. السيرفر بيبعت gameRestarted أوتوماتيك
 });
 
 if(actualStartBtn) actualStartBtn.addEventListener('click', () => { playSound('start'); socket.emit('goToModeSelection'); });
@@ -353,7 +346,6 @@ if(finalOkBtn) finalOkBtn.addEventListener('click', () => {
 
 socket.on('gameRestarted', () => {
     playSound('start'); if(guessInterval) clearInterval(guessInterval); showScreen('waiting');
-    if (spyLeftModal) spyLeftModal.classList.add('hidden');
     selectedBadge.classList.add('hidden'); randomModeCard.style.borderColor = 'rgba(0, 243, 255, 0.3)'; randomModeCard.style.boxShadow = 'none';
     selectRandomModeBtn.classList.remove('hidden'); revokeRandomModeBtn.classList.add('hidden'); confirmStartGameBtn.classList.add('hidden');
     votingResultModal.classList.add('hidden'); finalResultModal.classList.add('hidden');

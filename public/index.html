@@ -117,15 +117,6 @@
     <div id="kickedModal" class="modal-overlay hidden" style="z-index: 999999;"><div class="modal-content glass-container" style="text-align: center;"><div style="font-size: 4rem; margin-bottom: 15px;">🚫</div><h2 class="neon-text" style="color: var(--neon-red);">تم طردك!</h2><p style="color: #ccc; font-size: 1.1rem;">لقد طردك الهوست من الغرفة.</p></div></div>
     <div id="leftRoomModal" class="modal-overlay hidden" style="z-index: 999999;"><div class="modal-content glass-container" style="text-align: center;"><div style="font-size: 4rem; margin-bottom: 15px;">👋</div><h2 class="neon-text" style="color: var(--neon-blue);">لقد غادرت!</h2><p style="color: #ccc; font-size: 1.1rem;">لقد غادرت الغرفة بنجاح.</p></div></div>
 
-    <div id="spyLeftModal" class="modal-overlay hidden" style="z-index: 999999;">
-        <div class="modal-content glass-container" style="text-align: center;">
-            <div style="font-size: 4rem; margin-bottom: 15px;">🏃‍♂️</div>
-            <h2 class="neon-text" style="color: var(--neon-red); margin-bottom: 20px;">توقفت اللعبة!</h2>
-            <p id="spyLeftText" style="color: #ccc; font-size: 1.1rem; margin-bottom: 20px;">لقد توقفت اللعبه لان الجاسوس غادر اللعبه</p>
-            <button id="closeSpyLeftBtn" class="btn-create-room hidden" style="width: 100%;">OK</button>
-        </div>
-    </div>
-
     <div id="votingResultModal" class="modal-overlay hidden" style="backdrop-filter: blur(8px);">
         <div class="modal-content glass-container" style="text-align: center;">
             <div id="votingResultIcon" style="font-size: 4rem; margin-bottom: 15px;">🎭</div>
@@ -201,7 +192,6 @@
             <h2 class="game-main-title rgb-title" style="margin-bottom: 5px;">مرحلة التخمين</h2>
             <p style="color: #ccc; font-size: 0.95rem; margin-bottom: 10px;" id="guessingSubtitle">الجاسوس يبحث عن الكلمة الصحيحة...</p>
             <div id="spyTimer" style="color: var(--neon-red); font-size: 2rem; font-weight: bold; text-align: center; margin-bottom: 15px; text-shadow: 0 0 10px var(--neon-red);">30</div>
-            
             <div class="words-grid" id="wordsGrid"></div>
             <button id="confirmGuessBtn" class="btn-start-game active-start hidden" style="margin-top: 25px; width: 100%;">تأكيد الاختيار ✔️</button>
         </div>

@@ -13,7 +13,6 @@ app.use(express.static(path.resolve(__dirname, '..', 'public')));
 
 let rooms = {};
 
-// 📚 القاموس الجديد: تصنيفات دقيقة جداً عشان الجاسوس يتلخبط بجد
 const categorizedWords = {
     "أجهزة إلكترونية": ["هاتف", "لابتوب", "كاميرا", "طابعة", "ثلاجة", "غسالة", "تكييف", "مروحة", "تلفزيون", "ماوس", "كيبورد", "راوتر", "بلايستيشن", "سماعة", "ميكروفون", "تابلت", "شاحن", "باور بانك", "ساعة ذكية", "ميكروويف", "خلاط", "مكنسة كهربائية", "بروجيكتور", "راديو", "إكس بوكس", "شاشة عرض", "مكواة"],
     "أدوات مطبخ": ["ملعقة", "شوكة", "سكين", "طبق", "كأس", "طنجرة", "مقلاة", "إبريق", "فنجان", "صينية", "مبشرة", "قطاعة", "مصفاة", "وعاء", "فتاحة علب", "مطحنة", "كوب", "زجاجة", "شواية", "طاجن", "براد", "قالب كيك", "عصارة", "مضرب بيض"],
@@ -30,7 +29,6 @@ const categorizedWords = {
     "أدوات ومعدات": ["مطرقة", "مسمار", "مفك", "منشار", "سلم", "زرادية", "شنيور", "كماشة", "شريط قياس", "فرشاة صبغ", "مفتاح إنجليزي", "فأس", "مجرفة", "خوذة عمل", "قفازات عمل", "صنفرة", "ميزان ماء", "مسطريين", "مقص", "دباسة", "مسطرة"]
 };
 
-// 🔥 خوارزمية Fisher-Yates لضمان عشوائية 100% وعدم تكرار الكلمات
 function shuffleArray(array) {
     let currentIndex = array.length, randomIndex;
     while (currentIndex !== 0) {
@@ -44,13 +42,8 @@ function shuffleArray(array) {
 function getSimilarWords(correctWord, categoryName) {
     let categoryWords = categorizedWords[categoryName] || [];
     let filtered = categoryWords.filter(w => w !== correctWord);
-    
-    // خلط الكلمات المتبقية في التصنيف بشكل قوي
     filtered = shuffleArray(filtered);
-    
     let selected = filtered.slice(0, 14);
-
-    // لو التصنيف كان فيه أقل من 14 كلمة (تأمين إضافي)
     if (selected.length < 14) {
         let otherWords = [];
         Object.keys(categorizedWords).forEach(cat => {
@@ -60,10 +53,7 @@ function getSimilarWords(correctWord, categoryName) {
         otherWords = shuffleArray(otherWords);
         selected = selected.concat(otherWords.slice(0, 14 - selected.length));
     }
-    
     selected.push(correctWord);
-    
-    // خلط الـ 15 كلمة النهائية عشان الكلمة الصح مكانها يتغير كل مرة
     return shuffleArray(selected); 
 }
 
@@ -88,12 +78,15 @@ function handlePlayerLeave(roomId, playerId) {
 
     const isHost = rooms[roomId].players[playerId].isHost;
     const wasVoting = (rooms[roomId].gameState === 'voting');
+    let gameAborted = false;
 
+    // 🔥 لو الجاسوس خرج مش هنظهر رسالة، هنرستر الجولة بصمت
     if (rooms[roomId].spyId === playerId && ['playing', 'voting', 'guessing', 'voting_result'].includes(rooms[roomId].gameState)) {
-        const spyName = rooms[roomId].players[playerId].name;
-        io.to(roomId).emit('spyDisconnected', spyName);
         if(rooms[roomId].guessTimer) clearTimeout(rooms[roomId].guessTimer);
         rooms[roomId].gameState = 'waiting';
+        rooms[roomId].votes = {};
+        io.to(roomId).emit('gameRestarted'); 
+        gameAborted = true;
     }
 
     delete rooms[roomId].players[playerId];
@@ -104,7 +97,7 @@ function handlePlayerLeave(roomId, playerId) {
     } else {
         if (rooms[roomId]) {
             io.to(roomId).emit('updatePlayers', Object.values(rooms[roomId].players));
-            if (wasVoting) {
+            if (wasVoting && !gameAborted) {
                 if (rooms[roomId].votes[playerId]) delete rooms[roomId].votes[playerId];
                 const totalVotes = Object.keys(rooms[roomId].votes).length;
                 const remainingPlayersCount = Object.keys(rooms[roomId].players).length;
@@ -123,22 +116,14 @@ function handlePlayerLeave(roomId, playerId) {
 io.on('connection', (socket) => {
 
     socket.on('createRoom', (data) => {
-        const roomId = data.roomId;
-        const playerId = data.playerId; 
+        const roomId = data.roomId; const playerId = data.playerId; 
         socket.join(roomId); socket.roomId = roomId; socket.playerId = playerId;
-        
-        if (!rooms[roomId]) {
-            rooms[roomId] = { players: {}, gameState: 'waiting', word: '', category: '', spyId: null, votes: {}, guessingWords: [], guessTimer: null, guessEndTime: 0 };
-        }
-        
+        if (!rooms[roomId]) rooms[roomId] = { players: {}, gameState: 'waiting', word: '', category: '', spyId: null, votes: {}, guessingWords: [], guessTimer: null, guessEndTime: 0 };
         if (rooms[roomId].players[playerId] && rooms[roomId].players[playerId].disconnectTimeout) {
-            clearTimeout(rooms[roomId].players[playerId].disconnectTimeout);
-            rooms[roomId].players[playerId].disconnectTimeout = null;
+            clearTimeout(rooms[roomId].players[playerId].disconnectTimeout); rooms[roomId].players[playerId].disconnectTimeout = null;
         }
-
         const existingName = rooms[roomId].players[playerId] ? rooms[roomId].players[playerId].name : '𝐒𝐀𝐒𝐔𝐊𝐄';
         rooms[roomId].players[playerId] = { id: playerId, socketId: socket.id, name: existingName, isHost: true };
-        
         io.to(roomId).emit('updatePlayers', Object.values(rooms[roomId].players));
         
         const state = rooms[roomId].gameState;
@@ -161,26 +146,17 @@ io.on('connection', (socket) => {
     });
 
     socket.on('joinRoom', (data) => {
-        const roomId = data.roomId;
-        const playerId = data.playerId;
-
+        const roomId = data.roomId; const playerId = data.playerId;
         if (rooms[roomId]) {
             socket.join(roomId); socket.roomId = roomId; socket.playerId = playerId;
-            
             if (rooms[roomId].players[playerId]) {
-                if (rooms[roomId].players[playerId].disconnectTimeout) {
-                    clearTimeout(rooms[roomId].players[playerId].disconnectTimeout);
-                    rooms[roomId].players[playerId].disconnectTimeout = null;
-                }
+                if (rooms[roomId].players[playerId].disconnectTimeout) { clearTimeout(rooms[roomId].players[playerId].disconnectTimeout); rooms[roomId].players[playerId].disconnectTimeout = null; }
                 rooms[roomId].players[playerId].socketId = socket.id;
             } else {
                 let finalName = data.name.trim(); let suffix = 1;
-                while(Object.values(rooms[roomId].players).some(p => p.name === finalName)) {
-                    finalName = `${data.name.trim()} (${suffix})`; suffix++;
-                }
+                while(Object.values(rooms[roomId].players).some(p => p.name === finalName)) { finalName = `${data.name.trim()} (${suffix})`; suffix++; }
                 rooms[roomId].players[playerId] = { id: playerId, socketId: socket.id, name: finalName, isHost: false };
             }
-            
             io.to(roomId).emit('updatePlayers', Object.values(rooms[roomId].players));
             
             const state = rooms[roomId].gameState;
@@ -188,7 +164,6 @@ io.on('connection', (socket) => {
                 const isSpy = rooms[roomId].spyId === playerId;
                 socket.emit('assignRole', { word: rooms[roomId].word, isSpy: isSpy, category: rooms[roomId].category });
                 socket.emit('gameStarted');
-
                 if (state === 'voting' || state === 'voting_result') {
                     socket.emit('votingStarted', Object.values(rooms[roomId].players));
                     const totalVotes = Object.keys(rooms[roomId].votes).length;
@@ -224,8 +199,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on('leaveRoom', () => {
-        const roomId = socket.roomId;
-        const playerId = socket.playerId;
+        const roomId = socket.roomId; const playerId = socket.playerId;
         if (roomId && rooms[roomId] && rooms[roomId].players[playerId]) {
             if (rooms[roomId].players[playerId].disconnectTimeout) clearTimeout(rooms[roomId].players[playerId].disconnectTimeout);
             handlePlayerLeave(roomId, playerId);
@@ -330,8 +304,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on('disconnect', () => {
-        const roomId = socket.roomId;
-        const playerId = socket.playerId;
+        const roomId = socket.roomId; const playerId = socket.playerId;
         if (roomId && rooms[roomId] && rooms[roomId].players[playerId]) {
             rooms[roomId].players[playerId].disconnectTimeout = setTimeout(() => {
                 handlePlayerLeave(roomId, playerId);

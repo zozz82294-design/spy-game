@@ -178,6 +178,11 @@ if (roomFromUrl) {
         if(goToWaitingBtn) goToWaitingBtn.classList.add('hidden'); 
         if(playerNameInput) playerNameInput.classList.remove('hidden'); 
         if(joinRoomBtn) joinRoomBtn.classList.remove('hidden'); 
+        
+        // 🔥 تعديل الاسم في واجهة الانضمام للعبه الجاسوس
+        const welcomeTitle = document.querySelector('#welcomeScreen .sasuke-title');
+        if (welcomeTitle) welcomeTitle.innerText = "انضمام للعبه الجاسوس";
+
         if (guestName) {
             isHost = false;
             playerNameInput.value = guestName;
@@ -248,12 +253,15 @@ socket.on('updatePlayers', (playersArray) => {
             startGameBtn.classList.remove('hidden'); actualStartBtn.classList.add('hidden');
         }
     }
-    // 🔥 تحديث الـ HTML لتطبيق تنسيقات المسافات الجديدة في لوحة الهوست
+    // 🔥 تحديث HTML لوحة الهوست عشان نضمن توزيع المسافات الجديد
     if (isHost && modalPlayersList) {
         let modalHTML = '';
         playersArray.forEach(player => {
+            const crown = player.isHost ? '<span class="player-crown">👑</span>' : '';
+            const isMe = player.id === myPlayerId;
             const actionButtons = player.isHost ? `<span style="color:#64748b; font-size:0.9rem;">أنت الهوست</span>` : `<button class="btn-action edit" onclick="editPlayerName('${player.id}')">✏️</button><button class="btn-action kick" onclick="kickPlayer('${player.id}')">❌</button>`;
-            modalHTML += `<div class="modal-player-item"><div class="player-name-wrapper"><span class="player-name-text">${player.name}</span>${player.isHost ? '<span class="player-crown">👑</span>' : ''}</div><div class="modal-player-actions">${actionButtons}</div></div>`;
+            
+            modalHTML += `<div class="modal-player-item"><div class="player-name-wrapper"><span class="player-name-text">${player.name}</span>${crown}${isMe ? '<span style="color:#64748b; font-size:0.8rem;">(أنت)</span>' : ''}</div><div class="modal-player-actions">${actionButtons}</div></div>`;
         });
         modalPlayersList.innerHTML = modalHTML;
     }

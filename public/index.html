@@ -20,19 +20,17 @@
             100% { box-shadow: 0 0 12px #b000ff, inset 0 0 8px #b000ff; border-color: #b000ff; }
         }
 
-        /* 🔥 أنيميشن موجة الألوان للحروف (RGB Wave) */
-        @keyframes colorWave {
-            0% { color: #ff0055; text-shadow: 0 0 15px #ff0055; }
-            25% { color: #00f3ff; text-shadow: 0 0 15px #00f3ff; }
-            50% { color: #00ff88; text-shadow: 0 0 15px #00ff88; }
-            75% { color: #ffe600; text-shadow: 0 0 15px #ffe600; }
-            100% { color: #b000ff; text-shadow: 0 0 15px #b000ff; }
+        /* 🔥 الحل السحري للنصوص العربية: تغيير الألوان بدون تقطيع الحروف */
+        @keyframes hueShift {
+            0% { filter: hue-rotate(0deg); }
+            100% { filter: hue-rotate(360deg); }
         }
 
-        /* تطبيق موجة الألوان على حروف العناوين المحددة */
-        .rgb-title span, #roleTitle span, #roleCategory span {
-            animation: colorWave 4s infinite alternate ease-in-out;
-            animation-delay: calc(0.15s * var(--char-index)); /* تأخير زمني متسلسل لكل حرف */
+        /* تطبيق الـ RGB على النصوص (لون أساسي أحمر وبيلف على كل الألوان) */
+        .rgb-title, #roleTitle, #roleCategory {
+            color: #ff0055;
+            text-shadow: 0 0 15px #ff0055, 0 0 30px #ff0055;
+            animation: hueShift 4s linear infinite !important;
             display: inline-block;
         }
         
@@ -62,8 +60,13 @@
         .word-card.spy-active { border-color: var(--neon-blue); box-shadow: 0 0 15px var(--neon-blue); }
         .spy-tag { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: var(--neon-blue); color: #000; font-size: 0.65rem; padding: 2px 8px; border-radius: 10px; white-space: nowrap; animation: pop 0.3s ease; }
         
+        /* الإعدادات العامة (يسار) */
         .general-settings-icon { position: absolute; top: 20px; left: 20px; background: none; border: none; font-size: 1.9rem; cursor: pointer; z-index: 1000; transition: transform 0.3s, opacity 0.3s; animation: none !important; box-shadow: none !important; }
         .general-settings-icon:hover { transform: rotate(90deg); opacity: 0.8; }
+
+        /* إعدادات الهوست (نُقلت لليمين) */
+        .host-settings-icon { position: absolute; top: 20px; right: 20px; background: none; border: none; font-size: 1.9rem; cursor: pointer; z-index: 1000; transition: transform 0.3s, opacity 0.3s; animation: none !important; box-shadow: none !important; }
+        .host-settings-icon:hover { transform: scale(1.1); opacity: 0.8; }
 
         .toggle-switch-container { display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; margin-top: 20px; border: 1px solid rgba(255,255,255,0.1); }
         .toggle-btn { padding: 9px 18px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; transition: 0.3s; animation: none !important; }

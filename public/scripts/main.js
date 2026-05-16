@@ -1,33 +1,6 @@
 const socket = io();
 
 // ==========================================
-// 🎨 نظام تقطيع الحروف لتموج الألوان (RGB Wave)
-// ==========================================
-function applyRgbWaveToElement(element, text) {
-    if (!element) return;
-    element.innerHTML = '';
-    for (let i = 0; i < text.length; i++) {
-        const span = document.createElement('span');
-        if (text[i] === ' ') {
-            span.innerHTML = '&nbsp;';
-        } else {
-            span.textContent = text[i];
-            span.style.setProperty('--char-index', i);
-        }
-        element.appendChild(span);
-    }
-}
-
-function initRgbTitles() {
-    document.querySelectorAll('.rgb-title').forEach(el => {
-        if (!el.querySelector('span')) {
-            applyRgbWaveToElement(el, el.textContent);
-        }
-    });
-}
-initRgbTitles(); // تفعيل التموج فور تحميل الصفحة
-
-// ==========================================
 // 🎧 نظام الصوتيات الاحترافي
 // ==========================================
 const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -206,9 +179,9 @@ if (roomFromUrl) {
         if(playerNameInput) playerNameInput.classList.remove('hidden'); 
         if(joinRoomBtn) joinRoomBtn.classList.remove('hidden'); 
         
-        // 🔥 تغيير عنوان الشاشة الرئيسية للضيوف وتطبيق موجة الألوان
+        // 🔥 تغيير العنوان ببساطة وبدون تقطيع الحروف
         const welcomeTitle = document.querySelector('#welcomeScreen .sasuke-title');
-        if (welcomeTitle) applyRgbWaveToElement(welcomeTitle, "انضمام للعبه الجاسوس");
+        if (welcomeTitle) welcomeTitle.innerText = "انضمام للعبه الجاسوس";
 
         if (guestName) {
             isHost = false;
@@ -317,7 +290,7 @@ socket.on('modeDeselected', (mode) => {
     }
 });
 
-// 🔥 تطبيق موجة الألوان على الكلمة ودور الجاسوس ديناميكياً
+// 🔥 تعيين النص مباشرة مع الحفاظ على ترابط الحروف العربية
 socket.on('assignRole', (data) => {
     playSound('start');
     myRoleData = data;
@@ -327,12 +300,12 @@ socket.on('assignRole', (data) => {
     
     if(data.isSpy) {
         roleIcon.innerText = "🕵️‍♂️"; 
-        applyRgbWaveToElement(roleTitle, "أنت الجاسوس!"); 
+        roleTitle.innerText = "أنت الجاسوس!"; 
     } else {
         roleIcon.innerText = "🎯"; 
-        applyRgbWaveToElement(roleTitle, data.word);
+        roleTitle.innerText = data.word;
     }
-    applyRgbWaveToElement(roleCategory, `التصنيف: ${data.category}`);
+    roleCategory.innerText = `التصنيف: ${data.category}`;
 });
 
 socket.on('gameStarted', () => {

@@ -1,7 +1,7 @@
 const socket = io();
 
 // ==========================================
-// 🎧 نظام الصوتيات الاحترافي (بدون تحميل ملفات خارحية)
+// 🎧 نظام الصوتيات الاحترافي
 // ==========================================
 const AudioContext = window.AudioContext || window.webkitAudioContext;
 let audioCtx;
@@ -10,7 +10,6 @@ function initAudio() {
     if (!audioCtx) audioCtx = new AudioContext();
     if (audioCtx.state === 'suspended') audioCtx.resume();
 }
-// تفعيل الصوت مع أول ضغطة في الشاشة لتخطي حماية المتصفح
 document.addEventListener('click', initAudio, { once: true });
 
 function playSound(type) {
@@ -65,7 +64,6 @@ function playSound(type) {
     }
 }
 
-// إضافة صوت النقرة لكل الزراير
 document.addEventListener('click', (e) => {
     if(e.target.tagName === 'BUTTON' || e.target.closest('button')) playSound('click');
 });
@@ -88,14 +86,12 @@ const closeGeneralSettingsBtn = document.getElementById('closeGeneralSettingsBtn
 const toggleLeaveBtn = document.getElementById('toggleLeaveBtn');
 const leaveRoomBtn = document.getElementById('leaveRoomBtn');
 
-// استرجاع الإعداد من المتصفح
 let isLeaveBtnEnabled = localStorage.getItem('leaveBtnEnabled') !== 'false';
 
 function updateLeaveBtnState() {
     if (isLeaveBtnEnabled) {
         toggleLeaveBtn.innerText = "مفعل ✔️";
         toggleLeaveBtn.className = "toggle-btn active";
-        // إظهاره فقط لو الضيف جوه الغرفة مش في الشاشة الرئيسية
         if (!isHost && !document.getElementById('welcomeScreen').classList.contains('active')) {
             leaveRoomBtn.classList.remove('hidden');
         }
@@ -165,6 +161,9 @@ function animateCursor() {
     requestAnimationFrame(animateCursor);
 }
 requestAnimationFrame(animateCursor);
+
+document.addEventListener('mouseover', (e) => { if (isPcMode && e.target.closest('button') && customCursor) customCursor.classList.add('hovering'); });
+document.addEventListener('mouseout', (e) => { if (isPcMode && e.target.closest('button') && customCursor) customCursor.classList.remove('hovering'); });
 
 const urlParams = new URLSearchParams(window.location.search);
 const roomFromUrl = urlParams.get('room');
@@ -249,11 +248,12 @@ socket.on('updatePlayers', (playersArray) => {
             startGameBtn.classList.remove('hidden'); actualStartBtn.classList.add('hidden');
         }
     }
+    // 🔥 تحديث الـ HTML لتطبيق تنسيقات المسافات الجديدة في لوحة الهوست
     if (isHost && modalPlayersList) {
         let modalHTML = '';
         playersArray.forEach(player => {
-            const actionButtons = player.isHost ? `<span style="color:#64748b;">أنت الهوست</span>` : `<button class="btn-action edit" onclick="editPlayerName('${player.id}')">✏️</button><button class="btn-action kick" onclick="kickPlayer('${player.id}')">❌</button>`;
-            modalHTML += `<div class="modal-player-item"><span class="player-name-text">${player.name}</span><div class="modal-player-actions">${actionButtons}</div></div>`;
+            const actionButtons = player.isHost ? `<span style="color:#64748b; font-size:0.9rem;">أنت الهوست</span>` : `<button class="btn-action edit" onclick="editPlayerName('${player.id}')">✏️</button><button class="btn-action kick" onclick="kickPlayer('${player.id}')">❌</button>`;
+            modalHTML += `<div class="modal-player-item"><div class="player-name-wrapper"><span class="player-name-text">${player.name}</span>${player.isHost ? '<span class="player-crown">👑</span>' : ''}</div><div class="modal-player-actions">${actionButtons}</div></div>`;
         });
         modalPlayersList.innerHTML = modalHTML;
     }

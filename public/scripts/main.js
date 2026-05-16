@@ -133,6 +133,11 @@ const hostLeftModal = document.getElementById('hostLeftModal'); const kickedModa
 const leftRoomModal = document.getElementById('leftRoomModal'); const invalidRoomModal = document.getElementById('invalidRoomModal'); 
 const errorMsgText = document.getElementById('errorMsgText');
 
+// عناصر نافذة الجاسوس
+const spyLeftModal = document.getElementById('spyLeftModal');
+const spyLeftText = document.getElementById('spyLeftText');
+const closeSpyLeftBtn = document.getElementById('closeSpyLeftBtn');
+
 const selectRandomModeBtn = document.getElementById('selectRandomModeBtn'); const revokeRandomModeBtn = document.getElementById('revokeRandomModeBtn');
 const confirmStartGameBtn = document.getElementById('confirmStartGameBtn'); const selectedBadge = document.getElementById('selectedBadge');
 const randomModeCard = document.getElementById('randomModeCard'); const hostModeControls = document.getElementById('hostModeControls');
@@ -179,7 +184,6 @@ if (roomFromUrl) {
         if(playerNameInput) playerNameInput.classList.remove('hidden'); 
         if(joinRoomBtn) joinRoomBtn.classList.remove('hidden'); 
         
-        // تغيير العنوان ببساطة بدون تقطيع
         const welcomeTitle = document.querySelector('#welcomeScreen .sasuke-title');
         if (welcomeTitle) welcomeTitle.innerText = "انضمام للعبه الجاسوس";
 
@@ -235,6 +239,8 @@ socket.on('errorMsg', (msg) => {
 socket.on('updatePlayers', (playersArray) => {
     if (!playersArray) return;
     if (playerCountSpan) playerCountSpan.innerText = playersArray.length;
+    
+    // تحسين الأداء بإنشاء الـ DOM مرة واحدة
     if (playersListDiv) {
         let playersHTML = '';
         playersArray.forEach(player => {
@@ -246,13 +252,28 @@ socket.on('updatePlayers', (playersArray) => {
         });
         playersListDiv.innerHTML = playersHTML;
     }
-    if (isHost && actualStartBtn && startGameBtn) {
+
+    // 💡 التحكم الدقيق في نص الانتظار بناءً على الهوست والضيوف
+    if (isHost) {
         if (playersArray.length >= 3) { 
-            startGameBtn.classList.add('hidden'); actualStartBtn.classList.remove('hidden');
+            if(startGameBtn) startGameBtn.classList.add('hidden'); 
+            if(actualStartBtn) actualStartBtn.classList.remove('hidden');
         } else {
-            startGameBtn.classList.remove('hidden'); actualStartBtn.classList.add('hidden');
+            if(startGameBtn) {
+                startGameBtn.innerText = "في انتظار باقي اللاعبين... ⏳";
+                startGameBtn.classList.remove('hidden');
+            }
+            if(actualStartBtn) actualStartBtn.classList.add('hidden');
         }
+    } else {
+        // للضيوف دائماً
+        if(startGameBtn) {
+            startGameBtn.innerText = "في انتظار الهوست لبدء اللعبة ⏳";
+            startGameBtn.classList.remove('hidden');
+        }
+        if(actualStartBtn) actualStartBtn.classList.add('hidden');
     }
+
     if (isHost && modalPlayersList) {
         let modalHTML = '';
         playersArray.forEach(player => {
@@ -264,6 +285,28 @@ socket.on('updatePlayers', (playersArray) => {
         });
         modalPlayersList.innerHTML = modalHTML;
     }
+});
+
+// 🚨 استقبال حدث خروج الجاسوس
+socket.on('spyDisconnected', (spyName) => {
+    playSound('lose');
+    if (spyLeftText) spyLeftText.innerText = `لقد توقفت اللعبه لان الجاسوس (${spyName}) غادر اللعبه`;
+    if (spyLeftModal) spyLeftModal.classList.remove('hidden');
+    
+    // إظهار زر الإغلاق للهوست فقط عشان يقدر يعمل ريستارت
+    if (isHost) {
+        if(closeSpyLeftBtn) closeSpyLeftBtn.classList.remove('hidden');
+        if(restartGameBtn) restartGameBtn.disabled = false; // تفعيل إعادة اللعب من اللوحة احتياطياً
+    } else {
+        if(closeSpyLeftBtn) closeSpyLeftBtn.classList.add('hidden');
+    }
+});
+
+// إغلاق رسالة الجاسوس (للهوست)
+if(closeSpyLeftBtn) closeSpyLeftBtn.addEventListener('click', () => {
+    if (spyLeftModal) spyLeftModal.classList.add('hidden');
+    // الهوست ممكن يفتح لوحة التحكم ويعمل إعادة لعب
+    if(hostSettingsModal) hostSettingsModal.classList.remove('hidden');
 });
 
 if(actualStartBtn) actualStartBtn.addEventListener('click', () => { playSound('start'); socket.emit('goToModeSelection'); });
@@ -290,7 +333,6 @@ socket.on('modeDeselected', (mode) => {
     }
 });
 
-// تعيين النص مباشرة لضمان الاتصال العربي
 socket.on('assignRole', (data) => {
     playSound('start');
     myRoleData = data;
@@ -463,9 +505,14 @@ if(finalOkBtn) finalOkBtn.addEventListener('click', () => {
     else alert("انتهت اللعبة، في انتظار قرار الهوست بإغلاق اللعبة أو إعادة اللعب");
 });
 
+// 🔄 إخفاء كل النوافذ الطارئة عند إعادة اللعب
 socket.on('gameRestarted', () => {
     playSound('start');
     showScreen('waiting');
+    
+    // إخفاء رسالة الجاسوس لو كانت ظاهرة
+    if (spyLeftModal) spyLeftModal.classList.add('hidden');
+
     selectedBadge.classList.add('hidden'); randomModeCard.style.borderColor = 'rgba(0, 243, 255, 0.3)'; randomModeCard.style.boxShadow = 'none';
     selectRandomModeBtn.classList.remove('hidden'); revokeRandomModeBtn.classList.add('hidden'); confirmStartGameBtn.classList.add('hidden');
     votingResultModal.classList.add('hidden'); finalResultModal.classList.add('hidden');

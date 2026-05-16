@@ -70,7 +70,7 @@ io.on('connection', (socket) => {
             
             io.to(roomId).emit('updatePlayers', Object.values(rooms[roomId].players));
             
-            if(rooms[roomId].gameState === 'playing' || rooms[roomId].gameState === 'voting' || rooms[roomId].gameState === 'guessing') {
+            if(['playing', 'voting', 'guessing', 'voting_result'].includes(rooms[roomId].gameState)) {
                 socket.emit('gameStarted');
             }
         } else {
@@ -99,6 +99,14 @@ io.on('connection', (socket) => {
         const roomId = socket.roomId;
         const playerId = socket.playerId;
         if (roomId && rooms[roomId] && rooms[roomId].players[playerId]) {
+            
+            // 🚨 التحقق إذا كان المغادر هو الجاسوس أثناء اللعب
+            if (rooms[roomId].spyId === playerId && ['playing', 'voting', 'guessing', 'voting_result'].includes(rooms[roomId].gameState)) {
+                const spyName = rooms[roomId].players[playerId].name;
+                io.to(roomId).emit('spyDisconnected', spyName);
+                rooms[roomId].gameState = 'waiting';
+            }
+
             delete rooms[roomId].players[playerId];
             io.to(roomId).emit('updatePlayers', Object.values(rooms[roomId].players));
             socket.leave(roomId);
@@ -242,6 +250,14 @@ io.on('connection', (socket) => {
         const roomId = socket.roomId;
         const playerId = socket.playerId;
         if (roomId && rooms[roomId] && rooms[roomId].players[playerId]) {
+            
+            // 🚨 التحقق إذا كان المغادر هو الجاسوس بسبب فصل الإنترنت
+            if (rooms[roomId].spyId === playerId && ['playing', 'voting', 'guessing', 'voting_result'].includes(rooms[roomId].gameState)) {
+                const spyName = rooms[roomId].players[playerId].name;
+                io.to(roomId).emit('spyDisconnected', spyName);
+                rooms[roomId].gameState = 'waiting';
+            }
+
             if (rooms[roomId].players[playerId].isHost) {
                 socket.to(roomId).emit('hostDisconnected');
                 delete rooms[roomId];

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spy Game - SASUKE</title>
+    <link rel="stylesheet" href="styles/style.css">
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body class="mobile-mode">
+
+    <div class="neon-bg-container">
+        <div class="neon-glow-1"></div>
+        <div class="neon-glow-2"></div>
+    </div>
+
+    <div id="customCursor" class="custom-cursor hidden"></div>
+    <div id="cursorFollow1" class="cursor-follow hidden"></div>
+    <div id="cursorFollow2" class="cursor-follow hidden"></div>
+
+    <div id="notificationToast" class="toast hidden">تم نسخ رابط الدعوة بنجاح! 📋</div>
+
+    <div class="glass-container" id="mainContainer">
+        
+        <div id="welcomeScreen" class="screen active">
+            <div class="logo-section">
+                <div class="spy-icon">🕵️‍♂️</div>
+                <h1 class="sasuke-title">SASUKE</h1>
+            </div>
+            
+            <p class="view-text">اختر نوع العرض</p>
+            
+            <div class="view-options">
+                <button id="pcViewBtn" class="btn-view">كمبيوتر 💻</button>
+                <button id="mobileViewBtn" class="btn-view active-view">موبايل 📱</button>
+            </div>
+
+            <button id="goToWaitingBtn" class="btn-create-room">
+                إنشاء غرفة لعبة الجاسوس 🏠
+            </button>
+        </div>
+
+        <div id="waitingScreen" class="screen hidden">
+            
+            <div class="host-section">
+                <div class="avatar-glow">🕵️‍♂️</div>
+                <h2 class="game-main-title">لعبة الجاسوس</h2>
+                <p class="host-label">غرفة الانتظار الرئيسية</p>
+            </div>
+
+            <div class="invite-section">
+                <button id="copyInviteBtn" class="btn-invite" type="button">
+                     رابط الدعوة 🔗
+                </button>
+            </div>
+
+            <div class="players-panel">
+                <h3>اللاعبين في الغرفة (1/8)</h3>
+                <div class="players-list" id="playersList">
+                    <div class="player-slot host">
+                        <div class="player-name-wrapper">
+                            <span class="player-name-text">𝐒𝐀𝐒𝐔𝐊𝐄</span>
+                            <span class="player-crown">👑</span>
+                        </div>
+                        <span class="status-dot online"></span>
+                    </div>
+                    <div class="player-slot empty">
+                        <span>في انتظار لاعب...</span>
+                        <span class="status-dot waiting"></span>
+                    </div>
+                </div>
+            </div>
+
+            <button id="startGameBtn" class="btn-start-game" disabled>
+                في انتظار باقي اللاعبين... ⏳
+            </button>
+        </div>
+
+    </div>
+
+    <script src="scripts/app.js"></script>
+</body>
+</html>

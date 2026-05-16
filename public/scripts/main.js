@@ -31,7 +31,7 @@ const modalPlayersList = document.getElementById('modalPlayersList');
 const restartGameBtn = document.getElementById('restartGameBtn');
 const hostLeftModal = document.getElementById('hostLeftModal');
 const kickedModal = document.getElementById('kickedModal');
-const leftRoomModal = document.getElementById('leftRoomModal'); // النافذة الجديدة
+const leftRoomModal = document.getElementById('leftRoomModal'); 
 
 const selectRandomModeBtn = document.getElementById('selectRandomModeBtn');
 const startVotingBtn = document.getElementById('startVotingBtn');
@@ -42,6 +42,10 @@ const follow2 = document.getElementById('cursorFollow2');
 
 let isPcMode = false;
 let isHost = false; 
+
+// حفظ مكان الماوس دايماً عشان نمنع الـ Teleport
+let currentMouseX = window.innerWidth / 2;
+let currentMouseY = window.innerHeight / 2;
 
 const urlParams = new URLSearchParams(window.location.search);
 const roomFromUrl = urlParams.get('room');
@@ -96,13 +100,11 @@ if(joinRoomBtn) joinRoomBtn.addEventListener('click', () => {
     if(leaveRoomBtn) leaveRoomBtn.classList.remove('hidden');
 });
 
-// 🚪 مغادرة الضيف إرادياً (تعديل لإظهار الشاشة الثابتة بدلاً من الرئيسية)
+// 🚪 مغادرة الضيف إرادياً
 if(leaveRoomBtn) leaveRoomBtn.addEventListener('click', () => {
     if(confirm('هل أنت متأكد من مغادرة الغرفة؟')) {
         socket.emit('leaveRoom');
         sessionStorage.clear();
-        
-        // إخفاء زر المغادرة وإظهار شاشة "لقد غادرت"
         leaveRoomBtn.classList.add('hidden');
         if(leftRoomModal) leftRoomModal.classList.remove('hidden');
     }
@@ -115,6 +117,7 @@ socket.on('errorMsg', (msg) => {
 
 socket.on('hostDisconnected', () => {
     if(hostLeftModal) hostLeftModal.classList.remove('hidden');
+    if(leaveRoomBtn) leaveRoomBtn.classList.add('hidden');
     sessionStorage.clear();
 });
 
@@ -122,6 +125,7 @@ socket.on('hostDisconnected', () => {
 socket.on('youAreKickedPermanently', () => {
     if(kickedModal) kickedModal.classList.remove('hidden');
     if(leaveRoomBtn) leaveRoomBtn.classList.add('hidden');
+    sessionStorage.clear();
 });
 
 socket.on('updatePlayers', (playersArray) => {
@@ -255,10 +259,23 @@ function showScreen(screenName) {
     }
 }
 
+// دالة تحديث مكان الماوس عشان التيليبورت
+function updateCursorPos() {
+    const x = currentMouseX + 'px';
+    const y = currentMouseY + 'px';
+    if(customCursor) { customCursor.style.left = x; customCursor.style.top = y; }
+    if(follow1) { follow1.style.left = x; follow1.style.top = y; }
+    if(follow2) { follow2.style.left = x; follow2.style.top = y; }
+}
+
 if(pcViewBtn) {
     pcViewBtn.addEventListener('click', () => {
         isPcMode = true;
         document.body.className = 'pc-mode'; 
+        
+        // تحديث المكان قبل ما نظهر الماوس عشان ميطيرش
+        updateCursorPos();
+        
         if(customCursor) customCursor.classList.remove('hidden');
         if(follow1) follow1.classList.remove('hidden');
         if(follow2) follow2.classList.remove('hidden');
@@ -304,12 +321,14 @@ if(copyInviteBtn) copyInviteBtn.addEventListener('click', () => {
     });
 });
 
+// تسجيل مكان الماوس الحقيقي دايماً، وتحديث الشاشة لو إحنا في وضع الـ PC
 document.addEventListener('mousemove', (e) => {
+    currentMouseX = e.clientX;
+    currentMouseY = e.clientY;
+    
     if (!isPcMode) return;
-    const x = e.clientX + 'px', y = e.clientY + 'px';
-    if(customCursor) { customCursor.style.left = x; customCursor.style.top = y; }
-    if(follow1) { follow1.style.left = x; follow1.style.top = y; }
-    if(follow2) { follow2.style.left = x; follow2.style.top = y; }
+    updateCursorPos();
 });
+
 document.addEventListener('mouseover', (e) => { if (isPcMode && e.target.closest('button') && customCursor) customCursor.classList.add('hovering'); });
 document.addEventListener('mouseout', (e) => { if (isPcMode && e.target.closest('button') && customCursor) customCursor.classList.remove('hovering'); });

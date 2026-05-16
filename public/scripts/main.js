@@ -133,11 +133,7 @@ const hostLeftModal = document.getElementById('hostLeftModal'); const kickedModa
 const leftRoomModal = document.getElementById('leftRoomModal'); const invalidRoomModal = document.getElementById('invalidRoomModal'); 
 const errorMsgText = document.getElementById('errorMsgText');
 
-// عناصر نافذة الجاسوس
-const spyLeftModal = document.getElementById('spyLeftModal');
-const spyLeftText = document.getElementById('spyLeftText');
-const closeSpyLeftBtn = document.getElementById('closeSpyLeftBtn');
-
+const spyLeftModal = document.getElementById('spyLeftModal'); const spyLeftText = document.getElementById('spyLeftText'); const closeSpyLeftBtn = document.getElementById('closeSpyLeftBtn');
 const selectRandomModeBtn = document.getElementById('selectRandomModeBtn'); const revokeRandomModeBtn = document.getElementById('revokeRandomModeBtn');
 const confirmStartGameBtn = document.getElementById('confirmStartGameBtn'); const selectedBadge = document.getElementById('selectedBadge');
 const randomModeCard = document.getElementById('randomModeCard'); const hostModeControls = document.getElementById('hostModeControls');
@@ -240,7 +236,6 @@ socket.on('updatePlayers', (playersArray) => {
     if (!playersArray) return;
     if (playerCountSpan) playerCountSpan.innerText = playersArray.length;
     
-    // تحسين الأداء بإنشاء الـ DOM مرة واحدة
     if (playersListDiv) {
         let playersHTML = '';
         playersArray.forEach(player => {
@@ -253,24 +248,16 @@ socket.on('updatePlayers', (playersArray) => {
         playersListDiv.innerHTML = playersHTML;
     }
 
-    // 💡 التحكم الدقيق في نص الانتظار بناءً على الهوست والضيوف
     if (isHost) {
         if (playersArray.length >= 3) { 
             if(startGameBtn) startGameBtn.classList.add('hidden'); 
             if(actualStartBtn) actualStartBtn.classList.remove('hidden');
         } else {
-            if(startGameBtn) {
-                startGameBtn.innerText = "في انتظار باقي اللاعبين... ⏳";
-                startGameBtn.classList.remove('hidden');
-            }
+            if(startGameBtn) { startGameBtn.innerText = "في انتظار باقي اللاعبين... ⏳"; startGameBtn.classList.remove('hidden'); }
             if(actualStartBtn) actualStartBtn.classList.add('hidden');
         }
     } else {
-        // للضيوف دائماً
-        if(startGameBtn) {
-            startGameBtn.innerText = "في انتظار الهوست لبدء اللعبة ⏳";
-            startGameBtn.classList.remove('hidden');
-        }
+        if(startGameBtn) { startGameBtn.innerText = "في انتظار الهوست لبدء اللعبة ⏳"; startGameBtn.classList.remove('hidden'); }
         if(actualStartBtn) actualStartBtn.classList.add('hidden');
     }
 
@@ -280,32 +267,28 @@ socket.on('updatePlayers', (playersArray) => {
             const crown = player.isHost ? '<span class="player-crown">👑</span>' : '';
             const isMe = player.id === myPlayerId;
             const actionButtons = player.isHost ? `<span style="color:#64748b; font-size:0.9rem;">أنت الهوست</span>` : `<button class="btn-action edit" onclick="editPlayerName('${player.id}')">✏️</button><button class="btn-action kick" onclick="kickPlayer('${player.id}')">❌</button>`;
-            
             modalHTML += `<div class="modal-player-item"><div class="player-name-wrapper"><span class="player-name-text">${player.name}</span>${crown}${isMe ? '<span style="color:#64748b; font-size:0.8rem;">(أنت)</span>' : ''}</div><div class="modal-player-actions">${actionButtons}</div></div>`;
         });
         modalPlayersList.innerHTML = modalHTML;
     }
 });
 
-// 🚨 استقبال حدث خروج الجاسوس
 socket.on('spyDisconnected', (spyName) => {
     playSound('lose');
+    if(typeof guessInterval !== 'undefined') clearInterval(guessInterval); // إيقاف التايمر لو شغال
     if (spyLeftText) spyLeftText.innerText = `لقد توقفت اللعبه لان الجاسوس (${spyName}) غادر اللعبه`;
     if (spyLeftModal) spyLeftModal.classList.remove('hidden');
     
-    // إظهار زر الإغلاق للهوست فقط عشان يقدر يعمل ريستارت
     if (isHost) {
         if(closeSpyLeftBtn) closeSpyLeftBtn.classList.remove('hidden');
-        if(restartGameBtn) restartGameBtn.disabled = false; // تفعيل إعادة اللعب من اللوحة احتياطياً
+        if(restartGameBtn) restartGameBtn.disabled = false; 
     } else {
         if(closeSpyLeftBtn) closeSpyLeftBtn.classList.add('hidden');
     }
 });
 
-// إغلاق رسالة الجاسوس (للهوست)
 if(closeSpyLeftBtn) closeSpyLeftBtn.addEventListener('click', () => {
     if (spyLeftModal) spyLeftModal.classList.add('hidden');
-    // الهوست ممكن يفتح لوحة التحكم ويعمل إعادة لعب
     if(hostSettingsModal) hostSettingsModal.classList.remove('hidden');
 });
 
@@ -368,12 +351,7 @@ socket.on('votingStarted', (playersArray) => {
     let gridHTML = '';
     playersArray.forEach(p => {
         if (p.id !== myPlayerId) {
-            gridHTML += `
-                <div class="vote-card" onclick="castVote('${p.id}', this)">
-                    <div style="font-size: 2rem; margin-bottom:10px;">${p.isHost ? '👑' : '👤'}</div>
-                    <div style="font-weight:bold; color:#fff;">${p.name}</div>
-                </div>
-            `;
+            gridHTML += `<div class="vote-card" onclick="castVote('${p.id}', this)"><div style="font-size: 2rem; margin-bottom:10px;">${p.isHost ? '👑' : '👤'}</div><div style="font-weight:bold; color:#fff;">${p.name}</div></div>`;
         }
     });
     votingGrid.innerHTML = gridHTML;
@@ -394,7 +372,6 @@ socket.on('voteRegistered', (data) => {
         voteCounter.style.color = "var(--neon-green)";
         voteCounter.style.textShadow = "0 0 10px var(--neon-green)";
     }
-
     const logP = document.createElement('div');
     logP.className = 'log-entry';
     logP.innerHTML = `${data.voterName} صوت على <span class="target-name">${data.targetName}</span>`;
@@ -440,7 +417,10 @@ if(spyProceedBtn) spyProceedBtn.addEventListener('click', () => {
     votingResultModal.classList.add('hidden'); socket.emit('startGuessingPhase');
 });
 
-socket.on('guessingPhaseStarted', (wordsArray) => {
+// ⏱️ متغير لتايمر الواجهة
+let guessInterval;
+
+socket.on('guessingPhaseStarted', (data) => {
     playSound('start');
     votingResultModal.classList.add('hidden');
     showScreen('guessing');
@@ -452,11 +432,51 @@ socket.on('guessingPhaseStarted', (wordsArray) => {
     }
 
     let wordsHTML = '';
-    wordsArray.forEach(w => {
+    data.words.forEach(w => {
         const onClickAttr = myRoleData.isSpy ? `onclick="selectSpyWord('${w}')"` : '';
         wordsHTML += `<div class="word-card" id="word-${w}" ${onClickAttr}>${w}</div>`;
     });
     wordsGrid.innerHTML = wordsHTML;
+
+    // تشغيل العداد التنازلي في الواجهة
+    let timeLeft = data.duration;
+    const spyTimerEl = document.getElementById('spyTimer');
+    if(spyTimerEl) {
+        spyTimerEl.innerText = timeLeft;
+        spyTimerEl.style.color = "var(--neon-green)";
+        spyTimerEl.style.textShadow = "0 0 10px var(--neon-green)";
+    }
+    
+    if(guessInterval) clearInterval(guessInterval);
+    guessInterval = setInterval(() => {
+        timeLeft--;
+        if(spyTimerEl) {
+            spyTimerEl.innerText = timeLeft;
+            if(timeLeft <= 10) {
+                spyTimerEl.style.color = "var(--neon-red)";
+                spyTimerEl.style.textShadow = "0 0 10px var(--neon-red)";
+            }
+        }
+        if(timeLeft <= 0) clearInterval(guessInterval);
+    }, 1000);
+});
+
+// 🚨 استقبال حدث انتهاء وقت الجاسوس
+socket.on('spyTimeOut', () => {
+    playSound('lose');
+    if(guessInterval) clearInterval(guessInterval);
+    
+    const t1 = document.getElementById('finalResultText1'); const t2 = document.getElementById('finalResultText2');
+    const t3 = document.getElementById('finalResultText3'); const t4 = document.getElementById('finalResultText4');
+
+    t1.innerText = "نفد الوقت! ⏳";
+    t2.innerText = "لقد انتهت اللعبه لعدم اختيار الجاسوس الإجابة";
+    t2.style.color = "var(--neon-red)";
+    t3.innerText = "لقد خسر الجاسوس!";
+    t3.style.color = "var(--neon-red)";
+    t4.innerText = "";
+    
+    finalResultModal.classList.remove('hidden');
 });
 
 window.selectSpyWord = function(word) {
@@ -484,6 +504,7 @@ if(confirmGuessBtn) confirmGuessBtn.addEventListener('click', () => {
 });
 
 socket.on('gameFinalResult', (data) => {
+    if(guessInterval) clearInterval(guessInterval);
     if(data.isCorrect) playSound('win'); else playSound('lose');
     
     const t1 = document.getElementById('finalResultText1'); const t2 = document.getElementById('finalResultText2');
@@ -501,16 +522,17 @@ socket.on('gameFinalResult', (data) => {
 
 if(finalOkBtn) finalOkBtn.addEventListener('click', () => {
     finalResultModal.classList.add('hidden');
-    if (isHost) showScreen('waiting'); 
-    else alert("انتهت اللعبة، في انتظار قرار الهوست بإغلاق اللعبة أو إعادة اللعب");
+    if (isHost) {
+        // إظهار لوحة التحكم للهوست عشان يعمل إعادة اللعب
+        if(hostSettingsModal) hostSettingsModal.classList.remove('hidden');
+    }
 });
 
-// 🔄 إخفاء كل النوافذ الطارئة عند إعادة اللعب
 socket.on('gameRestarted', () => {
     playSound('start');
+    if(guessInterval) clearInterval(guessInterval);
     showScreen('waiting');
     
-    // إخفاء رسالة الجاسوس لو كانت ظاهرة
     if (spyLeftModal) spyLeftModal.classList.add('hidden');
 
     selectedBadge.classList.add('hidden'); randomModeCard.style.borderColor = 'rgba(0, 243, 255, 0.3)'; randomModeCard.style.boxShadow = 'none';

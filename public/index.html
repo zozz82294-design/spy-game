@@ -14,11 +14,22 @@
         <div class="neon-glow-2"></div>
     </div>
 
+    <button id="hostSettingsBtn" class="host-settings-icon hidden" title="إعدادات الغرفة">⚙️</button>
+
     <div id="customCursor" class="custom-cursor hidden"></div>
     <div id="cursorFollow1" class="cursor-follow hidden"></div>
     <div id="cursorFollow2" class="cursor-follow hidden"></div>
 
     <div id="notificationToast" class="toast hidden">تم نسخ رابط الدعوة بنجاح! 📋</div>
+
+    <div id="hostSettingsModal" class="modal-overlay hidden">
+        <div class="modal-content glass-container">
+            <h2 class="neon-text" style="margin-bottom: 20px;">إدارة اللاعبين ⚙️</h2>
+            <div id="modalPlayersList" class="modal-players-list"></div>
+            <button id="restartGameBtn" class="btn-restart-game" disabled>إعادة اللعب 🔄</button>
+            <button id="closeModalBtn" class="btn-close-modal" style="margin-top: 15px;">إغلاق اللوحة</button>
+        </div>
+    </div>
 
     <div class="glass-container" id="mainContainer">
         
@@ -28,20 +39,24 @@
                 <h1 class="sasuke-title">SASUKE</h1>
             </div>
             
-            <p class="view-text">اختر نوع العرض</p>
+            <input type="text" id="playerNameInput" class="name-input hidden" placeholder="اكتب اسمك هنا يا بطل..." autocomplete="off">
             
+            <p class="view-text">اختر نوع العرض</p>
             <div class="view-options">
                 <button id="pcViewBtn" class="btn-view">كمبيوتر 💻</button>
                 <button id="mobileViewBtn" class="btn-view active-view">موبايل 📱</button>
             </div>
-
+            
             <button id="goToWaitingBtn" class="btn-create-room">
                 إنشاء غرفة لعبة الجاسوس 🏠
+            </button>
+
+            <button id="joinRoomBtn" class="btn-join-room hidden">
+                انضمام للغرفة 🚀
             </button>
         </div>
 
         <div id="waitingScreen" class="screen hidden">
-            
             <div class="host-section">
                 <div class="avatar-glow">🕵️‍♂️</div>
                 <h2 class="game-main-title">لعبة الجاسوس</h2>
@@ -55,29 +70,28 @@
             </div>
 
             <div class="players-panel">
-                <h3>اللاعبين في الغرفة (1/8)</h3>
+                <h3>اللاعبين في الغرفة (<span id="playerCount">0</span>)</h3>
                 <div class="players-list" id="playersList">
-                    <div class="player-slot host">
-                        <div class="player-name-wrapper">
-                            <span class="player-name-text">𝐒𝐀𝐒𝐔𝐊𝐄</span>
-                            <span class="player-crown">👑</span>
-                        </div>
-                        <span class="status-dot online"></span>
-                    </div>
-                    <div class="player-slot empty">
-                        <span>في انتظار لاعب...</span>
-                        <span class="status-dot waiting"></span>
-                    </div>
+                    <div style="text-align: center; color: #64748b; padding: 10px;">جاري تحميل اللاعبين...</div>
                 </div>
             </div>
 
+            <button id="actualStartBtn" class="btn-start-game active-start hidden" style="margin-bottom: 10px;">
+                بدء اللعبة 🚀
+            </button>
             <button id="startGameBtn" class="btn-start-game" disabled>
                 في انتظار باقي اللاعبين... ⏳
             </button>
         </div>
 
+        <div id="gameScreen" class="screen hidden">
+            <div class="avatar-glow">🎭</div>
+            <h2 class="game-main-title">اللعبة بدأت!</h2>
+            <p style="color: #ccc; margin-top: 15px; font-size: 1.2rem;">جاري إعداد أدوار الجاسوس...</p>
+        </div>
+
     </div>
 
-    <script src="scripts/app.js"></script>
+    <script src="scripts/main.js"></script>
 </body>
 </html>

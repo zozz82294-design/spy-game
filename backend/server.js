@@ -9,19 +9,83 @@ const io = socketIo(server);
 
 const PORT = process.env.PORT || 3000;
 
-// تشغيل الملفات الثابتة من فولدر public
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.resolve(__dirname, '..', 'public')));
 
-// إدارة اتصالات اللاعبين (WebSockets)
+let rooms = {};
+
 io.on('connection', (socket) => {
-    console.log('لاعب جديد اتصل بالسيرفر: ' + socket.id);
+
+    socket.on('createRoom', (data) => {
+        const roomId = data.roomId;
+        socket.join(roomId);
+        socket.roomId = roomId;
+        
+        rooms[roomId] = { players: {} };
+        
+        // تسجيل الهوست باسم SASUKE إجبارياً من السيرفر
+        rooms[roomId].players[socket.id] = { 
+            id: socket.id, 
+            name: '𝐒𝐀𝐒𝐔𝐊𝐄', 
+            isHost: true 
+        };
+        
+        io.to(roomId).emit('updatePlayers', Object.values(rooms[roomId].players));
+    });
+
+    socket.on('joinRoom', (data) => {
+        const roomId = data.roomId;
+        
+        if (rooms[roomId]) {
+            socket.join(roomId);
+            socket.roomId = roomId;
+            
+            rooms[roomId].players[socket.id] = { 
+                id: socket.id, 
+                name: data.name, 
+                isHost: false 
+            };
+            
+            io.to(roomId).emit('updatePlayers', Object.values(rooms[roomId].players));
+        } else {
+            socket.emit('errorMsg', 'الغرفة دي مش موجودة أو الهوست قفل اللعبة!');
+        }
+    });
+
+    socket.on('changePlayerName', (data) => {
+        if(socket.roomId && rooms[socket.roomId] && rooms[socket.roomId].players[data.targetId]) {
+            rooms[socket.roomId].players[data.targetId].name = data.newName;
+            io.to(socket.roomId).emit('updatePlayers', Object.values(rooms[socket.roomId].players));
+        }
+    });
+
+    socket.on('kickPlayer', (targetId) => {
+        io.to(targetId).emit('youAreKicked');
+    });
+
+    socket.on('startGame', () => {
+        if(socket.roomId) io.to(socket.roomId).emit('gameStarted');
+    });
+
+    socket.on('restartGame', () => {
+        if(socket.roomId) io.to(socket.roomId).emit('gameRestarted');
+    });
 
     socket.on('disconnect', () => {
-        console.log('لاعب قطع الاتصال: ' + socket.id);
+        const roomId = socket.roomId;
+        if (roomId && rooms[roomId] && rooms[roomId].players[socket.id]) {
+            const isHost = rooms[roomId].players[socket.id].isHost;
+
+            if (isHost) {
+                socket.to(roomId).emit('errorMsg', 'الهوست خرج أو عمل ريفريش! تم إغلاق الغرفة.');
+                delete rooms[roomId];
+            } else {
+                delete rooms[roomId].players[socket.id];
+                io.to(roomId).emit('updatePlayers', Object.values(rooms[roomId].players));
+            }
+        }
     });
 });
 
-// تشغيل السيرفر على البورت 3000
 server.listen(PORT, () => {
     console.log(`=============================================`);
     console.log(`🚀 Server is successfully running on port ${PORT}`);

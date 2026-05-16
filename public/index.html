@@ -20,23 +20,24 @@
             100% { box-shadow: 0 0 12px #b000ff, inset 0 0 8px #b000ff; border-color: #b000ff; }
         }
 
-        /* 🔥 الحل السحري للنصوص العربية: تغيير الألوان بدون تقطيع الحروف */
+        /* 🔥 تموج الألوان للنصوص */
         @keyframes hueShift {
             0% { filter: hue-rotate(0deg); }
             100% { filter: hue-rotate(360deg); }
         }
 
-        /* تطبيق الـ RGB على النصوص (لون أساسي أحمر وبيلف على كل الألوان) */
+        /* إصلاح التوسيط: إزالة inline-block واستخدام block */
         .rgb-title, #roleTitle, #roleCategory {
             color: #ff0055;
             text-shadow: 0 0 15px #ff0055, 0 0 30px #ff0055;
             animation: hueShift 4s linear infinite !important;
-            display: inline-block;
+            display: block; 
+            text-align: center;
+            width: 100%;
         }
         
         .rgb-title { font-size: 2.8rem !important; margin-bottom: 25px !important; }
 
-        /* تطبيق الـ RGB Aura على *كل* زرار في اللعبة */
         button { animation: rgbGlow 6s infinite alternate !important; transition: transform 0.2s, box-shadow 0.2s !important; }
         button:hover { transform: scale(1.05); }
 
@@ -60,11 +61,9 @@
         .word-card.spy-active { border-color: var(--neon-blue); box-shadow: 0 0 15px var(--neon-blue); }
         .spy-tag { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: var(--neon-blue); color: #000; font-size: 0.65rem; padding: 2px 8px; border-radius: 10px; white-space: nowrap; animation: pop 0.3s ease; }
         
-        /* الإعدادات العامة (يسار) */
         .general-settings-icon { position: absolute; top: 20px; left: 20px; background: none; border: none; font-size: 1.9rem; cursor: pointer; z-index: 1000; transition: transform 0.3s, opacity 0.3s; animation: none !important; box-shadow: none !important; }
         .general-settings-icon:hover { transform: rotate(90deg); opacity: 0.8; }
 
-        /* إعدادات الهوست (نُقلت لليمين) */
         .host-settings-icon { position: absolute; top: 20px; right: 20px; background: none; border: none; font-size: 1.9rem; cursor: pointer; z-index: 1000; transition: transform 0.3s, opacity 0.3s; animation: none !important; box-shadow: none !important; }
         .host-settings-icon:hover { transform: scale(1.1); opacity: 0.8; }
 

@@ -179,7 +179,7 @@ if (roomFromUrl) {
         if(playerNameInput) playerNameInput.classList.remove('hidden'); 
         if(joinRoomBtn) joinRoomBtn.classList.remove('hidden'); 
         
-        // 🔥 تغيير العنوان ببساطة وبدون تقطيع الحروف
+        // تغيير العنوان ببساطة بدون تقطيع
         const welcomeTitle = document.querySelector('#welcomeScreen .sasuke-title');
         if (welcomeTitle) welcomeTitle.innerText = "انضمام للعبه الجاسوس";
 
@@ -290,7 +290,7 @@ socket.on('modeDeselected', (mode) => {
     }
 });
 
-// 🔥 تعيين النص مباشرة مع الحفاظ على ترابط الحروف العربية
+// تعيين النص مباشرة لضمان الاتصال العربي
 socket.on('assignRole', (data) => {
     playSound('start');
     myRoleData = data;

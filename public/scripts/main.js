@@ -1,3 +1,6 @@
+sessionStorage.clear();
+localStorage.clear();
+
 const socket = io();
 
 const screens = {
@@ -27,6 +30,7 @@ const hostSettingsModal = document.getElementById('hostSettingsModal');
 const closeModalBtn = document.getElementById('closeModalBtn');
 const modalPlayersList = document.getElementById('modalPlayersList');
 const restartGameBtn = document.getElementById('restartGameBtn');
+const hostLeftModal = document.getElementById('hostLeftModal');
 
 const customCursor = document.getElementById('customCursor');
 const follow1 = document.getElementById('cursorFollow1');
@@ -38,41 +42,31 @@ let isHost = false;
 const urlParams = new URLSearchParams(window.location.search);
 const roomFromUrl = urlParams.get('room');
 
-// ==========================================
-// 🚀 حل مشكلة الريفريش للهوست
-// ==========================================
 const wasHostOfRoom = sessionStorage.getItem('hostRoomId');
 
 if (roomFromUrl && wasHostOfRoom === roomFromUrl) {
-    // لو أنت الهوست وعملت ريفريش، نمسح اللينك ونرجعك للرئيسية فوراً
     sessionStorage.removeItem('hostRoomId');
     window.location.href = '/';
 }
 
 if (roomFromUrl && wasHostOfRoom !== roomFromUrl) {
-    // لو ضيف داخل على اللينك
     if(goToWaitingBtn) goToWaitingBtn.classList.add('hidden'); 
     if(playerNameInput) playerNameInput.classList.remove('hidden'); 
     if(joinRoomBtn) joinRoomBtn.classList.remove('hidden'); 
 }
 
-// إنشاء الغرفة (الهوست)
 if(goToWaitingBtn) goToWaitingBtn.addEventListener('click', () => {
     isHost = true;
     if(hostSettingsBtn) hostSettingsBtn.classList.remove('hidden'); 
     
     const newRoomId = Math.random().toString(36).substring(2, 8);
-    
-    // تسجيل إن المتصفح ده هو الهوست عشان لو عمل ريفريش
     sessionStorage.setItem('hostRoomId', newRoomId);
-    
     window.history.pushState({}, '', `?room=${newRoomId}`);
     
     socket.emit('createRoom', { roomId: newRoomId }); 
     showScreen('waiting');
 });
 
-// انضمام للغرفة (الضيف)
 if(joinRoomBtn) joinRoomBtn.addEventListener('click', () => {
     const enteredName = playerNameInput.value.trim();
     
@@ -91,7 +85,11 @@ socket.on('errorMsg', (msg) => {
     window.location.href = '/'; 
 });
 
-// تحديث اللاعبين
+// استقبال حدث خروج الهوست وإظهار النافذة للضيوف
+socket.on('hostDisconnected', () => {
+    if(hostLeftModal) hostLeftModal.classList.remove('hidden');
+});
+
 socket.on('updatePlayers', (playersArray) => {
     if (!playersArray) return;
 

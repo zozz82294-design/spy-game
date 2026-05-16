@@ -22,7 +22,6 @@ io.on('connection', (socket) => {
         
         rooms[roomId] = { players: {} };
         
-        // تسجيل الهوست باسم SASUKE إجبارياً من السيرفر
         rooms[roomId].players[socket.id] = { 
             id: socket.id, 
             name: '𝐒𝐀𝐒𝐔𝐊𝐄', 
@@ -76,7 +75,8 @@ io.on('connection', (socket) => {
             const isHost = rooms[roomId].players[socket.id].isHost;
 
             if (isHost) {
-                socket.to(roomId).emit('errorMsg', 'الهوست خرج أو عمل ريفريش! تم إغلاق الغرفة.');
+                // بدل رسالة الخطأ، هنبعت حدث مخصص للضيوف إن الهوست خرج
+                socket.to(roomId).emit('hostDisconnected');
                 delete rooms[roomId];
             } else {
                 delete rooms[roomId].players[socket.id];

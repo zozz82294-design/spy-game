@@ -1,6 +1,5 @@
 const socket = io();
 
-// 🔥 توليد النجوم وظهورها فوراً من غير تأخير
 function createStars() {
     const container = document.getElementById('starsContainer');
     container.innerHTML = '';
@@ -12,7 +11,6 @@ function createStars() {
         star.style.height = size + 'px';
         star.style.left = Math.random() * 100 + 'vw';
         star.style.animationDuration = Math.random() * 3 + 3 + 's'; 
-        // السر هنا! Negative delay بيخليها تبدأ وهي في نص الشاشة بالفعل
         star.style.animationDelay = '-' + (Math.random() * 6) + 's'; 
         container.appendChild(star);
     }
@@ -80,11 +78,7 @@ function updateLeaveBtnState() {
     } else {
         toggleLeaveBtn.innerText = "معطل ❌"; toggleLeaveBtn.className = "toggle-btn inactive"; leaveRoomBtn.classList.add('hidden');
     }
-    if (isHost) {
-        generalSettingsBtn.classList.add('hidden');
-    } else {
-        generalSettingsBtn.classList.remove('hidden');
-    }
+    if (isHost) { generalSettingsBtn.classList.add('hidden'); } else { generalSettingsBtn.classList.remove('hidden'); }
 }
 
 if(generalSettingsBtn) generalSettingsBtn.addEventListener('click', () => generalSettingsModal.classList.remove('hidden'));
@@ -102,9 +96,7 @@ const modalPlayersList = document.getElementById('modalPlayersList'); const rest
 const hostLeftModal = document.getElementById('hostLeftModal'); const kickedModal = document.getElementById('kickedModal');
 const leftRoomModal = document.getElementById('leftRoomModal'); const invalidRoomModal = document.getElementById('invalidRoomModal'); 
 const errorMsgText = document.getElementById('errorMsgText');
-
-const selectStarsBgBtn = document.getElementById('selectStarsBgBtn'); const selectDefaultBgBtn = document.getElementById('selectDefaultBgBtn');
-const starsContainer = document.getElementById('starsContainer'); const defaultBg = document.getElementById('defaultBg');
+const starsContainer = document.getElementById('starsContainer'); 
 const tieBreakerModal = document.getElementById('tieBreakerModal'); const tiedPlayersNames = document.getElementById('tiedPlayersNames'); const tieTimerEl = document.getElementById('tieTimer');
 let tieInterval;
 
@@ -133,6 +125,35 @@ requestAnimationFrame(animateCursor);
 document.addEventListener('mouseover', (e) => { if (isPcMode && e.target.closest('button') && customCursor) customCursor.classList.add('hovering'); });
 document.addEventListener('mouseout', (e) => { if (isPcMode && e.target.closest('button') && customCursor) customCursor.classList.remove('hovering'); });
 
+// 🔥 نظام الخلفيات الجديد: حفظ وتطبيق
+function applyTheme(themeNum, showStars) {
+    document.body.classList.remove('theme-1', 'theme-2', 'theme-3', 'theme-4', 'theme-5', 'theme-6');
+    document.body.classList.add(`theme-${themeNum}`);
+    
+    if (showStars) {
+        createStars();
+        starsContainer.classList.remove('hidden');
+    } else {
+        starsContainer.classList.add('hidden');
+        starsContainer.innerHTML = ''; 
+    }
+    localStorage.setItem('savedTheme', JSON.stringify({ theme: themeNum, stars: showStars }));
+}
+
+// استرجاع الخلفية عند فتح الموقع
+const savedBgData = localStorage.getItem('savedTheme');
+if (savedBgData) {
+    try {
+        const parsed = JSON.parse(savedBgData);
+        applyTheme(parsed.theme || 1, parsed.stars || false);
+    } catch (e) { applyTheme(1, false); }
+} else {
+    // لو لاعب قديم كان مختار 'stars'
+    const oldSaved = localStorage.getItem('selectedBg');
+    if (oldSaved === 'stars') applyTheme(1, true);
+    else applyTheme(1, false);
+}
+
 socket.on('connect', () => {
     const urlParams = new URLSearchParams(window.location.search);
     const roomFromUrl = urlParams.get('room');
@@ -151,7 +172,7 @@ socket.on('connect', () => {
             if(playerNameInput) playerNameInput.classList.remove('hidden'); 
             if(joinRoomBtn) joinRoomBtn.classList.remove('hidden');
             const welcomeTitle = document.querySelector('#welcomeScreen .sasuke-title');
-            if (welcomeTitle) applyRgbWaveToElement(welcomeTitle, "انضمام للعبه الجاسوس");
+            if (welcomeTitle) applyRgbWaveToElement(welcomeTitle, "انـــضـــمـــام");
             
             playerNameInput.value = guestName;
             socket.emit('joinRoom', { roomId: roomFromUrl, name: guestName, playerId: myPlayerId });
@@ -161,41 +182,29 @@ socket.on('connect', () => {
             if(playerNameInput) playerNameInput.classList.remove('hidden'); 
             if(joinRoomBtn) joinRoomBtn.classList.remove('hidden');
             const welcomeTitle = document.querySelector('#welcomeScreen .sasuke-title');
-            if (welcomeTitle) applyRgbWaveToElement(welcomeTitle, "انضمام للعبه الجاسوس");
+            if (welcomeTitle) applyRgbWaveToElement(welcomeTitle, "انـــضـــمـــام");
         }
     } else {
         sessionStorage.removeItem('hostRoomId'); sessionStorage.removeItem('guestName');
     }
 });
 
-if(goToWaitingBtn) goToWaitingBtn.addEventListener('click', () => {
-    isHost = true; 
-    pendingAction = 'create';
-    showScreen('bgSelection');
-});
-
+if(goToWaitingBtn) goToWaitingBtn.addEventListener('click', () => { isHost = true; pendingAction = 'create'; showScreen('bgSelection'); });
 if(joinRoomBtn) joinRoomBtn.addEventListener('click', () => {
     const enteredName = playerNameInput.value.trim();
     if(!enteredName) { alert("اكتب اسمك الأول يا بطل!"); return; }
-    isHost = false; 
-    tempGuestName = enteredName;
-    tempRoomIdToJoin = new URLSearchParams(window.location.search).get('room');
-    pendingAction = 'join';
-    showScreen('bgSelection');
+    isHost = false; tempGuestName = enteredName; tempRoomIdToJoin = new URLSearchParams(window.location.search).get('room');
+    pendingAction = 'join'; showScreen('bgSelection');
 });
 
-if(selectStarsBgBtn) selectStarsBgBtn.addEventListener('click', () => {
-    createStars();
-    starsContainer.classList.remove('hidden');
-    defaultBg.classList.add('hidden'); 
-    executePendingAction();
-});
-
-if(selectDefaultBgBtn) selectDefaultBgBtn.addEventListener('click', () => {
-    starsContainer.classList.add('hidden');
-    defaultBg.classList.remove('hidden');
-    executePendingAction();
-});
+// تشغيل الأزرار الخاصة بالخلفيات
+document.getElementById('bgBtn1').addEventListener('click', () => { applyTheme(1, false); executePendingAction(); });
+document.getElementById('bgBtn2').addEventListener('click', () => { applyTheme(2, false); executePendingAction(); });
+document.getElementById('bgBtn3').addEventListener('click', () => { applyTheme(3, false); executePendingAction(); });
+document.getElementById('bgBtn4').addEventListener('click', () => { applyTheme(4, false); executePendingAction(); });
+document.getElementById('bgBtn5').addEventListener('click', () => { applyTheme(5, false); executePendingAction(); });
+document.getElementById('bgBtn6').addEventListener('click', () => { applyTheme(6, false); executePendingAction(); });
+document.getElementById('bgBtnStars').addEventListener('click', () => { applyTheme(1, true); executePendingAction(); });
 
 function executePendingAction() {
     if (pendingAction === 'create') {

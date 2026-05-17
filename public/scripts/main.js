@@ -125,7 +125,6 @@ requestAnimationFrame(animateCursor);
 document.addEventListener('mouseover', (e) => { if (isPcMode && e.target.closest('button') && customCursor) customCursor.classList.add('hovering'); });
 document.addEventListener('mouseout', (e) => { if (isPcMode && e.target.closest('button') && customCursor) customCursor.classList.remove('hovering'); });
 
-// 🔥 نظام الخلفيات الجديد: حفظ وتطبيق
 function applyTheme(themeNum, showStars) {
     document.body.classList.remove('theme-1', 'theme-2', 'theme-3', 'theme-4', 'theme-5', 'theme-6');
     document.body.classList.add(`theme-${themeNum}`);
@@ -140,7 +139,6 @@ function applyTheme(themeNum, showStars) {
     localStorage.setItem('savedTheme', JSON.stringify({ theme: themeNum, stars: showStars }));
 }
 
-// استرجاع الخلفية عند فتح الموقع
 const savedBgData = localStorage.getItem('savedTheme');
 if (savedBgData) {
     try {
@@ -148,25 +146,32 @@ if (savedBgData) {
         applyTheme(parsed.theme || 1, parsed.stars || false);
     } catch (e) { applyTheme(1, false); }
 } else {
-    // لو لاعب قديم كان مختار 'stars'
     const oldSaved = localStorage.getItem('selectedBg');
     if (oldSaved === 'stars') applyTheme(1, true);
     else applyTheme(1, false);
 }
 
+// 🔥 نظام التوجيه الذكي لحل جلتش الـ Refresh للهوست
 socket.on('connect', () => {
     const urlParams = new URLSearchParams(window.location.search);
     const roomFromUrl = urlParams.get('room');
     const wasHostOfRoom = sessionStorage.getItem('hostRoomId');
+    const isHostFlag = sessionStorage.getItem('isHostFlag'); // بصمة الهوست السحرية
     const guestName = sessionStorage.getItem('guestName');
 
     if (roomFromUrl) {
-        if (wasHostOfRoom === roomFromUrl) {
-            isHost = true;
-            if(hostSettingsBtn) hostSettingsBtn.classList.remove('hidden');
-            if(copyInviteBtn) copyInviteBtn.classList.remove('hidden');
-            socket.emit('createRoom', { roomId: roomFromUrl, playerId: myPlayerId });
+        if (wasHostOfRoom === roomFromUrl || isHostFlag === 'true') {
+            // 🔥 الهوست عمل ريفريش: نرجعه للرئيسية ونمسح الرابط من فوق
+            sessionStorage.removeItem('hostRoomId');
+            sessionStorage.removeItem('isHostFlag');
+            window.history.replaceState({}, '', window.location.pathname); // بيمسح الروم من الرابط خالص
+            isHost = false;
+            if(hostSettingsBtn) hostSettingsBtn.classList.add('hidden');
+            if(copyInviteBtn) copyInviteBtn.classList.add('hidden');
+            showScreen('welcome');
+            updateLeaveBtnState();
         } else if (guestName) {
+            // ضيف عمل ريفريش، نرجعه غرفته
             isHost = false;
             if(goToWaitingBtn) goToWaitingBtn.classList.add('hidden'); 
             if(playerNameInput) playerNameInput.classList.remove('hidden'); 
@@ -178,6 +183,7 @@ socket.on('connect', () => {
             socket.emit('joinRoom', { roomId: roomFromUrl, name: guestName, playerId: myPlayerId });
             updateLeaveBtnState();
         } else {
+            // ضيف جديد داخل من الرابط
             if(goToWaitingBtn) goToWaitingBtn.classList.add('hidden'); 
             if(playerNameInput) playerNameInput.classList.remove('hidden'); 
             if(joinRoomBtn) joinRoomBtn.classList.remove('hidden');
@@ -185,11 +191,20 @@ socket.on('connect', () => {
             if (welcomeTitle) applyRgbWaveToElement(welcomeTitle, "انـــضـــمـــام");
         }
     } else {
-        sessionStorage.removeItem('hostRoomId'); sessionStorage.removeItem('guestName');
+        sessionStorage.removeItem('hostRoomId'); 
+        sessionStorage.removeItem('guestName');
+        sessionStorage.removeItem('isHostFlag');
+        showScreen('welcome');
     }
 });
 
-if(goToWaitingBtn) goToWaitingBtn.addEventListener('click', () => { isHost = true; pendingAction = 'create'; showScreen('bgSelection'); });
+if(goToWaitingBtn) goToWaitingBtn.addEventListener('click', () => { 
+    isHost = true; 
+    sessionStorage.setItem('isHostFlag', 'true'); // نحط بصمة الهوست
+    pendingAction = 'create'; 
+    showScreen('bgSelection'); 
+});
+
 if(joinRoomBtn) joinRoomBtn.addEventListener('click', () => {
     const enteredName = playerNameInput.value.trim();
     if(!enteredName) { alert("اكتب اسمك الأول يا بطل!"); return; }
@@ -197,7 +212,6 @@ if(joinRoomBtn) joinRoomBtn.addEventListener('click', () => {
     pendingAction = 'join'; showScreen('bgSelection');
 });
 
-// تشغيل الأزرار الخاصة بالخلفيات
 document.getElementById('bgBtn1').addEventListener('click', () => { applyTheme(1, false); executePendingAction(); });
 document.getElementById('bgBtn2').addEventListener('click', () => { applyTheme(2, false); executePendingAction(); });
 document.getElementById('bgBtn3').addEventListener('click', () => { applyTheme(3, false); executePendingAction(); });
@@ -448,8 +462,8 @@ window.editPlayerName = function(targetId) { const newName = prompt('أدخل ا
 window.kickPlayer = function(targetId) { if (confirm('طرد نهائي لهذا اللاعب؟')) socket.emit('kickPlayer', targetId); };
 function showScreen(screenName) { Object.values(screens).forEach(s => { if(s) { s.classList.remove('active'); s.classList.add('hidden'); } }); if(screens[screenName]) { screens[screenName].classList.remove('hidden'); screens[screenName].classList.add('active'); } }
 
-if(pcViewBtn) pcViewBtn.addEventListener('click', () => { isPcMode = true; document.body.className = 'pc-mode'; if(customCursor) customCursor.classList.remove('hidden'); if(follow1) follow1.classList.remove('hidden'); if(follow2) follow2.classList.remove('hidden'); pcViewBtn.classList.add('active-view'); if(mobileViewBtn) mobileViewBtn.classList.remove('active-view'); });
-if(mobileViewBtn) mobileViewBtn.addEventListener('click', () => { isPcMode = false; document.body.className = 'mobile-mode'; if(customCursor) customCursor.classList.add('hidden'); if(follow1) follow1.classList.add('hidden'); if(follow2) follow2.classList.add('hidden'); mobileViewBtn.classList.add('active-view'); if(pcViewBtn) pcViewBtn.classList.remove('active-view'); });
+if(pcViewBtn) pcViewBtn.addEventListener('click', () => { isPcMode = true; document.body.className = 'pc-mode ' + (document.body.className.match(/theme-\d/)?.[0] || 'theme-1'); if(customCursor) customCursor.classList.remove('hidden'); if(follow1) follow1.classList.remove('hidden'); if(follow2) follow2.classList.remove('hidden'); pcViewBtn.classList.add('active-view'); if(mobileViewBtn) mobileViewBtn.classList.remove('active-view'); });
+if(mobileViewBtn) mobileViewBtn.addEventListener('click', () => { isPcMode = false; document.body.className = 'mobile-mode ' + (document.body.className.match(/theme-\d/)?.[0] || 'theme-1'); if(customCursor) customCursor.classList.add('hidden'); if(follow1) follow1.classList.add('hidden'); if(follow2) follow2.classList.add('hidden'); mobileViewBtn.classList.add('active-view'); if(pcViewBtn) pcViewBtn.classList.remove('active-view'); });
 
 if(hostSettingsBtn) hostSettingsBtn.addEventListener('click', () => { if(hostSettingsModal) hostSettingsModal.classList.remove('hidden'); });
 if(closeModalBtn) closeModalBtn.addEventListener('click', () => { if(hostSettingsModal) hostSettingsModal.classList.add('hidden'); });

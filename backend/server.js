@@ -13,7 +13,6 @@ app.use(express.static(path.resolve(__dirname, '..', 'public')));
 
 let rooms = {};
 
-// 📚 القاموس الذهبي: 500 كلمة عشوائية ومألوفة مقسمة داخلياً لضمان أقوى تمويه للجاسوس
 const categorizedWords = {
     "حاجات في البيت": ["سرير", "مخدة", "بطانية", "دولاب", "شماعة", "مراية", "سجادة", "ستارة", "نجفة", "لمبة", "فيشة", "مفتاح", "باب", "شباك", "بلكونة", "ريموت", "تلفزيون", "كنبة", "كرسي", "طاولة", "مكتب", "ساعة حائط", "فازة", "وردة", "صورة", "مروحة", "تكييف", "دفاية", "غسالة", "ثلاجة", "بوتاجاز", "فرن", "ميكروويف", "خلاط", "كاتل", "حنفية", "حوض", "صابونة", "فوطة", "ليفة", "شامبو", "معجون أسنان", "فرشاة أسنان", "مشط", "مقص أظافر", "استشوار", "مكواة", "مكنسة", "ممسحة", "مقشة", "جاروف", "زبالة", "كيس", "علبة", "صندوق", "درج", "قفل", "شنطة", "محفظة", "نظارة", "شاحن", "سماعة", "لاب توب", "تابلت", "كيبورد", "ماوس", "سلك", "كرتونة", "مسمار", "شاكوش", "مفك", "بنسة", "غراء", "شريط لحام", "بطارية", "ولاعة", "شمعة", "كبريت", "مبخرة", "سبحة", "سجادة صلاة", "مصحف", "قلم", "ورقة", "دباسة", "استيكة", "براية", "مسطرة", "لون", "لوحة", "ملف", "تقويم", "نوتة", "منبه", "حصالة", "ميزان", "طفاية حريق"],
     "أكل وشرب": ["أرز", "مكرونة", "عيش", "بيض", "جبنة", "لبن", "زبادي", "عسل", "حلاوة", "مربى", "زيت", "سمنة", "زبدة", "ملح", "سكر", "فلفل", "كمون", "شطة", "كاتشب", "مايونيز", "بطاطس", "طماطم", "خيار", "بصل", "ثوم", "جزر", "فلفل رومي", "بتنجان", "كوسة", "بسلة", "فاصوليا", "عدس", "فول", "طعمية", "كشري", "حواوشي", "بيتزا", "برجر", "شاورما", "كباب", "كفتة", "فراخ", "لحمة", "سمك", "تونة", "كبدة", "شوربة", "سلطة", "مخلل", "شيبسي", "لبان", "بونبوني", "شوكولاتة", "بسكويت", "كيكة", "ايس كريم", "كنافة", "بسبوسة", "فاكهة", "تفاح", "موز", "برتقال", "عنب", "بطيخ", "مانجو", "فراولة", "خوخ", "رمان", "كمثرى", "جوافة", "تمر", "تين", "مشمش", "أناناس", "كيوي", "كانز", "مياه", "شاي", "قهوة", "عصير", "بيبسي", "كوكاكولا", "سفن اب", "ميرندا", "عصير قصب", "تمر هندي", "سوبيا", "لبن رايب", "ينسون", "نعناع", "قرفة", "كاكاو", "نسكافيه", "كابتشينو", "شاي بلبن", "سحلب", "خروب"],
@@ -22,7 +21,6 @@ const categorizedWords = {
     "حيوانات ونباتات": ["أسد", "نمر", "فهد", "ذئب", "ثعلب", "كلب", "قطة", "فار", "أرنب", "قرد", "نسناس", "فيل", "زرافة", "حصان", "حمار", "جمل", "بقرة", "جاموسة", "خروف", "معزة", "خنزير", "غزال", "دب", "باندا", "كنغر", "كوالا", "تمساح", "ثعبان", "سحلية", "برص", "سلحفاة", "ضفدع", "سمكة", "قرش", "حوت", "دولفين", "أخطبوط", "قنديل بحر", "استاكوزا", "كابوريا", "نحلة", "نملة", "دبانة", "ناموسة", "صرصار", "عنكبوت", "عقرب", "فراشة", "غراب", "حمامة", "عصفور", "صقر", "نسر", "بومة", "ببغاء", "بطة", "وزة", "فرخة", "ديك", "ديك رومي", "نعامة", "بطريق", "شجرة", "نخلة", "صبار", "نجيلة", "غصن", "ورقة شجر", "ليمونة", "برتقالة", "بذرة"]
 };
 
-// 🔥 خوارزمية لضمان عشوائية 100% وعدم التكرار
 function shuffleArray(array) {
     let currentIndex = array.length, randomIndex;
     while (currentIndex !== 0) {
@@ -33,11 +31,9 @@ function shuffleArray(array) {
     return array;
 }
 
-// 🧠 استخراج الكلمات المموهة بدقة (من نفس المجموعة عشان نعقد الجاسوس)
 function getSimilarWords(correctWord, categoryName) {
     let categoryWords = categorizedWords[categoryName] || [];
     let filtered = categoryWords.filter(w => w !== correctWord);
-    
     filtered = shuffleArray(filtered);
     let selected = filtered.slice(0, 14);
 
@@ -57,11 +53,37 @@ function getSimilarWords(correctWord, categoryName) {
 
 function checkVotingResult(roomId) {
     if (!rooms[roomId]) return;
-    rooms[roomId].gameState = 'voting_result';
+    
     const voteCounts = {};
     Object.values(rooms[roomId].votes).forEach(id => { voteCounts[id] = (voteCounts[id] || 0) + 1; });
-    let maxVotes = 0; let topVotedId = null;
-    for (const [id, count] of Object.entries(voteCounts)) { if (count > maxVotes) { maxVotes = count; topVotedId = id; } }
+    
+    let maxVotes = 0;
+    for (const count of Object.values(voteCounts)) { if (count > maxVotes) maxVotes = count; }
+
+    const tiedIds = [];
+    for (const [id, count] of Object.entries(voteCounts)) { if (count === maxVotes) tiedIds.push(id); }
+
+    // 🔥 نظام كسر التعادل
+    const totalPlayers = Object.keys(rooms[roomId].players).length;
+    if (tiedIds.length > 1 && totalPlayers > 1) {
+        rooms[roomId].gameState = 'voting_tied';
+        const tiedNames = tiedIds.map(id => rooms[roomId].players[id] ? rooms[roomId].players[id].name : "لاعب غادر").join(' و ');
+        
+        io.to(roomId).emit('votingTied', { tiedNames: tiedNames });
+        rooms[roomId].votes = {}; 
+
+        setTimeout(() => {
+            if(rooms[roomId] && rooms[roomId].gameState === 'voting_tied') {
+                rooms[roomId].gameState = 'voting';
+                io.to(roomId).emit('votingStarted', Object.values(rooms[roomId].players));
+            }
+        }, 12000); // 12 seconds
+        return;
+    }
+
+    // نتيجة عادية
+    rooms[roomId].gameState = 'voting_result';
+    const topVotedId = tiedIds[0];
     const isSpyCaught = (topVotedId === rooms[roomId].spyId);
     const votedPlayer = rooms[roomId].players[topVotedId];
     const votedPlayerName = votedPlayer ? votedPlayer.name : "لاعب غادر";
@@ -78,7 +100,7 @@ function handlePlayerLeave(roomId, playerId) {
     const wasVoting = (rooms[roomId].gameState === 'voting');
     let gameAborted = false;
 
-    if (rooms[roomId].spyId === playerId && ['playing', 'voting', 'guessing', 'voting_result'].includes(rooms[roomId].gameState)) {
+    if (rooms[roomId].spyId === playerId && ['playing', 'voting', 'guessing', 'voting_result', 'voting_tied'].includes(rooms[roomId].gameState)) {
         if(rooms[roomId].guessTimer) clearTimeout(rooms[roomId].guessTimer);
         rooms[roomId].gameState = 'waiting';
         rooms[roomId].votes = {};
@@ -124,11 +146,11 @@ io.on('connection', (socket) => {
         io.to(roomId).emit('updatePlayers', Object.values(rooms[roomId].players));
         
         const state = rooms[roomId].gameState;
-        if(['playing', 'voting', 'guessing', 'voting_result'].includes(state)) {
+        if(['playing', 'voting', 'guessing', 'voting_result', 'voting_tied'].includes(state)) {
             const isSpy = rooms[roomId].spyId === playerId;
             socket.emit('assignRole', { word: rooms[roomId].word, isSpy: isSpy, category: rooms[roomId].category });
             socket.emit('gameStarted');
-            if (state === 'voting' || state === 'voting_result') {
+            if (state === 'voting' || state === 'voting_result' || state === 'voting_tied') {
                 socket.emit('votingStarted', Object.values(rooms[roomId].players));
                 const totalVotes = Object.keys(rooms[roomId].votes).length;
                 const totalRequired = Object.keys(rooms[roomId].players).length;
@@ -165,11 +187,11 @@ io.on('connection', (socket) => {
             io.to(roomId).emit('updatePlayers', Object.values(rooms[roomId].players));
             
             const state = rooms[roomId].gameState;
-            if(['playing', 'voting', 'guessing', 'voting_result'].includes(state)) {
+            if(['playing', 'voting', 'guessing', 'voting_result', 'voting_tied'].includes(state)) {
                 const isSpy = rooms[roomId].spyId === playerId;
                 socket.emit('assignRole', { word: rooms[roomId].word, isSpy: isSpy, category: rooms[roomId].category });
                 socket.emit('gameStarted');
-                if (state === 'voting' || state === 'voting_result') {
+                if (state === 'voting' || state === 'voting_result' || state === 'voting_tied') {
                     socket.emit('votingStarted', Object.values(rooms[roomId].players));
                     const totalVotes = Object.keys(rooms[roomId].votes).length;
                     const totalRequired = Object.keys(rooms[roomId].players).length;

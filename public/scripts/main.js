@@ -106,6 +106,10 @@ const hostLeftModal = document.getElementById('hostLeftModal'); const kickedModa
 const leftRoomModal = document.getElementById('leftRoomModal'); const invalidRoomModal = document.getElementById('invalidRoomModal'); 
 const errorMsgText = document.getElementById('errorMsgText');
 const tieBreakerModal = document.getElementById('tieBreakerModal'); const tiedPlayersNames = document.getElementById('tiedPlayersNames'); const tieTimerEl = document.getElementById('tieTimer');
+
+// 🔥 إضافة نافذة انتظار الهوست الجديدة
+const guestWaitingHostModal = document.getElementById('guestWaitingHostModal');
+
 let tieInterval;
 
 const selectRandomModeBtn = document.getElementById('selectRandomModeBtn'); const revokeRandomModeBtn = document.getElementById('revokeRandomModeBtn');
@@ -117,7 +121,6 @@ const spyProceedBtn = document.getElementById('spyProceedBtn'); const wordsGrid 
 const confirmGuessBtn = document.getElementById('confirmGuessBtn'); const finalResultModal = document.getElementById('finalResultModal'); const finalOkBtn = document.getElementById('finalOkBtn');
 const customCursor = document.getElementById('customCursor'); const follow1 = document.getElementById('cursorFollow1'); const follow2 = document.getElementById('cursorFollow2');
 
-// 🔥 المتغيرات الخاصة بأزرار التصويت الجديدة
 const hintsVoteBtn = document.getElementById('hintsVoteBtn'); const questionsVoteBtn = document.getElementById('questionsVoteBtn');
 const hintsBadge = document.getElementById('hintsBadge'); const questionsBadge = document.getElementById('questionsBadge');
 
@@ -221,14 +224,12 @@ socket.on('updatePlayers', (playersArray) => {
 
 if(actualStartBtn) actualStartBtn.addEventListener('click', () => { playSound('start'); socket.emit('goToModeSelection'); });
 socket.on('showModeSelection', () => {
-    // تصفير البادجات عند فتح الشاشة
     if(hintsBadge) { hintsBadge.classList.add('hidden'); hintsBadge.style.display = 'none'; hintsBadge.innerText = '0'; }
     if(questionsBadge) { questionsBadge.classList.add('hidden'); questionsBadge.style.display = 'none'; questionsBadge.innerText = '0'; }
     showScreen('modeSelection');
     if(isHost) { hostModeControls.classList.remove('hidden'); } else { hostModeControls.classList.add('hidden'); confirmStartGameBtn.classList.add('hidden'); }
 });
 
-// 🔥 أحداث الأزرار الجديدة
 if(hintsVoteBtn) hintsVoteBtn.addEventListener('click', () => { playSound('click'); socket.emit('voteFeature', 'hint'); });
 if(questionsVoteBtn) questionsVoteBtn.addEventListener('click', () => { playSound('click'); socket.emit('voteFeature', 'question'); });
 
@@ -403,9 +404,14 @@ socket.on('gameFinalResult', (data) => {
     finalResultModal.classList.remove('hidden');
 });
 
+// 🔥 التعديل هنا: إظهار إعدادات الهوست أو شاشة الانتظار للضيوف
 if(finalOkBtn) finalOkBtn.addEventListener('click', () => {
     finalResultModal.classList.add('hidden');
-    if (isHost) { if(hostSettingsModal) hostSettingsModal.classList.remove('hidden'); }
+    if (isHost) { 
+        if(hostSettingsModal) hostSettingsModal.classList.remove('hidden'); 
+    } else {
+        if(guestWaitingHostModal) guestWaitingHostModal.classList.remove('hidden');
+    }
 });
 
 socket.on('gameRestarted', () => {
@@ -415,6 +421,9 @@ socket.on('gameRestarted', () => {
     votingResultModal.classList.add('hidden'); finalResultModal.classList.add('hidden'); tieBreakerModal.classList.add('hidden');
     if(startVotingPhaseBtn) startVotingPhaseBtn.classList.add('hidden'); if(confirmGuessBtn) confirmGuessBtn.classList.add('hidden');
     if (isHost && restartGameBtn && hostSettingsModal) { restartGameBtn.disabled = true; hostSettingsModal.classList.add('hidden'); }
+    
+    // 🔥 مسح شاشة الانتظار بتاعت الضيوف لما الجولة تتكرر
+    if(guestWaitingHostModal) guestWaitingHostModal.classList.add('hidden');
 });
 
 window.editPlayerName = function(targetId) { const newName = prompt('أدخل الاسم الجديد:'); if (newName && newName.trim() !== '') socket.emit('changePlayerName', { targetId: targetId, newName: newName.trim() }); };
@@ -449,6 +458,10 @@ socket.on('hostLeftRoom', (hostName) => {
     if(hostLeftText) hostLeftText.innerText = `لقد تم اغلاق الغرفه لان الهوست (${hostName}) غادر الغرفه`;
     if(hostLeftModal) hostLeftModal.classList.remove('hidden');
     if(leaveRoomBtn) leaveRoomBtn.classList.add('hidden');
+    
+    // 🔥 مسح شاشة الانتظار عشان رسالة خروج الهوست تظهر بوضوح
+    if(guestWaitingHostModal) guestWaitingHostModal.classList.add('hidden');
+    
     sessionStorage.clear();
 });
 

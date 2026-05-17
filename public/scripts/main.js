@@ -139,7 +139,6 @@ requestAnimationFrame(animateCursor);
 document.addEventListener('mouseover', (e) => { if (isPcMode && e.target.closest('button') && customCursor) customCursor.classList.add('hovering'); });
 document.addEventListener('mouseout', (e) => { if (isPcMode && e.target.closest('button') && customCursor) customCursor.classList.remove('hovering'); });
 
-// 🔥 تعديل لوجيك الدخول عشان يستوعب عودة الهوست لو عمل ريفريش
 socket.on('connect', () => {
     const urlParams = new URLSearchParams(window.location.search);
     const roomFromUrl = urlParams.get('room');
@@ -147,7 +146,6 @@ socket.on('connect', () => {
     const guestName = sessionStorage.getItem('guestName');
 
     if (hostRoomId) {
-        // الهوست عمل ريفريش ورجع
         isHost = true;
         if(hostSettingsBtn) hostSettingsBtn.classList.remove('hidden');
         socket.emit('createRoom', { roomId: hostRoomId, playerId: myPlayerId });
@@ -167,7 +165,6 @@ socket.on('connect', () => {
     }
 });
 
-// 🔥 استقبال حالة الشاشة عشان لو حد عمل ريفريش يرجع لصفحته الأصلية
 socket.on('syncState', (state) => {
     if (state === 'waiting') {
         showScreen('waiting');
@@ -239,7 +236,13 @@ socket.on('updatePlayers', (playersArray) => {
     }
 });
 
-if(actualStartBtn) actualStartBtn.addEventListener('click', () => { playSound('start'); socket.emit('goToModeSelection'); });
+// 🔥 حماية الأزرار من الضغط المزدوج
+if(actualStartBtn) actualStartBtn.addEventListener('click', (e) => { 
+    e.target.disabled = true;
+    playSound('start'); socket.emit('goToModeSelection'); 
+    setTimeout(() => e.target.disabled = false, 1000);
+});
+
 socket.on('showModeSelection', () => {
     if(hintsBadge) { hintsBadge.classList.add('hidden'); hintsBadge.style.display = 'none'; hintsBadge.innerText = '0'; }
     if(questionsBadge) { questionsBadge.classList.add('hidden'); questionsBadge.style.display = 'none'; questionsBadge.innerText = '0'; }
@@ -263,7 +266,12 @@ socket.on('updateFeatureVotes', (data) => {
 
 if(selectRandomModeBtn) selectRandomModeBtn.addEventListener('click', () => socket.emit('selectMode', 'random'));
 if(revokeRandomModeBtn) revokeRandomModeBtn.addEventListener('click', () => socket.emit('deselectMode', 'random'));
-if(confirmStartGameBtn) confirmStartGameBtn.addEventListener('click', () => { playSound('start'); socket.emit('startRandomMode'); });
+
+if(confirmStartGameBtn) confirmStartGameBtn.addEventListener('click', (e) => { 
+    e.target.disabled = true;
+    playSound('start'); socket.emit('startRandomMode'); 
+    setTimeout(() => e.target.disabled = false, 2000);
+});
 
 socket.on('modeSelected', (mode) => {
     if(mode === 'random') {
@@ -290,7 +298,11 @@ socket.on('gameStarted', (data) => {
     if (isHost && startVotingPhaseBtn) startVotingPhaseBtn.classList.remove('hidden');
 });
 
-if(startVotingPhaseBtn) startVotingPhaseBtn.addEventListener('click', () => { playSound('start'); socket.emit('startVotingPhase'); });
+if(startVotingPhaseBtn) startVotingPhaseBtn.addEventListener('click', (e) => { 
+    e.target.disabled = true;
+    playSound('start'); socket.emit('startVotingPhase'); 
+    setTimeout(() => e.target.disabled = false, 2000);
+});
 
 socket.on('votingStarted', (playersArray) => {
     playSound('start'); showScreen('voting'); liveVoteLog.innerHTML = ''; voteCounter.innerText = `0/${playersArray.length}`; voteCounter.style.textShadow = "none";
@@ -407,7 +419,11 @@ socket.on('spySelectedWord', (data) => {
     if (activeCard) { activeCard.classList.add('spy-active'); activeCard.innerHTML += `<div class="spy-tag">اختارها ${data.spyName}</div>`; }
 });
 
-if(confirmGuessBtn) confirmGuessBtn.addEventListener('click', () => { if(selectedSpyWord) socket.emit('spyConfirmWord', selectedSpyWord); });
+if(confirmGuessBtn) confirmGuessBtn.addEventListener('click', (e) => { 
+    e.target.disabled = true;
+    if(selectedSpyWord) socket.emit('spyConfirmWord', selectedSpyWord); 
+    setTimeout(() => e.target.disabled = false, 2000);
+});
 
 socket.on('gameFinalResult', (data) => {
     if(guessInterval) clearInterval(guessInterval);
@@ -458,7 +474,12 @@ if(mobileViewBtn) mobileViewBtn.addEventListener('click', () => { isPcMode = fal
 
 if(hostSettingsBtn) hostSettingsBtn.addEventListener('click', () => { if(hostSettingsModal) hostSettingsModal.classList.remove('hidden'); });
 if(closeModalBtn) closeModalBtn.addEventListener('click', () => { if(hostSettingsModal) hostSettingsModal.classList.add('hidden'); });
-if(restartGameBtn) restartGameBtn.addEventListener('click', () => { if(confirm('إعادة اللعب وإرجاع الجميع لغرفة الانتظار؟')) socket.emit('restartGame'); });
+
+if(restartGameBtn) restartGameBtn.addEventListener('click', (e) => { 
+    e.target.disabled = true;
+    if(confirm('إعادة اللعب وإرجاع الجميع لغرفة الانتظار؟')) socket.emit('restartGame'); 
+    setTimeout(() => e.target.disabled = false, 2000);
+});
 
 if(copyInviteBtn) copyInviteBtn.addEventListener('click', () => { 
     const roomId = sessionStorage.getItem('hostRoomId');

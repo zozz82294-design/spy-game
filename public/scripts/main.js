@@ -1,6 +1,5 @@
 const socket = io();
 
-// توليد النجوم دايماً كخلفية ثابتة
 function createStars() {
     const container = document.getElementById('starsContainer');
     container.innerHTML = '';
@@ -16,7 +15,7 @@ function createStars() {
         container.appendChild(star);
     }
 }
-createStars(); // تشغيل النجوم فوراً مع تحميل الصفحة
+createStars();
 
 function applyRgbWaveToElement(element, text) {
     if (!element) return;
@@ -122,58 +121,46 @@ requestAnimationFrame(animateCursor);
 document.addEventListener('mouseover', (e) => { if (isPcMode && e.target.closest('button') && customCursor) customCursor.classList.add('hovering'); });
 document.addEventListener('mouseout', (e) => { if (isPcMode && e.target.closest('button') && customCursor) customCursor.classList.remove('hovering'); });
 
+// 🔥 التوجيه الذكي بعد تثبيت رابط الهوست
 socket.on('connect', () => {
     const urlParams = new URLSearchParams(window.location.search);
     const roomFromUrl = urlParams.get('room');
-    const wasHostOfRoom = sessionStorage.getItem('hostRoomId');
-    const isHostFlag = sessionStorage.getItem('isHostFlag'); 
     const guestName = sessionStorage.getItem('guestName');
 
     if (roomFromUrl) {
-        if (wasHostOfRoom === roomFromUrl || isHostFlag === 'true') {
-            sessionStorage.removeItem('hostRoomId');
-            sessionStorage.removeItem('isHostFlag');
-            window.history.replaceState({}, '', window.location.pathname);
-            isHost = false;
-            if(hostSettingsBtn) hostSettingsBtn.classList.add('hidden');
-            if(copyInviteBtn) copyInviteBtn.classList.add('hidden');
-            showScreen('welcome');
-            updateLeaveBtnState();
-        } else if (guestName) {
-            isHost = false;
-            if(goToWaitingBtn) goToWaitingBtn.classList.add('hidden'); 
-            if(playerNameInput) playerNameInput.classList.remove('hidden'); 
-            if(joinRoomBtn) joinRoomBtn.classList.remove('hidden');
-            const welcomeTitle = document.querySelector('#welcomeScreen .sasuke-title');
-            if (welcomeTitle) applyRgbWaveToElement(welcomeTitle, "انـــضـــمـــام");
-            
+        // أي حد عنده ?room= في الرابط فهو 100% ضيف (Guest)
+        isHost = false;
+        if(goToWaitingBtn) goToWaitingBtn.classList.add('hidden'); 
+        if(playerNameInput) playerNameInput.classList.remove('hidden'); 
+        if(joinRoomBtn) joinRoomBtn.classList.remove('hidden');
+        
+        const welcomeTitle = document.querySelector('#welcomeScreen .sasuke-title');
+        if (welcomeTitle) applyRgbWaveToElement(welcomeTitle, "انـــضـــمـــام");
+        
+        if (guestName) {
             playerNameInput.value = guestName;
             socket.emit('joinRoom', { roomId: roomFromUrl, name: guestName, playerId: myPlayerId });
             updateLeaveBtnState();
-        } else {
-            if(goToWaitingBtn) goToWaitingBtn.classList.add('hidden'); 
-            if(playerNameInput) playerNameInput.classList.remove('hidden'); 
-            if(joinRoomBtn) joinRoomBtn.classList.remove('hidden');
-            const welcomeTitle = document.querySelector('#welcomeScreen .sasuke-title');
-            if (welcomeTitle) applyRgbWaveToElement(welcomeTitle, "انـــضـــمـــام");
         }
     } else {
+        // مفيش روم في الرابط، يبقى ده الهوست أو لاعب جديد تماماً في الصفحة الرئيسية
         sessionStorage.removeItem('hostRoomId'); 
         sessionStorage.removeItem('guestName');
-        sessionStorage.removeItem('isHostFlag');
         showScreen('welcome');
+        updateLeaveBtnState();
     }
 });
 
-// 🔥 الدخول السريع فوراً لغرفة الانتظار
+// 🔥 إنشاء الغرفة للهوست بدون تغيير الرابط
 if(goToWaitingBtn) goToWaitingBtn.addEventListener('click', () => { 
     isHost = true; 
-    sessionStorage.setItem('isHostFlag', 'true'); 
     if(hostSettingsBtn) hostSettingsBtn.classList.remove('hidden'); 
     if(copyInviteBtn) copyInviteBtn.classList.remove('hidden'); 
     const newRoomId = Math.random().toString(36).substring(2, 8); 
     sessionStorage.setItem('hostRoomId', newRoomId); 
-    window.history.pushState({}, '', `?room=${newRoomId}`);
+    
+    // تم إزالة تغيير الرابط (pushState) من هنا، الرابط بيفضل ثابت!
+    
     socket.emit('createRoom', { roomId: newRoomId, playerId: myPlayerId }); 
     showScreen('waiting');
     updateLeaveBtnState();
@@ -420,6 +407,15 @@ if(mobileViewBtn) mobileViewBtn.addEventListener('click', () => { isPcMode = fal
 if(hostSettingsBtn) hostSettingsBtn.addEventListener('click', () => { if(hostSettingsModal) hostSettingsModal.classList.remove('hidden'); });
 if(closeModalBtn) closeModalBtn.addEventListener('click', () => { if(hostSettingsModal) hostSettingsModal.classList.add('hidden'); });
 if(restartGameBtn) restartGameBtn.addEventListener('click', () => { if(confirm('إعادة اللعب وإرجاع الجميع لغرفة الانتظار؟')) socket.emit('restartGame'); });
-if(copyInviteBtn) copyInviteBtn.addEventListener('click', () => { navigator.clipboard.writeText(window.location.href).then(() => { if(notificationToast) { notificationToast.classList.remove('hidden'); setTimeout(() => notificationToast.classList.add('hidden'), 2500); } }); });
+
+// 🔥 زر دعوة الهوست: بينشئ الرابط السري ديناميكياً وينسخه من غير ما يغير الرابط اللي فوق!
+if(copyInviteBtn) copyInviteBtn.addEventListener('click', () => { 
+    const roomId = sessionStorage.getItem('hostRoomId');
+    const inviteLink = window.location.origin + window.location.pathname + '?room=' + roomId;
+    navigator.clipboard.writeText(inviteLink).then(() => { 
+        if(notificationToast) { notificationToast.classList.remove('hidden'); setTimeout(() => notificationToast.classList.add('hidden'), 2500); } 
+    }); 
+});
+
 socket.on('hostDisconnected', () => { if(hostLeftModal) hostLeftModal.classList.remove('hidden'); if(leaveRoomBtn) leaveRoomBtn.classList.add('hidden'); sessionStorage.clear(); });
 socket.on('youAreKickedPermanently', () => { if(kickedModal) kickedModal.classList.remove('hidden'); if(leaveRoomBtn) leaveRoomBtn.classList.add('hidden'); sessionStorage.clear(); });

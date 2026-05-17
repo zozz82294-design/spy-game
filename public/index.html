@@ -190,7 +190,9 @@
         <div id="modeSelectionScreen" class="screen hidden">
             <h2 class="game-main-title rgb-title" style="margin-bottom: 25px;">اختيار التصنيف</h2>
             <div class="mode-card" id="randomModeCard" style="position: relative;">
-                <div id="selectedBadge" class="hidden" style="position: absolute; top: -15px; left: 15px; background: var(--neon-green); color: #000; padding: 5px 15px; border-radius: 20px; font-weight: bold; font-size: 0.95rem; box-shadow: 0 0 10px var(--neon-green); white-space: nowrap;">اختارها SASUKE ✔️</div>
+                <div id="selectedBadge" class="hidden" style="position: absolute; top: -15px; left: 15px; background: var(--neon-green); color: #000; padding: 5px 15px; border-radius: 20px; font-weight: bold; font-size: 0.95rem; box-shadow: 0 0 10px var(--neon-green); white-space: nowrap; direction: ltr;">
+                    ✔️ اختارها <span style="display:inline-block; margin-left:4px;">SASUKE</span>
+                </div>
                 <h3 style="color: var(--neon-blue); font-size: 1.6rem; margin-bottom: 12px; margin-top: 10px;">عشوائي 🎲</h3>
                 <p style="color: #94a3b8; font-size: 0.95rem; line-height: 1.6; margin-bottom: 25px; text-align: right;">ميزة الأشياء العشوائية: تقدر تكشف الجاسوس بسهولة أكبر.</p>
                 <div id="hostModeControls" class="hidden">
@@ -198,6 +200,18 @@
                     <button id="revokeRandomModeBtn" class="btn-create-room hidden" style="padding: 12px; background: rgba(255, 51, 102, 0.1); border-color: var(--neon-red); color: var(--neon-red); margin-bottom: 12px; width: 100%;">سحب الاختيار ❌</button>
                 </div>
             </div>
+
+            <div style="display: flex; gap: 15px; margin-top: 20px; width: 100%;">
+                <button id="hintsVoteBtn" class="btn-view" style="flex: 1; position: relative; padding: 12px; font-weight: bold; font-size: 1.1rem; border-color: rgba(255,255,255,0.2);">
+                    تلميحات
+                    <div id="hintsBadge" class="hidden" style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: var(--neon-red); color: #fff; font-weight: bold; border-radius: 50%; width: 24px; height: 24px; align-items: center; justify-content: center; font-size: 0.9rem; box-shadow: 0 0 10px var(--neon-red); border: 2px solid #0a0a0f;">0</div>
+                </button>
+                <button id="questionsVoteBtn" class="btn-view" style="flex: 1; position: relative; padding: 12px; font-weight: bold; font-size: 1.1rem; border-color: rgba(255,255,255,0.2);">
+                    أسئلة
+                    <div id="questionsBadge" class="hidden" style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: var(--neon-blue); color: #fff; font-weight: bold; border-radius: 50%; width: 24px; height: 24px; align-items: center; justify-content: center; font-size: 0.9rem; box-shadow: 0 0 10px var(--neon-blue); border: 2px solid #0a0a0f;">0</div>
+                </button>
+            </div>
+
             <button id="confirmStartGameBtn" class="btn-start-game active-start hidden" style="margin-top: 25px; width: 100%;">تأكيد وبدء اللعب 🚀</button>
         </div>
 

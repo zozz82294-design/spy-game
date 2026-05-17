@@ -98,12 +98,11 @@ function handlePlayerLeave(roomId, playerId) {
     const wasVoting = (rooms[roomId].gameState === 'voting');
     let gameAborted = false;
 
-    // 🔥 الطرد الفوري لو الهوست قفل، وإرسال اسمه في الرسالة
     if (isHost) {
         const hostName = rooms[roomId].players[playerId].name;
         io.to(roomId).emit('hostLeftRoom', hostName);
         delete rooms[roomId];
-        return; // بنوقف الدالة هنا عشان الغرفة اتمسحت خلاص
+        return; 
     }
 
     if (rooms[roomId].spyId === playerId && ['playing', 'voting', 'guessing', 'voting_result', 'voting_tied'].includes(rooms[roomId].gameState)) {
@@ -138,7 +137,8 @@ io.on('connection', (socket) => {
     socket.on('createRoom', (data) => {
         const roomId = data.roomId; const playerId = data.playerId; 
         socket.join(roomId); socket.roomId = roomId; socket.playerId = playerId;
-        if (!rooms[roomId]) rooms[roomId] = { players: {}, gameState: 'waiting', word: '', category: '', spyId: null, votes: {}, guessingWords: [], guessTimer: null, guessEndTime: 0 };
+        // 🔥 إضافة قوائم التصويت للميزات الجديدة
+        if (!rooms[roomId]) rooms[roomId] = { players: {}, gameState: 'waiting', word: '', category: '', spyId: null, votes: {}, guessingWords: [], guessTimer: null, guessEndTime: 0, featureVotes: { hints: [], questions: [] } };
         if (rooms[roomId].players[playerId] && rooms[roomId].players[playerId].disconnectTimeout) {
             clearTimeout(rooms[roomId].players[playerId].disconnectTimeout); rooms[roomId].players[playerId].disconnectTimeout = null;
         }
@@ -149,7 +149,6 @@ io.on('connection', (socket) => {
         const state = rooms[roomId].gameState;
         if(['playing', 'voting', 'guessing', 'voting_result', 'voting_tied'].includes(state)) {
             const isSpy = rooms[roomId].spyId === playerId;
-            // 🔥 دمج الحدثين هنا برضه عشان لو الهوست عمل Reconnect
             socket.emit('gameStarted', { word: rooms[roomId].word, isSpy: isSpy, category: rooms[roomId].category });
             
             if (state === 'voting' || state === 'voting_result' || state === 'voting_tied') {
@@ -190,7 +189,6 @@ io.on('connection', (socket) => {
             const state = rooms[roomId].gameState;
             if(['playing', 'voting', 'guessing', 'voting_result', 'voting_tied'].includes(state)) {
                 const isSpy = rooms[roomId].spyId === playerId;
-                // 🔥 دمج الحدثين للضيف
                 socket.emit('gameStarted', { word: rooms[roomId].word, isSpy: isSpy, category: rooms[roomId].category });
                 
                 if (state === 'voting' || state === 'voting_result' || state === 'voting_tied') {
@@ -236,9 +234,34 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on('goToModeSelection', () => { if(socket.roomId) io.to(socket.roomId).emit('showModeSelection'); });
+    socket.on('goToModeSelection', () => { 
+        if(socket.roomId && rooms[socket.roomId]) {
+            rooms[socket.roomId].featureVotes = { hints: [], questions: [] }; // تصفير الأصوات
+            io.to(socket.roomId).emit('showModeSelection'); 
+        }
+    });
+
     socket.on('selectMode', (modeName) => io.to(socket.roomId).emit('modeSelected', modeName));
     socket.on('deselectMode', (modeName) => io.to(socket.roomId).emit('modeDeselected', modeName));
+
+    // 🔥 استقبال أصوات الميزات (تلميحات / أسئلة)
+    socket.on('voteFeature', (feature) => {
+        const roomId = socket.roomId; const playerId = socket.playerId;
+        if(roomId && rooms[roomId]) {
+            let targetArray = feature === 'hint' ? rooms[roomId].featureVotes.hints : rooms[roomId].featureVotes.questions;
+            if(!targetArray.includes(playerId)) {
+                targetArray.push(playerId); // إضافة الصوت
+            } else {
+                targetArray = targetArray.filter(id => id !== playerId); // مسح الصوت لو داس تاني
+                if(feature === 'hint') rooms[roomId].featureVotes.hints = targetArray;
+                else rooms[roomId].featureVotes.questions = targetArray;
+            }
+            io.to(roomId).emit('updateFeatureVotes', {
+                hints: rooms[roomId].featureVotes.hints.length,
+                questions: rooms[roomId].featureVotes.questions.length
+            });
+        }
+    });
 
     socket.on('startRandomMode', () => {
         const roomId = socket.roomId;
@@ -258,7 +281,6 @@ io.on('connection', (socket) => {
             let spyId = guests.length > 0 ? guests[Math.floor(Math.random() * guests.length)].id : playersArray[0].id;
             rooms[roomId].spyId = spyId;
 
-            // 🔥 التعديل العبقري: إرسال الكلمة وفتح الشاشة في أمر واحد عشان الموبايلات متعلقش!
             playersArray.forEach(player => {
                 io.to(player.socketId).emit('gameStarted', { word: randomWord, isSpy: player.id === spyId, category: randomCategory });
             });
@@ -337,10 +359,8 @@ io.on('connection', (socket) => {
         if (roomId && rooms[roomId] && rooms[roomId].players[playerId]) {
             const isHost = rooms[roomId].players[playerId].isHost;
             if (isHost) {
-                // 🔥 الهوست فصل (عمل ريفريش) = الروم تتقفل فوراً بدون انتظار
                 handlePlayerLeave(roomId, playerId);
             } else {
-                // الضيف لسه عنده 60 ثانية مهلة
                 rooms[roomId].players[playerId].disconnectTimeout = setTimeout(() => {
                     handlePlayerLeave(roomId, playerId);
                 }, 60000); 

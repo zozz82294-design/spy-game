@@ -28,7 +28,6 @@ function applyRgbWaveToElement(element, text) {
     }
 }
 
-// 🔥 التنفيذ الفوري لمنع الوميض وإخفاء زر الهوست قبل رسم الشاشة!
 const urlParamsSync = new URLSearchParams(window.location.search);
 const roomFromUrlSync = urlParamsSync.get('room');
 
@@ -117,6 +116,10 @@ const votingGrid = document.getElementById('votingGrid'); const votingResultModa
 const spyProceedBtn = document.getElementById('spyProceedBtn'); const wordsGrid = document.getElementById('wordsGrid');
 const confirmGuessBtn = document.getElementById('confirmGuessBtn'); const finalResultModal = document.getElementById('finalResultModal'); const finalOkBtn = document.getElementById('finalOkBtn');
 const customCursor = document.getElementById('customCursor'); const follow1 = document.getElementById('cursorFollow1'); const follow2 = document.getElementById('cursorFollow2');
+
+// 🔥 المتغيرات الخاصة بأزرار التصويت الجديدة
+const hintsVoteBtn = document.getElementById('hintsVoteBtn'); const questionsVoteBtn = document.getElementById('questionsVoteBtn');
+const hintsBadge = document.getElementById('hintsBadge'); const questionsBadge = document.getElementById('questionsBadge');
 
 let isPcMode = false; let isHost = false; let myRoleData = null; let selectedSpyWord = null; let guessInterval;
 let mouseX = window.innerWidth / 2, mouseY = window.innerHeight / 2; let f1X = mouseX, f1Y = mouseY, f2X = mouseX, f2Y = mouseY;
@@ -218,9 +221,28 @@ socket.on('updatePlayers', (playersArray) => {
 
 if(actualStartBtn) actualStartBtn.addEventListener('click', () => { playSound('start'); socket.emit('goToModeSelection'); });
 socket.on('showModeSelection', () => {
+    // تصفير البادجات عند فتح الشاشة
+    if(hintsBadge) { hintsBadge.classList.add('hidden'); hintsBadge.style.display = 'none'; hintsBadge.innerText = '0'; }
+    if(questionsBadge) { questionsBadge.classList.add('hidden'); questionsBadge.style.display = 'none'; questionsBadge.innerText = '0'; }
     showScreen('modeSelection');
     if(isHost) { hostModeControls.classList.remove('hidden'); } else { hostModeControls.classList.add('hidden'); confirmStartGameBtn.classList.add('hidden'); }
 });
+
+// 🔥 أحداث الأزرار الجديدة
+if(hintsVoteBtn) hintsVoteBtn.addEventListener('click', () => { playSound('click'); socket.emit('voteFeature', 'hint'); });
+if(questionsVoteBtn) questionsVoteBtn.addEventListener('click', () => { playSound('click'); socket.emit('voteFeature', 'question'); });
+
+socket.on('updateFeatureVotes', (data) => {
+    if(hintsBadge) {
+        if(data.hints > 0) { hintsBadge.innerText = data.hints; hintsBadge.classList.remove('hidden'); hintsBadge.style.display = 'flex'; }
+        else { hintsBadge.classList.add('hidden'); hintsBadge.style.display = 'none'; }
+    }
+    if(questionsBadge) {
+        if(data.questions > 0) { questionsBadge.innerText = data.questions; questionsBadge.classList.remove('hidden'); questionsBadge.style.display = 'flex'; }
+        else { questionsBadge.classList.add('hidden'); questionsBadge.style.display = 'none'; }
+    }
+});
+
 if(selectRandomModeBtn) selectRandomModeBtn.addEventListener('click', () => socket.emit('selectMode', 'random'));
 if(revokeRandomModeBtn) revokeRandomModeBtn.addEventListener('click', () => socket.emit('deselectMode', 'random'));
 if(confirmStartGameBtn) confirmStartGameBtn.addEventListener('click', () => { playSound('start'); socket.emit('startRandomMode'); });
@@ -238,7 +260,6 @@ socket.on('modeDeselected', (mode) => {
     }
 });
 
-// 🔥 استقبال أحداث بداية اللعبة مدمجة هنا (عشان الموبايلات)
 socket.on('gameStarted', (data) => {
     if(data) { 
         playSound('start'); myRoleData = data;
@@ -404,7 +425,6 @@ function showScreen(screenName) {
     if(screens[screenName]) { 
         screens[screenName].classList.remove('hidden'); 
         screens[screenName].classList.add('active'); 
-        // 🔥 حل سحري للموبايل عشان يضمن رسم الشاشة بدون تعليق
         void screens[screenName].offsetWidth; 
     } 
 }
@@ -424,7 +444,6 @@ if(copyInviteBtn) copyInviteBtn.addEventListener('click', () => {
     }); 
 });
 
-// 🔥 استقبال خبر خروج الهوست وإظهار الرسالة
 socket.on('hostLeftRoom', (hostName) => {
     const hostLeftText = document.getElementById('hostLeftText');
     if(hostLeftText) hostLeftText.innerText = `لقد تم اغلاق الغرفه لان الهوست (${hostName}) غادر الغرفه`;
@@ -433,7 +452,6 @@ socket.on('hostLeftRoom', (hostName) => {
     sessionStorage.clear();
 });
 
-// إغلاق الرسالة والرجوع للرئيسية
 const closeHostLeftBtn = document.getElementById('closeHostLeftBtn');
 if(closeHostLeftBtn) closeHostLeftBtn.addEventListener('click', () => {
     if(hostLeftModal) hostLeftModal.classList.add('hidden');

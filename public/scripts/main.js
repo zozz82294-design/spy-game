@@ -1,6 +1,5 @@
 const socket = io();
 
-// توليد النجوم دايماً كخلفية ثابتة
 function createStars() {
     const container = document.getElementById('starsContainer');
     container.innerHTML = '';
@@ -29,7 +28,7 @@ function applyRgbWaveToElement(element, text) {
     }
 }
 
-// 🔥 التنفيذ الفوري (Synchronous Fix) لمنع الوميض وإخفاء زر الهوست قبل رسم الشاشة!
+// 🔥 التنفيذ الفوري لمنع الوميض وإخفاء زر الهوست قبل رسم الشاشة!
 const urlParamsSync = new URLSearchParams(window.location.search);
 const roomFromUrlSync = urlParamsSync.get('room');
 
@@ -41,7 +40,6 @@ if (roomFromUrlSync) {
     if (welcomeTitle) welcomeTitle.textContent = "انـــضـــمـــام";
 }
 
-// تشغيل تأثيرات النصوص بعد تظبيطها
 function initRgbTitles() { document.querySelectorAll('.rgb-title').forEach(el => { if (!el.querySelector('span')) applyRgbWaveToElement(el, el.textContent); }); }
 initRgbTitles();
 
@@ -143,7 +141,6 @@ socket.on('connect', () => {
 
     if (roomFromUrl) {
         isHost = false;
-        // الشاشة متظبطة من فوق فمش محتاجين نعمل حاجة غير لو عنده اسم متسجل نرجعه غرفته
         if (guestName) {
             playerNameInput.value = guestName;
             socket.emit('joinRoom', { roomId: roomFromUrl, name: guestName, playerId: myPlayerId });
@@ -241,14 +238,14 @@ socket.on('modeDeselected', (mode) => {
     }
 });
 
-socket.on('assignRole', (data) => {
-    playSound('start'); myRoleData = data;
-    const roleIcon = document.getElementById('roleIcon'); const roleTitle = document.getElementById('roleTitle');
-    if(data.isSpy) { roleIcon.innerText = "🕵️‍♂️"; applyRgbWaveToElement(roleTitle, "أنت الجاسوس!"); } 
-    else { roleIcon.innerText = "🎯"; applyRgbWaveToElement(roleTitle, data.word); }
-});
-
-socket.on('gameStarted', () => {
+// 🔥 استقبال أحداث بداية اللعبة مدمجة هنا (عشان الموبايلات)
+socket.on('gameStarted', (data) => {
+    if(data) { 
+        playSound('start'); myRoleData = data;
+        const roleIcon = document.getElementById('roleIcon'); const roleTitle = document.getElementById('roleTitle');
+        if(data.isSpy) { roleIcon.innerText = "🕵️‍♂️"; applyRgbWaveToElement(roleTitle, "أنت الجاسوس!"); } 
+        else { roleIcon.innerText = "🎯"; applyRgbWaveToElement(roleTitle, data.word); }
+    }
     showScreen('game');
     if (isHost && restartGameBtn) restartGameBtn.disabled = false;
     if (isHost && startVotingPhaseBtn) startVotingPhaseBtn.classList.remove('hidden');
@@ -401,7 +398,16 @@ socket.on('gameRestarted', () => {
 
 window.editPlayerName = function(targetId) { const newName = prompt('أدخل الاسم الجديد:'); if (newName && newName.trim() !== '') socket.emit('changePlayerName', { targetId: targetId, newName: newName.trim() }); };
 window.kickPlayer = function(targetId) { if (confirm('طرد نهائي لهذا اللاعب؟')) socket.emit('kickPlayer', targetId); };
-function showScreen(screenName) { Object.values(screens).forEach(s => { if(s) { s.classList.remove('active'); s.classList.add('hidden'); } }); if(screens[screenName]) { screens[screenName].classList.remove('hidden'); screens[screenName].classList.add('active'); } }
+
+function showScreen(screenName) { 
+    Object.values(screens).forEach(s => { if(s) { s.classList.remove('active'); s.classList.add('hidden'); } }); 
+    if(screens[screenName]) { 
+        screens[screenName].classList.remove('hidden'); 
+        screens[screenName].classList.add('active'); 
+        // 🔥 حل سحري للموبايل عشان يضمن رسم الشاشة بدون تعليق
+        void screens[screenName].offsetWidth; 
+    } 
+}
 
 if(pcViewBtn) pcViewBtn.addEventListener('click', () => { isPcMode = true; document.body.className = 'pc-mode'; if(customCursor) customCursor.classList.remove('hidden'); if(follow1) follow1.classList.remove('hidden'); if(follow2) follow2.classList.remove('hidden'); pcViewBtn.classList.add('active-view'); if(mobileViewBtn) mobileViewBtn.classList.remove('active-view'); });
 if(mobileViewBtn) mobileViewBtn.addEventListener('click', () => { isPcMode = false; document.body.className = 'mobile-mode'; if(customCursor) customCursor.classList.add('hidden'); if(follow1) follow1.classList.add('hidden'); if(follow2) follow2.classList.add('hidden'); mobileViewBtn.classList.add('active-view'); if(pcViewBtn) pcViewBtn.classList.remove('active-view'); });
@@ -410,7 +416,6 @@ if(hostSettingsBtn) hostSettingsBtn.addEventListener('click', () => { if(hostSet
 if(closeModalBtn) closeModalBtn.addEventListener('click', () => { if(hostSettingsModal) hostSettingsModal.classList.add('hidden'); });
 if(restartGameBtn) restartGameBtn.addEventListener('click', () => { if(confirm('إعادة اللعب وإرجاع الجميع لغرفة الانتظار؟')) socket.emit('restartGame'); });
 
-// 🔥 زر النسخ بقا بينسخ الرابط مباشرة
 if(copyInviteBtn) copyInviteBtn.addEventListener('click', () => { 
     const roomId = sessionStorage.getItem('hostRoomId');
     const inviteLink = window.location.origin + window.location.pathname + '?room=' + roomId;
@@ -419,5 +424,20 @@ if(copyInviteBtn) copyInviteBtn.addEventListener('click', () => {
     }); 
 });
 
-socket.on('hostDisconnected', () => { if(hostLeftModal) hostLeftModal.classList.remove('hidden'); if(leaveRoomBtn) leaveRoomBtn.classList.add('hidden'); sessionStorage.clear(); });
+// 🔥 استقبال خبر خروج الهوست وإظهار الرسالة
+socket.on('hostLeftRoom', (hostName) => {
+    const hostLeftText = document.getElementById('hostLeftText');
+    if(hostLeftText) hostLeftText.innerText = `لقد تم اغلاق الغرفه لان الهوست (${hostName}) غادر الغرفه`;
+    if(hostLeftModal) hostLeftModal.classList.remove('hidden');
+    if(leaveRoomBtn) leaveRoomBtn.classList.add('hidden');
+    sessionStorage.clear();
+});
+
+// إغلاق الرسالة والرجوع للرئيسية
+const closeHostLeftBtn = document.getElementById('closeHostLeftBtn');
+if(closeHostLeftBtn) closeHostLeftBtn.addEventListener('click', () => {
+    if(hostLeftModal) hostLeftModal.classList.add('hidden');
+    showScreen('welcome');
+});
+
 socket.on('youAreKickedPermanently', () => { if(kickedModal) kickedModal.classList.remove('hidden'); if(leaveRoomBtn) leaveRoomBtn.classList.add('hidden'); sessionStorage.clear(); });

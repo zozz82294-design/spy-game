@@ -1,5 +1,6 @@
 const socket = io();
 
+// توليد النجوم دايماً كخلفية ثابتة
 function createStars() {
     const container = document.getElementById('starsContainer');
     container.innerHTML = '';
@@ -15,6 +16,7 @@ function createStars() {
         container.appendChild(star);
     }
 }
+createStars(); // تشغيل النجوم فوراً مع تحميل الصفحة
 
 function applyRgbWaveToElement(element, text) {
     if (!element) return;
@@ -67,14 +69,10 @@ const closeGeneralSettingsBtn = document.getElementById('closeGeneralSettingsBtn
 const leaveRoomBtn = document.getElementById('leaveRoomBtn');
 let isLeaveBtnEnabled = localStorage.getItem('leaveBtnEnabled') !== 'false';
 
-let pendingAction = null;
-let tempRoomIdToJoin = null;
-let tempGuestName = null;
-
 function updateLeaveBtnState() {
     if (isLeaveBtnEnabled) {
         toggleLeaveBtn.innerText = "مفعل ✔️"; toggleLeaveBtn.className = "toggle-btn active";
-        if (!isHost && !document.getElementById('welcomeScreen').classList.contains('active') && !document.getElementById('bgSelectionScreen').classList.contains('active')) leaveRoomBtn.classList.remove('hidden');
+        if (!isHost && !document.getElementById('welcomeScreen').classList.contains('active')) leaveRoomBtn.classList.remove('hidden');
     } else {
         toggleLeaveBtn.innerText = "معطل ❌"; toggleLeaveBtn.className = "toggle-btn inactive"; leaveRoomBtn.classList.add('hidden');
     }
@@ -85,7 +83,7 @@ if(generalSettingsBtn) generalSettingsBtn.addEventListener('click', () => genera
 if(closeGeneralSettingsBtn) closeGeneralSettingsBtn.addEventListener('click', () => generalSettingsModal.classList.add('hidden'));
 if(toggleLeaveBtn) toggleLeaveBtn.addEventListener('click', () => { isLeaveBtnEnabled = !isLeaveBtnEnabled; localStorage.setItem('leaveBtnEnabled', isLeaveBtnEnabled); updateLeaveBtnState(); });
 
-const screens = { welcome: document.getElementById('welcomeScreen'), bgSelection: document.getElementById('bgSelectionScreen'), waiting: document.getElementById('waitingScreen'), modeSelection: document.getElementById('modeSelectionScreen'), game: document.getElementById('gameScreen'), voting: document.getElementById('votingScreen'), guessing: document.getElementById('guessingScreen') };
+const screens = { welcome: document.getElementById('welcomeScreen'), waiting: document.getElementById('waitingScreen'), modeSelection: document.getElementById('modeSelectionScreen'), game: document.getElementById('gameScreen'), voting: document.getElementById('votingScreen'), guessing: document.getElementById('guessingScreen') };
 const mainContainer = document.getElementById('mainContainer'); const pcViewBtn = document.getElementById('pcViewBtn'); const mobileViewBtn = document.getElementById('mobileViewBtn');
 const goToWaitingBtn = document.getElementById('goToWaitingBtn'); const joinRoomBtn = document.getElementById('joinRoomBtn');       
 const playerNameInput = document.getElementById('playerNameInput'); const copyInviteBtn = document.getElementById('copyInviteBtn');
@@ -96,7 +94,6 @@ const modalPlayersList = document.getElementById('modalPlayersList'); const rest
 const hostLeftModal = document.getElementById('hostLeftModal'); const kickedModal = document.getElementById('kickedModal');
 const leftRoomModal = document.getElementById('leftRoomModal'); const invalidRoomModal = document.getElementById('invalidRoomModal'); 
 const errorMsgText = document.getElementById('errorMsgText');
-const starsContainer = document.getElementById('starsContainer'); 
 const tieBreakerModal = document.getElementById('tieBreakerModal'); const tiedPlayersNames = document.getElementById('tiedPlayersNames'); const tieTimerEl = document.getElementById('tieTimer');
 let tieInterval;
 
@@ -125,53 +122,24 @@ requestAnimationFrame(animateCursor);
 document.addEventListener('mouseover', (e) => { if (isPcMode && e.target.closest('button') && customCursor) customCursor.classList.add('hovering'); });
 document.addEventListener('mouseout', (e) => { if (isPcMode && e.target.closest('button') && customCursor) customCursor.classList.remove('hovering'); });
 
-function applyTheme(themeNum, showStars) {
-    document.body.classList.remove('theme-1', 'theme-2', 'theme-3', 'theme-4', 'theme-5', 'theme-6');
-    document.body.classList.add(`theme-${themeNum}`);
-    
-    if (showStars) {
-        createStars();
-        starsContainer.classList.remove('hidden');
-    } else {
-        starsContainer.classList.add('hidden');
-        starsContainer.innerHTML = ''; 
-    }
-    localStorage.setItem('savedTheme', JSON.stringify({ theme: themeNum, stars: showStars }));
-}
-
-const savedBgData = localStorage.getItem('savedTheme');
-if (savedBgData) {
-    try {
-        const parsed = JSON.parse(savedBgData);
-        applyTheme(parsed.theme || 1, parsed.stars || false);
-    } catch (e) { applyTheme(1, false); }
-} else {
-    const oldSaved = localStorage.getItem('selectedBg');
-    if (oldSaved === 'stars') applyTheme(1, true);
-    else applyTheme(1, false);
-}
-
-// 🔥 نظام التوجيه الذكي لحل جلتش الـ Refresh للهوست
 socket.on('connect', () => {
     const urlParams = new URLSearchParams(window.location.search);
     const roomFromUrl = urlParams.get('room');
     const wasHostOfRoom = sessionStorage.getItem('hostRoomId');
-    const isHostFlag = sessionStorage.getItem('isHostFlag'); // بصمة الهوست السحرية
+    const isHostFlag = sessionStorage.getItem('isHostFlag'); 
     const guestName = sessionStorage.getItem('guestName');
 
     if (roomFromUrl) {
         if (wasHostOfRoom === roomFromUrl || isHostFlag === 'true') {
-            // 🔥 الهوست عمل ريفريش: نرجعه للرئيسية ونمسح الرابط من فوق
             sessionStorage.removeItem('hostRoomId');
             sessionStorage.removeItem('isHostFlag');
-            window.history.replaceState({}, '', window.location.pathname); // بيمسح الروم من الرابط خالص
+            window.history.replaceState({}, '', window.location.pathname);
             isHost = false;
             if(hostSettingsBtn) hostSettingsBtn.classList.add('hidden');
             if(copyInviteBtn) copyInviteBtn.classList.add('hidden');
             showScreen('welcome');
             updateLeaveBtnState();
         } else if (guestName) {
-            // ضيف عمل ريفريش، نرجعه غرفته
             isHost = false;
             if(goToWaitingBtn) goToWaitingBtn.classList.add('hidden'); 
             if(playerNameInput) playerNameInput.classList.remove('hidden'); 
@@ -183,7 +151,6 @@ socket.on('connect', () => {
             socket.emit('joinRoom', { roomId: roomFromUrl, name: guestName, playerId: myPlayerId });
             updateLeaveBtnState();
         } else {
-            // ضيف جديد داخل من الرابط
             if(goToWaitingBtn) goToWaitingBtn.classList.add('hidden'); 
             if(playerNameInput) playerNameInput.classList.remove('hidden'); 
             if(joinRoomBtn) joinRoomBtn.classList.remove('hidden');
@@ -198,46 +165,31 @@ socket.on('connect', () => {
     }
 });
 
+// 🔥 الدخول السريع فوراً لغرفة الانتظار
 if(goToWaitingBtn) goToWaitingBtn.addEventListener('click', () => { 
     isHost = true; 
-    sessionStorage.setItem('isHostFlag', 'true'); // نحط بصمة الهوست
-    pendingAction = 'create'; 
-    showScreen('bgSelection'); 
+    sessionStorage.setItem('isHostFlag', 'true'); 
+    if(hostSettingsBtn) hostSettingsBtn.classList.remove('hidden'); 
+    if(copyInviteBtn) copyInviteBtn.classList.remove('hidden'); 
+    const newRoomId = Math.random().toString(36).substring(2, 8); 
+    sessionStorage.setItem('hostRoomId', newRoomId); 
+    window.history.pushState({}, '', `?room=${newRoomId}`);
+    socket.emit('createRoom', { roomId: newRoomId, playerId: myPlayerId }); 
+    showScreen('waiting');
+    updateLeaveBtnState();
 });
 
 if(joinRoomBtn) joinRoomBtn.addEventListener('click', () => {
     const enteredName = playerNameInput.value.trim();
     if(!enteredName) { alert("اكتب اسمك الأول يا بطل!"); return; }
-    isHost = false; tempGuestName = enteredName; tempRoomIdToJoin = new URLSearchParams(window.location.search).get('room');
-    pendingAction = 'join'; showScreen('bgSelection');
+    isHost = false; 
+    if(copyInviteBtn) copyInviteBtn.classList.add('hidden'); 
+    sessionStorage.setItem('guestName', enteredName);
+    const roomIdToJoin = new URLSearchParams(window.location.search).get('room');
+    socket.emit('joinRoom', { roomId: roomIdToJoin, name: enteredName, playerId: myPlayerId }); 
+    showScreen('waiting'); 
+    updateLeaveBtnState();
 });
-
-document.getElementById('bgBtn1').addEventListener('click', () => { applyTheme(1, false); executePendingAction(); });
-document.getElementById('bgBtn2').addEventListener('click', () => { applyTheme(2, false); executePendingAction(); });
-document.getElementById('bgBtn3').addEventListener('click', () => { applyTheme(3, false); executePendingAction(); });
-document.getElementById('bgBtn4').addEventListener('click', () => { applyTheme(4, false); executePendingAction(); });
-document.getElementById('bgBtn5').addEventListener('click', () => { applyTheme(5, false); executePendingAction(); });
-document.getElementById('bgBtn6').addEventListener('click', () => { applyTheme(6, false); executePendingAction(); });
-document.getElementById('bgBtnStars').addEventListener('click', () => { applyTheme(1, true); executePendingAction(); });
-
-function executePendingAction() {
-    if (pendingAction === 'create') {
-        if(hostSettingsBtn) hostSettingsBtn.classList.remove('hidden'); 
-        if(copyInviteBtn) copyInviteBtn.classList.remove('hidden'); 
-        const newRoomId = Math.random().toString(36).substring(2, 8); 
-        sessionStorage.setItem('hostRoomId', newRoomId); 
-        window.history.pushState({}, '', `?room=${newRoomId}`);
-        socket.emit('createRoom', { roomId: newRoomId, playerId: myPlayerId }); 
-        showScreen('waiting');
-    } else if (pendingAction === 'join') {
-        if(copyInviteBtn) copyInviteBtn.classList.add('hidden'); 
-        sessionStorage.setItem('guestName', tempGuestName);
-        socket.emit('joinRoom', { roomId: tempRoomIdToJoin, name: tempGuestName, playerId: myPlayerId }); 
-        showScreen('waiting'); 
-        updateLeaveBtnState();
-    }
-    updateLeaveBtnState(); 
-}
 
 if(leaveRoomBtn) leaveRoomBtn.addEventListener('click', () => {
     if(confirm('هل أنت متأكد من مغادرة الغرفة؟')) { socket.emit('leaveRoom'); sessionStorage.clear(); leaveRoomBtn.classList.add('hidden'); if(leftRoomModal) leftRoomModal.classList.remove('hidden'); }
@@ -462,8 +414,8 @@ window.editPlayerName = function(targetId) { const newName = prompt('أدخل ا
 window.kickPlayer = function(targetId) { if (confirm('طرد نهائي لهذا اللاعب؟')) socket.emit('kickPlayer', targetId); };
 function showScreen(screenName) { Object.values(screens).forEach(s => { if(s) { s.classList.remove('active'); s.classList.add('hidden'); } }); if(screens[screenName]) { screens[screenName].classList.remove('hidden'); screens[screenName].classList.add('active'); } }
 
-if(pcViewBtn) pcViewBtn.addEventListener('click', () => { isPcMode = true; document.body.className = 'pc-mode ' + (document.body.className.match(/theme-\d/)?.[0] || 'theme-1'); if(customCursor) customCursor.classList.remove('hidden'); if(follow1) follow1.classList.remove('hidden'); if(follow2) follow2.classList.remove('hidden'); pcViewBtn.classList.add('active-view'); if(mobileViewBtn) mobileViewBtn.classList.remove('active-view'); });
-if(mobileViewBtn) mobileViewBtn.addEventListener('click', () => { isPcMode = false; document.body.className = 'mobile-mode ' + (document.body.className.match(/theme-\d/)?.[0] || 'theme-1'); if(customCursor) customCursor.classList.add('hidden'); if(follow1) follow1.classList.add('hidden'); if(follow2) follow2.classList.add('hidden'); mobileViewBtn.classList.add('active-view'); if(pcViewBtn) pcViewBtn.classList.remove('active-view'); });
+if(pcViewBtn) pcViewBtn.addEventListener('click', () => { isPcMode = true; document.body.className = 'pc-mode'; if(customCursor) customCursor.classList.remove('hidden'); if(follow1) follow1.classList.remove('hidden'); if(follow2) follow2.classList.remove('hidden'); pcViewBtn.classList.add('active-view'); if(mobileViewBtn) mobileViewBtn.classList.remove('active-view'); });
+if(mobileViewBtn) mobileViewBtn.addEventListener('click', () => { isPcMode = false; document.body.className = 'mobile-mode'; if(customCursor) customCursor.classList.add('hidden'); if(follow1) follow1.classList.add('hidden'); if(follow2) follow2.classList.add('hidden'); mobileViewBtn.classList.add('active-view'); if(pcViewBtn) pcViewBtn.classList.remove('active-view'); });
 
 if(hostSettingsBtn) hostSettingsBtn.addEventListener('click', () => { if(hostSettingsModal) hostSettingsModal.classList.remove('hidden'); });
 if(closeModalBtn) closeModalBtn.addEventListener('click', () => { if(hostSettingsModal) hostSettingsModal.classList.add('hidden'); });

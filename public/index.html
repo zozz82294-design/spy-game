@@ -8,18 +8,15 @@
     <link rel="stylesheet" href="styles/style.css">
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        /* تطبيق الخط الجديد على اللعبة كلها */
         body, html, button, input, p, h1, h2, h3, span, div { font-family: 'Cairo', sans-serif; }
         
-        body, html { overflow-x: hidden; overflow-y: auto; height: 100%; min-height: 100vh; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; transition: background 0.5s ease; }
-        
-        /* 🔥 الخلفيات الجديدة الفخمة */
-        body.theme-1 { background: #0a0a0f; background-image: radial-gradient(ellipse at 20% 50%, #1a0a2e 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, #0a1a2e 0%, transparent 60%); background-attachment: fixed; }
-        body.theme-2 { background: #0d0d1a; background-image: radial-gradient(ellipse at 50% 0%, #2d1b69 0%, transparent 70%), radial-gradient(ellipse at 80% 80%, #1a0a3e 0%, transparent 60%); background-attachment: fixed; }
-        body.theme-3 { background: #020c02; background-image: radial-gradient(ellipse at 30% 50%, #0a2e0a 0%, transparent 60%), radial-gradient(ellipse at 70% 20%, #001a00 0%, transparent 70%); background-attachment: fixed; }
-        body.theme-4 { background: #0f0500; background-image: radial-gradient(ellipse at 20% 80%, #3e0a0a 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, #2e1500 0%, transparent 70%); background-attachment: fixed; }
-        body.theme-5 { background: #000a1a; background-image: radial-gradient(ellipse at 50% 100%, #003366 0%, transparent 60%), radial-gradient(ellipse at 20% 20%, #001a33 0%, transparent 70%); background-attachment: fixed; }
-        body.theme-6 { background: #0a0800; background-image: radial-gradient(ellipse at 30% 30%, #2e2000 0%, transparent 60%), radial-gradient(ellipse at 70% 70%, #1a1000 0%, transparent 70%); background-attachment: fixed; }
+        /* 🔥 الخلفية الأساسية الدائمة (النيون الفخم) */
+        body, html { 
+            overflow-x: hidden; overflow-y: auto; height: 100%; min-height: 100vh; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; 
+            background: #0a0a0f; 
+            background-image: radial-gradient(ellipse at 20% 50%, #1a0a2e 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, #0a1a2e 0%, transparent 60%); 
+            background-attachment: fixed; 
+        }
 
         body.mobile-mode #mainContainer { max-width: 450px !important; margin: 0 auto; width: 100%; position: relative; z-index: 10; }
         body.pc-mode #mainContainer { max-width: 1000px !important; margin: 0 auto; width: 100%; position: relative; z-index: 10; }
@@ -96,15 +93,15 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes pop { 0% { transform: translateX(-50%) scale(0); } 100% { transform: translateX(-50%) scale(1); } }
 
-        /* النجوم بقت شفافة عشان تشتغل فوق أي خلفية تختارها */
+        /* 🔥 النجوم المتساقطة الثابتة */
         #starsContainer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; overflow: hidden; background: transparent; }
         .falling-star { position: absolute; background: #fff; border-radius: 50%; box-shadow: 0 0 8px rgba(255,255,255,0.8); animation: starFall linear infinite; }
         @keyframes starFall { 0% { transform: translateY(-10vh); opacity: 0; } 10% { opacity: 1; } 80% { opacity: 1; } 100% { transform: translateY(110vh); opacity: 0; } }
     </style>
 </head>
-<body class="mobile-mode theme-1">
+<body class="mobile-mode">
 
-    <div id="starsContainer" class="hidden"></div>
+    <div id="starsContainer"></div>
 
     <button id="generalSettingsBtn" class="general-settings-icon" title="الإعدادات العامة">⚙️</button>
     <button id="hostSettingsBtn" class="host-settings-icon hidden" title="إدارة اللاعبين">👥</button>
@@ -121,7 +118,7 @@
             <h2 class="neon-text" style="margin-bottom: 25px;">الإعدادات ⚙️</h2>
             <div class="toggle-switch-container">
                 <span style="color: #fff; font-size: 1.1rem; font-weight: bold;">زر المغادرة (للضيوف)</span>
-                <button id="toggleLeaveBtn" class="toggle-btn active">مفعل ✔️</button>
+                <button id="toggleLeaveBtn" class="toggle-btn active">م مفعل ✔️</button>
             </div>
             <button id="closeGeneralSettingsBtn" class="btn-close-modal" style="margin-top: 30px; width: 100%;">إغلاق</button>
         </div>
@@ -171,21 +168,6 @@
             <div class="view-options" style="margin-bottom: 20px;"><button id="pcViewBtn" class="btn-view">كمبيوتر 💻</button><button id="mobileViewBtn" class="btn-view active-view">موبايل 📱</button></div>
             <button id="goToWaitingBtn" class="btn-create-room" style="width: 100%; margin-bottom: 15px;">إنشاء غرفة لعبة الجاسوس 🏠</button>
             <button id="joinRoomBtn" class="btn-join-room hidden" style="width: 100%;">انـــضـــمـــام 🚀</button>
-        </div>
-
-        <div id="bgSelectionScreen" class="screen hidden">
-            <h2 class="game-main-title rgb-title" style="margin-bottom: 25px;">اختيار خلفية</h2>
-            <p style="color: #ccc; text-align: center; margin-bottom: 20px;">اختر الخلفية المفضلة لك أثناء اللعب</p>
-            
-            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 15px;">
-                <button id="bgBtn1" class="btn-view" style="padding: 12px; border-radius: 12px; font-weight: bold; background: #0a0a0f; border: 1px solid #1a0a2e; color: #fff;">أزرق بنفسجي</button>
-                <button id="bgBtn2" class="btn-view" style="padding: 12px; border-radius: 12px; font-weight: bold; background: #0d0d1a; border: 1px solid #2d1b69; color: #fff;">بنفسجي فضائي</button>
-                <button id="bgBtn3" class="btn-view" style="padding: 12px; border-radius: 12px; font-weight: bold; background: #020c02; border: 1px solid #0a2e0a; color: #fff;">أخضر داكن</button>
-                <button id="bgBtn4" class="btn-view" style="padding: 12px; border-radius: 12px; font-weight: bold; background: #0f0500; border: 1px solid #3e0a0a; color: #fff;">أحمر وبرتقالي</button>
-                <button id="bgBtn5" class="btn-view" style="padding: 12px; border-radius: 12px; font-weight: bold; background: #000a1a; border: 1px solid #003366; color: #fff;">أزرق عميق</button>
-                <button id="bgBtn6" class="btn-view" style="padding: 12px; border-radius: 12px; font-weight: bold; background: #0a0800; border: 1px solid #2e2000; color: #fff;">ذهبي فاخر</button>
-            </div>
-            <button id="bgBtnStars" class="btn-create-room" style="width: 100%;">نجوم متساقطة ✨ (مع الأساسية)</button>
         </div>
 
         <div id="waitingScreen" class="screen hidden">

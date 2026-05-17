@@ -78,13 +78,21 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes pop { 0% { transform: translateX(-50%) scale(0); } 100% { transform: translateX(-50%) scale(1); } }
 
-        /* 🔥 أنيميشن النجوم المتساقطة (خفيف جداً CSS Only) */
-        #starsContainer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; overflow: hidden; }
-        .falling-star { position: absolute; background: white; border-radius: 50%; opacity: 0; animation: starFall linear infinite; }
+        /* 🔥 تعديل أنيميشن النجوم ليكون فوري ومميز */
+        #starsContainer { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; 
+            pointer-events: none; overflow: hidden; 
+            background: radial-gradient(circle at center, #0a1128 0%, #030712 100%); /* سماء ليلية هادية */
+        }
+        .falling-star { 
+            position: absolute; background: #fff; border-radius: 50%; 
+            box-shadow: 0 0 8px rgba(255,255,255,0.8);
+            animation: starFall linear infinite; 
+        }
         @keyframes starFall {
             0% { transform: translateY(-10vh); opacity: 0; }
             10% { opacity: 1; }
-            90% { opacity: 1; }
+            80% { opacity: 1; }
             100% { transform: translateY(110vh); opacity: 0; }
         }
     </style>
@@ -184,7 +192,7 @@
         <div id="modeSelectionScreen" class="screen hidden">
             <h2 class="game-main-title rgb-title" style="margin-bottom: 25px;">اختيار التصنيف</h2>
             <div class="mode-card" id="randomModeCard" style="position: relative;">
-                <div id="selectedBadge" class="hidden" style="position: absolute; top: -15px; right: -15px; background: var(--neon-green); color: #000; padding: 5px 15px; border-radius: 20px; font-weight: bold; font-size: 0.9rem; box-shadow: 0 0 10px var(--neon-green);">اختارها 𝐒𝐀𝐒𝐔𝐊𝐄</div>
+                <div id="selectedBadge" class="hidden" style="position: absolute; top: -15px; right: -15px; background: var(--neon-green); color: #000; padding: 5px 15px; border-radius: 20px; font-weight: bold; font-size: 0.9rem; box-shadow: 0 0 10px var(--neon-green);">اختارها 𝐒𝐀𝐒𝐔𝐊ﻪ</div>
                 <h3 style="color: var(--neon-blue); font-size: 1.6rem; margin-bottom: 12px;">عشوائي 🎲</h3>
                 <p style="color: #94a3b8; font-size: 0.95rem; line-height: 1.6; margin-bottom: 25px; text-align: right;">ميزة الأشياء العشوائية: تقدر تكشف الجاسوس بسهولة أكبر.</p>
                 <div id="hostModeControls" class="hidden">

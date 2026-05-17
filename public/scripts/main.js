@@ -1,18 +1,19 @@
 const socket = io();
 
-// توليد النجوم بالـ JS عشان متأثرش على أداء الـ HTML
+// 🔥 توليد النجوم وظهورها فوراً من غير تأخير
 function createStars() {
     const container = document.getElementById('starsContainer');
     container.innerHTML = '';
-    for (let i = 0; i < 50; i++) {
+    for (let i = 0; i < 75; i++) {
         let star = document.createElement('div');
         star.className = 'falling-star';
-        let size = Math.random() * 3 + 1; // 1px to 4px
+        let size = Math.random() * 3 + 1.5; 
         star.style.width = size + 'px';
         star.style.height = size + 'px';
         star.style.left = Math.random() * 100 + 'vw';
-        star.style.animationDuration = Math.random() * 3 + 2 + 's'; // 2s to 5s
-        star.style.animationDelay = Math.random() * 5 + 's';
+        star.style.animationDuration = Math.random() * 3 + 3 + 's'; 
+        // السر هنا! Negative delay بيخليها تبدأ وهي في نص الشاشة بالفعل
+        star.style.animationDelay = '-' + (Math.random() * 6) + 's'; 
         container.appendChild(star);
     }
 }
@@ -68,7 +69,6 @@ const closeGeneralSettingsBtn = document.getElementById('closeGeneralSettingsBtn
 const leaveRoomBtn = document.getElementById('leaveRoomBtn');
 let isLeaveBtnEnabled = localStorage.getItem('leaveBtnEnabled') !== 'false';
 
-// متغيرات عشان نحفظ الأكشن قبل اختيار الخلفية
 let pendingAction = null;
 let tempRoomIdToJoin = null;
 let tempGuestName = null;
@@ -80,7 +80,6 @@ function updateLeaveBtnState() {
     } else {
         toggleLeaveBtn.innerText = "معطل ❌"; toggleLeaveBtn.className = "toggle-btn inactive"; leaveRoomBtn.classList.add('hidden');
     }
-    // إخفاء زر الإعدادات العامة للهوست
     if (isHost) {
         generalSettingsBtn.classList.add('hidden');
     } else {
@@ -169,7 +168,6 @@ socket.on('connect', () => {
     }
 });
 
-// 🔥 تعديل سير العمل: الذهاب لاختيار الخلفية أولاً
 if(goToWaitingBtn) goToWaitingBtn.addEventListener('click', () => {
     isHost = true; 
     pendingAction = 'create';
@@ -186,11 +184,10 @@ if(joinRoomBtn) joinRoomBtn.addEventListener('click', () => {
     showScreen('bgSelection');
 });
 
-// أزرار اختيار الخلفية
 if(selectStarsBgBtn) selectStarsBgBtn.addEventListener('click', () => {
     createStars();
     starsContainer.classList.remove('hidden');
-    defaultBg.classList.add('hidden'); // إخفاء النيون الأصلي لتركيز الأداء
+    defaultBg.classList.add('hidden'); 
     executePendingAction();
 });
 
@@ -216,7 +213,7 @@ function executePendingAction() {
         showScreen('waiting'); 
         updateLeaveBtnState();
     }
-    updateLeaveBtnState(); // تحديث عشان يخفي الإعدادات من الهوست
+    updateLeaveBtnState(); 
 }
 
 if(leaveRoomBtn) leaveRoomBtn.addEventListener('click', () => {
@@ -304,7 +301,6 @@ socket.on('votingStarted', (playersArray) => {
     votingGrid.innerHTML = gridHTML;
 });
 
-// 🔥 استقبال كسر التعادل
 socket.on('votingTied', (data) => {
     playSound('lose');
     tiedPlayersNames.innerText = data.tiedNames;
@@ -320,7 +316,6 @@ socket.on('votingTied', (data) => {
         if(timeLeft <= 0) {
             clearInterval(tieInterval);
             tieBreakerModal.classList.add('hidden');
-            // الواجهة هتستقبل votingStarted مرة تانية من السيرفر وتنظف الكروت أوتوماتيك
         }
     }, 1000);
 });
@@ -444,7 +439,6 @@ window.editPlayerName = function(targetId) { const newName = prompt('أدخل ا
 window.kickPlayer = function(targetId) { if (confirm('طرد نهائي لهذا اللاعب؟')) socket.emit('kickPlayer', targetId); };
 function showScreen(screenName) { Object.values(screens).forEach(s => { if(s) { s.classList.remove('active'); s.classList.add('hidden'); } }); if(screens[screenName]) { screens[screenName].classList.remove('hidden'); screens[screenName].classList.add('active'); } }
 
-// 🔥 تغيير المقاسات ديناميكياً
 if(pcViewBtn) pcViewBtn.addEventListener('click', () => { isPcMode = true; document.body.className = 'pc-mode'; if(customCursor) customCursor.classList.remove('hidden'); if(follow1) follow1.classList.remove('hidden'); if(follow2) follow2.classList.remove('hidden'); pcViewBtn.classList.add('active-view'); if(mobileViewBtn) mobileViewBtn.classList.remove('active-view'); });
 if(mobileViewBtn) mobileViewBtn.addEventListener('click', () => { isPcMode = false; document.body.className = 'mobile-mode'; if(customCursor) customCursor.classList.add('hidden'); if(follow1) follow1.classList.add('hidden'); if(follow2) follow2.classList.add('hidden'); mobileViewBtn.classList.add('active-view'); if(pcViewBtn) pcViewBtn.classList.remove('active-view'); });
 

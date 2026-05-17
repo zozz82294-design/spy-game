@@ -137,7 +137,6 @@ io.on('connection', (socket) => {
     socket.on('createRoom', (data) => {
         const roomId = data.roomId; const playerId = data.playerId; 
         socket.join(roomId); socket.roomId = roomId; socket.playerId = playerId;
-        // 🔥 إضافة قوائم التصويت للميزات الجديدة
         if (!rooms[roomId]) rooms[roomId] = { players: {}, gameState: 'waiting', word: '', category: '', spyId: null, votes: {}, guessingWords: [], guessTimer: null, guessEndTime: 0, featureVotes: { hints: [], questions: [] } };
         if (rooms[roomId].players[playerId] && rooms[roomId].players[playerId].disconnectTimeout) {
             clearTimeout(rooms[roomId].players[playerId].disconnectTimeout); rooms[roomId].players[playerId].disconnectTimeout = null;
@@ -236,7 +235,7 @@ io.on('connection', (socket) => {
 
     socket.on('goToModeSelection', () => { 
         if(socket.roomId && rooms[socket.roomId]) {
-            rooms[socket.roomId].featureVotes = { hints: [], questions: [] }; // تصفير الأصوات
+            rooms[socket.roomId].featureVotes = { hints: [], questions: [] }; 
             io.to(socket.roomId).emit('showModeSelection'); 
         }
     });
@@ -244,21 +243,40 @@ io.on('connection', (socket) => {
     socket.on('selectMode', (modeName) => io.to(socket.roomId).emit('modeSelected', modeName));
     socket.on('deselectMode', (modeName) => io.to(socket.roomId).emit('modeDeselected', modeName));
 
-    // 🔥 استقبال أصوات الميزات (تلميحات / أسئلة)
+    // 🔥 تعديل نظام التصويت (اختيار واحد فقط لكل لاعب)
     socket.on('voteFeature', (feature) => {
         const roomId = socket.roomId; const playerId = socket.playerId;
         if(roomId && rooms[roomId]) {
-            let targetArray = feature === 'hint' ? rooms[roomId].featureVotes.hints : rooms[roomId].featureVotes.questions;
-            if(!targetArray.includes(playerId)) {
-                targetArray.push(playerId); // إضافة الصوت
-            } else {
-                targetArray = targetArray.filter(id => id !== playerId); // مسح الصوت لو داس تاني
-                if(feature === 'hint') rooms[roomId].featureVotes.hints = targetArray;
-                else rooms[roomId].featureVotes.questions = targetArray;
+            let hints = rooms[roomId].featureVotes.hints;
+            let questions = rooms[roomId].featureVotes.questions;
+
+            if (feature === 'hint') {
+                if (hints.includes(playerId)) {
+                    // لو داس عليها تاني يمسح صوته
+                    hints = hints.filter(id => id !== playerId);
+                } else {
+                    // يحط صوته ويمسحه من الأسئلة لو كان موجود
+                    hints.push(playerId);
+                    questions = questions.filter(id => id !== playerId);
+                }
+            } else if (feature === 'question') {
+                if (questions.includes(playerId)) {
+                    // لو داس عليها تاني يمسح صوته
+                    questions = questions.filter(id => id !== playerId);
+                } else {
+                    // يحط صوته ويمسحه من التلميحات لو كان موجود
+                    questions.push(playerId);
+                    hints = hints.filter(id => id !== playerId);
+                }
             }
+
+            // حفظ التحديثات
+            rooms[roomId].featureVotes.hints = hints;
+            rooms[roomId].featureVotes.questions = questions;
+
             io.to(roomId).emit('updateFeatureVotes', {
-                hints: rooms[roomId].featureVotes.hints.length,
-                questions: rooms[roomId].featureVotes.questions.length
+                hints: hints.length,
+                questions: questions.length
             });
         }
     });

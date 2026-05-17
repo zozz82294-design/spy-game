@@ -1,5 +1,6 @@
 const socket = io();
 
+// توليد النجوم دايماً كخلفية ثابتة
 function createStars() {
     const container = document.getElementById('starsContainer');
     container.innerHTML = '';
@@ -15,7 +16,7 @@ function createStars() {
         container.appendChild(star);
     }
 }
-createStars();
+createStars(); 
 
 function applyRgbWaveToElement(element, text) {
     if (!element) return;
@@ -27,6 +28,20 @@ function applyRgbWaveToElement(element, text) {
         element.appendChild(span);
     }
 }
+
+// 🔥 التنفيذ الفوري (Synchronous Fix) لمنع الوميض وإخفاء زر الهوست قبل رسم الشاشة!
+const urlParamsSync = new URLSearchParams(window.location.search);
+const roomFromUrlSync = urlParamsSync.get('room');
+
+if (roomFromUrlSync) {
+    document.getElementById('goToWaitingBtn').classList.add('hidden');
+    document.getElementById('playerNameInput').classList.remove('hidden');
+    document.getElementById('joinRoomBtn').classList.remove('hidden');
+    const welcomeTitle = document.querySelector('#welcomeScreen .sasuke-title');
+    if (welcomeTitle) welcomeTitle.textContent = "انـــضـــمـــام";
+}
+
+// تشغيل تأثيرات النصوص بعد تظبيطها
 function initRgbTitles() { document.querySelectorAll('.rgb-title').forEach(el => { if (!el.querySelector('span')) applyRgbWaveToElement(el, el.textContent); }); }
 initRgbTitles();
 
@@ -121,29 +136,20 @@ requestAnimationFrame(animateCursor);
 document.addEventListener('mouseover', (e) => { if (isPcMode && e.target.closest('button') && customCursor) customCursor.classList.add('hovering'); });
 document.addEventListener('mouseout', (e) => { if (isPcMode && e.target.closest('button') && customCursor) customCursor.classList.remove('hovering'); });
 
-// 🔥 التوجيه الذكي بعد تثبيت رابط الهوست
 socket.on('connect', () => {
     const urlParams = new URLSearchParams(window.location.search);
     const roomFromUrl = urlParams.get('room');
     const guestName = sessionStorage.getItem('guestName');
 
     if (roomFromUrl) {
-        // أي حد عنده ?room= في الرابط فهو 100% ضيف (Guest)
         isHost = false;
-        if(goToWaitingBtn) goToWaitingBtn.classList.add('hidden'); 
-        if(playerNameInput) playerNameInput.classList.remove('hidden'); 
-        if(joinRoomBtn) joinRoomBtn.classList.remove('hidden');
-        
-        const welcomeTitle = document.querySelector('#welcomeScreen .sasuke-title');
-        if (welcomeTitle) applyRgbWaveToElement(welcomeTitle, "انـــضـــمـــام");
-        
+        // الشاشة متظبطة من فوق فمش محتاجين نعمل حاجة غير لو عنده اسم متسجل نرجعه غرفته
         if (guestName) {
             playerNameInput.value = guestName;
             socket.emit('joinRoom', { roomId: roomFromUrl, name: guestName, playerId: myPlayerId });
             updateLeaveBtnState();
         }
     } else {
-        // مفيش روم في الرابط، يبقى ده الهوست أو لاعب جديد تماماً في الصفحة الرئيسية
         sessionStorage.removeItem('hostRoomId'); 
         sessionStorage.removeItem('guestName');
         showScreen('welcome');
@@ -151,16 +157,12 @@ socket.on('connect', () => {
     }
 });
 
-// 🔥 إنشاء الغرفة للهوست بدون تغيير الرابط
 if(goToWaitingBtn) goToWaitingBtn.addEventListener('click', () => { 
     isHost = true; 
     if(hostSettingsBtn) hostSettingsBtn.classList.remove('hidden'); 
     if(copyInviteBtn) copyInviteBtn.classList.remove('hidden'); 
     const newRoomId = Math.random().toString(36).substring(2, 8); 
     sessionStorage.setItem('hostRoomId', newRoomId); 
-    
-    // تم إزالة تغيير الرابط (pushState) من هنا، الرابط بيفضل ثابت!
-    
     socket.emit('createRoom', { roomId: newRoomId, playerId: myPlayerId }); 
     showScreen('waiting');
     updateLeaveBtnState();
@@ -408,7 +410,7 @@ if(hostSettingsBtn) hostSettingsBtn.addEventListener('click', () => { if(hostSet
 if(closeModalBtn) closeModalBtn.addEventListener('click', () => { if(hostSettingsModal) hostSettingsModal.classList.add('hidden'); });
 if(restartGameBtn) restartGameBtn.addEventListener('click', () => { if(confirm('إعادة اللعب وإرجاع الجميع لغرفة الانتظار؟')) socket.emit('restartGame'); });
 
-// 🔥 زر دعوة الهوست: بينشئ الرابط السري ديناميكياً وينسخه من غير ما يغير الرابط اللي فوق!
+// 🔥 زر النسخ بقا بينسخ الرابط مباشرة
 if(copyInviteBtn) copyInviteBtn.addEventListener('click', () => { 
     const roomId = sessionStorage.getItem('hostRoomId');
     const inviteLink = window.location.origin + window.location.pathname + '?room=' + roomId;

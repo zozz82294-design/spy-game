@@ -107,7 +107,6 @@ const leftRoomModal = document.getElementById('leftRoomModal'); const invalidRoo
 const errorMsgText = document.getElementById('errorMsgText');
 const tieBreakerModal = document.getElementById('tieBreakerModal'); const tiedPlayersNames = document.getElementById('tiedPlayersNames'); const tieTimerEl = document.getElementById('tieTimer');
 
-// 🔥 إضافة نافذة انتظار الهوست الجديدة
 const guestWaitingHostModal = document.getElementById('guestWaitingHostModal');
 
 let tieInterval;
@@ -140,12 +139,20 @@ requestAnimationFrame(animateCursor);
 document.addEventListener('mouseover', (e) => { if (isPcMode && e.target.closest('button') && customCursor) customCursor.classList.add('hovering'); });
 document.addEventListener('mouseout', (e) => { if (isPcMode && e.target.closest('button') && customCursor) customCursor.classList.remove('hovering'); });
 
+// 🔥 تعديل لوجيك الدخول عشان يستوعب عودة الهوست لو عمل ريفريش
 socket.on('connect', () => {
     const urlParams = new URLSearchParams(window.location.search);
     const roomFromUrl = urlParams.get('room');
+    const hostRoomId = sessionStorage.getItem('hostRoomId');
     const guestName = sessionStorage.getItem('guestName');
 
-    if (roomFromUrl) {
+    if (hostRoomId) {
+        // الهوست عمل ريفريش ورجع
+        isHost = true;
+        if(hostSettingsBtn) hostSettingsBtn.classList.remove('hidden');
+        socket.emit('createRoom', { roomId: hostRoomId, playerId: myPlayerId });
+        updateLeaveBtnState();
+    } else if (roomFromUrl) {
         isHost = false;
         if (guestName) {
             playerNameInput.value = guestName;
@@ -157,6 +164,16 @@ socket.on('connect', () => {
         sessionStorage.removeItem('guestName');
         showScreen('welcome');
         updateLeaveBtnState();
+    }
+});
+
+// 🔥 استقبال حالة الشاشة عشان لو حد عمل ريفريش يرجع لصفحته الأصلية
+socket.on('syncState', (state) => {
+    if (state === 'waiting') {
+        showScreen('waiting');
+    } else if (state === 'modeSelection') {
+        showScreen('modeSelection');
+        if(isHost) hostModeControls.classList.remove('hidden');
     }
 });
 
@@ -404,7 +421,6 @@ socket.on('gameFinalResult', (data) => {
     finalResultModal.classList.remove('hidden');
 });
 
-// 🔥 التعديل هنا: إظهار إعدادات الهوست أو شاشة الانتظار للضيوف
 if(finalOkBtn) finalOkBtn.addEventListener('click', () => {
     finalResultModal.classList.add('hidden');
     if (isHost) { 
@@ -422,7 +438,6 @@ socket.on('gameRestarted', () => {
     if(startVotingPhaseBtn) startVotingPhaseBtn.classList.add('hidden'); if(confirmGuessBtn) confirmGuessBtn.classList.add('hidden');
     if (isHost && restartGameBtn && hostSettingsModal) { restartGameBtn.disabled = true; hostSettingsModal.classList.add('hidden'); }
     
-    // 🔥 مسح شاشة الانتظار بتاعت الضيوف لما الجولة تتكرر
     if(guestWaitingHostModal) guestWaitingHostModal.classList.add('hidden');
 });
 
@@ -459,7 +474,6 @@ socket.on('hostLeftRoom', (hostName) => {
     if(hostLeftModal) hostLeftModal.classList.remove('hidden');
     if(leaveRoomBtn) leaveRoomBtn.classList.add('hidden');
     
-    // 🔥 مسح شاشة الانتظار عشان رسالة خروج الهوست تظهر بوضوح
     if(guestWaitingHostModal) guestWaitingHostModal.classList.add('hidden');
     
     sessionStorage.clear();

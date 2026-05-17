@@ -146,6 +146,9 @@ io.on('connection', (socket) => {
         io.to(roomId).emit('updatePlayers', Object.values(rooms[roomId].players));
         
         const state = rooms[roomId].gameState;
+        // 🔥 تزامن الشاشة الحالية عشان لو حد عمل ريفريش يرجع مكانه
+        socket.emit('syncState', state);
+
         if(['playing', 'voting', 'guessing', 'voting_result', 'voting_tied'].includes(state)) {
             const isSpy = rooms[roomId].spyId === playerId;
             socket.emit('gameStarted', { word: rooms[roomId].word, isSpy: isSpy, category: rooms[roomId].category });
@@ -186,6 +189,8 @@ io.on('connection', (socket) => {
             io.to(roomId).emit('updatePlayers', Object.values(rooms[roomId].players));
             
             const state = rooms[roomId].gameState;
+            socket.emit('syncState', state);
+
             if(['playing', 'voting', 'guessing', 'voting_result', 'voting_tied'].includes(state)) {
                 const isSpy = rooms[roomId].spyId === playerId;
                 socket.emit('gameStarted', { word: rooms[roomId].word, isSpy: isSpy, category: rooms[roomId].category });
@@ -243,7 +248,6 @@ io.on('connection', (socket) => {
     socket.on('selectMode', (modeName) => io.to(socket.roomId).emit('modeSelected', modeName));
     socket.on('deselectMode', (modeName) => io.to(socket.roomId).emit('modeDeselected', modeName));
 
-    // 🔥 تعديل نظام التصويت (اختيار واحد فقط لكل لاعب)
     socket.on('voteFeature', (feature) => {
         const roomId = socket.roomId; const playerId = socket.playerId;
         if(roomId && rooms[roomId]) {
@@ -252,25 +256,20 @@ io.on('connection', (socket) => {
 
             if (feature === 'hint') {
                 if (hints.includes(playerId)) {
-                    // لو داس عليها تاني يمسح صوته
                     hints = hints.filter(id => id !== playerId);
                 } else {
-                    // يحط صوته ويمسحه من الأسئلة لو كان موجود
                     hints.push(playerId);
                     questions = questions.filter(id => id !== playerId);
                 }
             } else if (feature === 'question') {
                 if (questions.includes(playerId)) {
-                    // لو داس عليها تاني يمسح صوته
                     questions = questions.filter(id => id !== playerId);
                 } else {
-                    // يحط صوته ويمسحه من التلميحات لو كان موجود
                     questions.push(playerId);
                     hints = hints.filter(id => id !== playerId);
                 }
             }
 
-            // حفظ التحديثات
             rooms[roomId].featureVotes.hints = hints;
             rooms[roomId].featureVotes.questions = questions;
 
@@ -372,17 +371,14 @@ io.on('connection', (socket) => {
         }
     });
 
+    // 🔥 التعديل الجذري: إعطاء الهوست مهلة 60 ثانية زيه زي الضيوف عشان لو عمل ريفريش!
     socket.on('disconnect', () => {
         const roomId = socket.roomId; const playerId = socket.playerId;
         if (roomId && rooms[roomId] && rooms[roomId].players[playerId]) {
-            const isHost = rooms[roomId].players[playerId].isHost;
-            if (isHost) {
+            // مهلة 60 ثانية للكل (هوست أو ضيف)
+            rooms[roomId].players[playerId].disconnectTimeout = setTimeout(() => {
                 handlePlayerLeave(roomId, playerId);
-            } else {
-                rooms[roomId].players[playerId].disconnectTimeout = setTimeout(() => {
-                    handlePlayerLeave(roomId, playerId);
-                }, 60000); 
-            }
+            }, 60000); 
         }
     });
 });

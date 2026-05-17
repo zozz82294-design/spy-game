@@ -80,7 +80,6 @@ function handlePlayerLeave(roomId, playerId) {
     const wasVoting = (rooms[roomId].gameState === 'voting');
     let gameAborted = false;
 
-    // 🔥 لو الجاسوس خرج مش هنظهر رسالة، هنرستر الجولة بصمت
     if (rooms[roomId].spyId === playerId && ['playing', 'voting', 'guessing', 'voting_result'].includes(rooms[roomId].gameState)) {
         if(rooms[roomId].guessTimer) clearTimeout(rooms[roomId].guessTimer);
         rooms[roomId].gameState = 'waiting';
@@ -148,8 +147,17 @@ io.on('connection', (socket) => {
     socket.on('joinRoom', (data) => {
         const roomId = data.roomId; const playerId = data.playerId;
         if (rooms[roomId]) {
+            
+            // 🔥 المنع الجذري: لو اللاعب جديد واللعبة مش في وضع الانتظار (بدأت بالفعل)
+            const isExistingPlayer = !!rooms[roomId].players[playerId];
+            if (!isExistingPlayer && rooms[roomId].gameState !== 'waiting') {
+                socket.emit('errorMsg', 'لقد بدأت اللعبة بالفعل! 🚫 لا يمكنك الانضمام الآن.');
+                return; // يمنع الدخول تماماً
+            }
+
             socket.join(roomId); socket.roomId = roomId; socket.playerId = playerId;
-            if (rooms[roomId].players[playerId]) {
+            
+            if (isExistingPlayer) {
                 if (rooms[roomId].players[playerId].disconnectTimeout) { clearTimeout(rooms[roomId].players[playerId].disconnectTimeout); rooms[roomId].players[playerId].disconnectTimeout = null; }
                 rooms[roomId].players[playerId].socketId = socket.id;
             } else {

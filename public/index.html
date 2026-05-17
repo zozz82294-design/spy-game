@@ -26,7 +26,7 @@
 
         .logo-section { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; }
         
-        .rgb-title, #roleTitle, #roleCategory {
+        .rgb-title, #roleTitle {
             color: #ff0055;
             text-shadow: 0 0 15px #ff0055, 0 0 30px #ff0055;
             animation: hueShift 4s linear infinite !important;
@@ -159,7 +159,7 @@
         <div id="modeSelectionScreen" class="screen hidden">
             <h2 class="game-main-title rgb-title" style="margin-bottom: 25px;">اختيار التصنيف</h2>
             <div class="mode-card" id="randomModeCard" style="position: relative;">
-                <div id="selectedBadge" class="hidden" style="position: absolute; top: -15px; right: -15px; background: var(--neon-green); color: #000; padding: 5px 15px; border-radius: 20px; font-weight: bold; font-size: 0.9rem; box-shadow: 0 0 10px var(--neon-green);">اختارها 𝐒𝐀𝐒𝐔𝐊𝐄</div>
+                <div id="selectedBadge" class="hidden" style="position: absolute; top: -15px; right: -15px; background: var(--neon-green); color: #000; padding: 5px 15px; border-radius: 20px; font-weight: bold; font-size: 0.9rem; box-shadow: 0 0 10px var(--neon-green);">اختارها 𝐒𝐀𝐒𝐔𝐊ﻪ</div>
                 <h3 style="color: var(--neon-blue); font-size: 1.6rem; margin-bottom: 12px;">عشوائي 🎲</h3>
                 <p style="color: #94a3b8; font-size: 0.95rem; line-height: 1.6; margin-bottom: 25px; text-align: right;">ميزة الأشياء العشوائية: تقدر تكشف الجاسوس بسهولة أكبر.</p>
                 <div id="hostModeControls" class="hidden">
@@ -172,8 +172,8 @@
 
         <div id="gameScreen" class="screen hidden">
             <div class="avatar-glow" id="roleIcon">🎭</div>
-            <h2 class="game-main-title rgb-title" id="roleTitle" style="margin-bottom: 5px;">...</h2>
-            <p id="roleCategory" style="color: var(--neon-blue); font-size: 1.2rem; margin-bottom: 20px; font-weight: bold;">التصنيف: ...</p>
+            <h2 class="game-main-title rgb-title" id="roleTitle" style="margin-bottom: 20px;">...</h2>
+            
             <div style="background: rgba(0,0,0,0.5); padding: 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 25px;">
                 <p style="color: #ccc; font-size: 1.1rem; margin-bottom: 12px;">ابحثوا عن الجاسوس!</p>
                 <p style="color: #64748b; font-size: 0.9rem; line-height: 1.5;">تناقشوا الآن عبر الصوت واكتشفوا من لا يعرف الكلمة.</p>

@@ -41,6 +41,8 @@ function playSound(type) {
 }
 document.addEventListener('click', (e) => { if(e.target.tagName === 'BUTTON' || e.target.closest('button')) playSound('click'); });
 
+window.addEventListener('beforeunload', () => { socket.emit('leaveRoom'); });
+
 let myPlayerId = sessionStorage.getItem('playerId');
 if (!myPlayerId) { myPlayerId = 'player_' + Math.random().toString(36).substr(2, 9); sessionStorage.setItem('playerId', myPlayerId); }
 
@@ -73,7 +75,6 @@ const hostLeftModal = document.getElementById('hostLeftModal'); const kickedModa
 const leftRoomModal = document.getElementById('leftRoomModal'); const invalidRoomModal = document.getElementById('invalidRoomModal'); 
 const errorMsgText = document.getElementById('errorMsgText');
 
-// 🔥 المودال اتمسح من المتغيرات
 const selectRandomModeBtn = document.getElementById('selectRandomModeBtn'); const revokeRandomModeBtn = document.getElementById('revokeRandomModeBtn');
 const confirmStartGameBtn = document.getElementById('confirmStartGameBtn'); const selectedBadge = document.getElementById('selectedBadge');
 const randomModeCard = document.getElementById('randomModeCard'); const hostModeControls = document.getElementById('hostModeControls');
@@ -186,11 +187,6 @@ socket.on('updatePlayers', (playersArray) => {
     }
 });
 
-// 🔥 رسالة المودال اتمسحت من هنا، وبقينا بنقفل اللعبة في صمت
-socket.on('spyDisconnected', (spyName) => {
-    // مفيش رسايل هتطلع هنا خلاص. السيرفر بيبعت gameRestarted أوتوماتيك
-});
-
 if(actualStartBtn) actualStartBtn.addEventListener('click', () => { playSound('start'); socket.emit('goToModeSelection'); });
 socket.on('showModeSelection', () => {
     showScreen('modeSelection');
@@ -213,12 +209,12 @@ socket.on('modeDeselected', (mode) => {
     }
 });
 
+// 🔥 مسحنا سطر category من هنا عشان التصنيف ميظهرش
 socket.on('assignRole', (data) => {
     playSound('start'); myRoleData = data;
-    const roleIcon = document.getElementById('roleIcon'); const roleTitle = document.getElementById('roleTitle'); const roleCategory = document.getElementById('roleCategory');
+    const roleIcon = document.getElementById('roleIcon'); const roleTitle = document.getElementById('roleTitle');
     if(data.isSpy) { roleIcon.innerText = "🕵️‍♂️"; applyRgbWaveToElement(roleTitle, "أنت الجاسوس!"); } 
     else { roleIcon.innerText = "🎯"; applyRgbWaveToElement(roleTitle, data.word); }
-    applyRgbWaveToElement(roleCategory, `التصنيف: ${data.category}`);
 });
 
 socket.on('gameStarted', () => {

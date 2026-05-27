@@ -28,15 +28,31 @@ function applyRgbWaveToElement(element, text) {
     }
 }
 
+// 🔊 تعريف الأصوات الجديدة هنا
+const audioJoin = new Audio('audio/join.mp3');
+const audioWaiting = new Audio('audio/waiting.mp3');
+const audioStart = new Audio('audio/start.mp3');
+
 const urlParamsSync = new URLSearchParams(window.location.search);
 const roomFromUrlSync = urlParamsSync.get('room');
 
+const playerNameInput = document.getElementById('playerNameInput');
+
 if (roomFromUrlSync) {
     document.getElementById('goToWaitingBtn').classList.add('hidden');
-    document.getElementById('playerNameInput').classList.remove('hidden');
+    if(playerNameInput) playerNameInput.classList.remove('hidden');
     document.getElementById('joinRoomBtn').classList.remove('hidden');
     const welcomeTitle = document.querySelector('#welcomeScreen .sasuke-title');
     if (welcomeTitle) welcomeTitle.textContent = "انـــضـــمـــام";
+
+    // 🔊 تشغيل صوت الانضمام بمجرد التفاعل مع الشاشة
+    const playJoinAudio = () => {
+        audioJoin.play().catch(e => {});
+        document.removeEventListener('click', playJoinAudio);
+        if(playerNameInput) playerNameInput.removeEventListener('focus', playJoinAudio);
+    };
+    document.addEventListener('click', playJoinAudio);
+    if(playerNameInput) playerNameInput.addEventListener('focus', playJoinAudio);
 }
 
 function initRgbTitles() { document.querySelectorAll('.rgb-title').forEach(el => { if (!el.querySelector('span')) applyRgbWaveToElement(el, el.textContent); }); }
@@ -97,7 +113,7 @@ if(toggleLeaveBtn) toggleLeaveBtn.addEventListener('click', () => { isLeaveBtnEn
 const screens = { welcome: document.getElementById('welcomeScreen'), waiting: document.getElementById('waitingScreen'), modeSelection: document.getElementById('modeSelectionScreen'), game: document.getElementById('gameScreen'), voting: document.getElementById('votingScreen'), guessing: document.getElementById('guessingScreen') };
 const mainContainer = document.getElementById('mainContainer'); const pcViewBtn = document.getElementById('pcViewBtn'); const mobileViewBtn = document.getElementById('mobileViewBtn');
 const goToWaitingBtn = document.getElementById('goToWaitingBtn'); const joinRoomBtn = document.getElementById('joinRoomBtn');       
-const playerNameInput = document.getElementById('playerNameInput'); const copyInviteBtn = document.getElementById('copyInviteBtn');
+const copyInviteBtn = document.getElementById('copyInviteBtn');
 const playerCountSpan = document.getElementById('playerCount'); const playersListDiv = document.getElementById('playersList');
 const startGameBtn = document.getElementById('startGameBtn'); const actualStartBtn = document.getElementById('actualStartBtn');
 const hostSettingsBtn = document.getElementById('hostSettingsBtn'); const hostSettingsModal = document.getElementById('hostSettingsModal'); const closeModalBtn = document.getElementById('closeModalBtn');
@@ -153,7 +169,7 @@ socket.on('connect', () => {
     } else if (roomFromUrl) {
         isHost = false;
         if (guestName) {
-            playerNameInput.value = guestName;
+            if(playerNameInput) playerNameInput.value = guestName;
             socket.emit('joinRoom', { roomId: roomFromUrl, name: guestName, playerId: myPlayerId });
             updateLeaveBtnState();
         }
@@ -186,7 +202,7 @@ if(goToWaitingBtn) goToWaitingBtn.addEventListener('click', () => {
 });
 
 if(joinRoomBtn) joinRoomBtn.addEventListener('click', () => {
-    const enteredName = playerNameInput.value.trim();
+    const enteredName = playerNameInput ? playerNameInput.value.trim() : '';
     if(!enteredName) { alert("اكتب اسمك الأول يا بطل!"); return; }
     isHost = false; 
     if(copyInviteBtn) copyInviteBtn.classList.add('hidden'); 
@@ -195,6 +211,9 @@ if(joinRoomBtn) joinRoomBtn.addEventListener('click', () => {
     socket.emit('joinRoom', { roomId: roomIdToJoin, name: enteredName, playerId: myPlayerId }); 
     showScreen('waiting'); 
     updateLeaveBtnState();
+
+    // 🔊 تشغيل صوت الانتظار للضيف فقط
+    audioWaiting.play().catch(e => console.log(e));
 });
 
 if(leaveRoomBtn) leaveRoomBtn.addEventListener('click', () => {
@@ -285,10 +304,12 @@ socket.on('modeDeselected', (mode) => {
     }
 });
 
-// 🔥 تعديل استقبال بيانات اللعبة عشان نظهر التصنيف للكل (بما فيهم الجاسوس)
 socket.on('gameStarted', (data) => {
     if(data) { 
-        playSound('start'); myRoleData = data;
+        // 🔊 تشغيل الصوت الفخم لبداية اللعبة للجميع
+        audioStart.play().catch(e => console.log(e));
+        
+        myRoleData = data;
         const roleIcon = document.getElementById('roleIcon'); 
         const roleTitle = document.getElementById('roleTitle');
         const categoryTitle = document.getElementById('categoryTitle'); 
@@ -302,7 +323,6 @@ socket.on('gameStarted', (data) => {
             applyRgbWaveToElement(roleTitle, data.word); 
         }
 
-        // إظهار التصنيف دائماً للجميع (الجاسوس والعاديين)
         if(categoryTitle) {
             categoryTitle.innerText = `التصنيف: ${data.category}`; 
             categoryTitle.classList.remove('hidden'); 

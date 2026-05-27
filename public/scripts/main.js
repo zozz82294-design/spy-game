@@ -285,26 +285,27 @@ socket.on('modeDeselected', (mode) => {
     }
 });
 
-// 🔥 تعديل استقبال بيانات اللعبة عشان نظهر التصنيف
+// 🔥 تعديل استقبال بيانات اللعبة عشان نظهر التصنيف للكل (بما فيهم الجاسوس)
 socket.on('gameStarted', (data) => {
     if(data) { 
         playSound('start'); myRoleData = data;
         const roleIcon = document.getElementById('roleIcon'); 
         const roleTitle = document.getElementById('roleTitle');
-        const categoryTitle = document.getElementById('categoryTitle'); // سحبنا مكان التصنيف
+        const categoryTitle = document.getElementById('categoryTitle'); 
         
         if(data.isSpy) { 
             roleIcon.innerText = "🕵️‍♂️"; 
             applyRgbWaveToElement(roleTitle, "أنت الجاسوس!"); 
-            if(categoryTitle) categoryTitle.classList.add('hidden'); // إخفاء التصنيف للجاسوس
         } 
         else { 
             roleIcon.innerText = "🎯"; 
             applyRgbWaveToElement(roleTitle, data.word); 
-            if(categoryTitle) {
-                categoryTitle.innerText = `التصنيف: ${data.category}`; // كتابة التصنيف
-                categoryTitle.classList.remove('hidden'); // إظهار التصنيف
-            }
+        }
+
+        // إظهار التصنيف دائماً للجميع (الجاسوس والعاديين)
+        if(categoryTitle) {
+            categoryTitle.innerText = `التصنيف: ${data.category}`; 
+            categoryTitle.classList.remove('hidden'); 
         }
     }
     showScreen('game');

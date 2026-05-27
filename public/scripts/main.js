@@ -236,7 +236,6 @@ socket.on('updatePlayers', (playersArray) => {
     }
 });
 
-// 🔥 حماية الأزرار من الضغط المزدوج
 if(actualStartBtn) actualStartBtn.addEventListener('click', (e) => { 
     e.target.disabled = true;
     playSound('start'); socket.emit('goToModeSelection'); 
@@ -286,12 +285,27 @@ socket.on('modeDeselected', (mode) => {
     }
 });
 
+// 🔥 تعديل استقبال بيانات اللعبة عشان نظهر التصنيف
 socket.on('gameStarted', (data) => {
     if(data) { 
         playSound('start'); myRoleData = data;
-        const roleIcon = document.getElementById('roleIcon'); const roleTitle = document.getElementById('roleTitle');
-        if(data.isSpy) { roleIcon.innerText = "🕵️‍♂️"; applyRgbWaveToElement(roleTitle, "أنت الجاسوس!"); } 
-        else { roleIcon.innerText = "🎯"; applyRgbWaveToElement(roleTitle, data.word); }
+        const roleIcon = document.getElementById('roleIcon'); 
+        const roleTitle = document.getElementById('roleTitle');
+        const categoryTitle = document.getElementById('categoryTitle'); // سحبنا مكان التصنيف
+        
+        if(data.isSpy) { 
+            roleIcon.innerText = "🕵️‍♂️"; 
+            applyRgbWaveToElement(roleTitle, "أنت الجاسوس!"); 
+            if(categoryTitle) categoryTitle.classList.add('hidden'); // إخفاء التصنيف للجاسوس
+        } 
+        else { 
+            roleIcon.innerText = "🎯"; 
+            applyRgbWaveToElement(roleTitle, data.word); 
+            if(categoryTitle) {
+                categoryTitle.innerText = `التصنيف: ${data.category}`; // كتابة التصنيف
+                categoryTitle.classList.remove('hidden'); // إظهار التصنيف
+            }
+        }
     }
     showScreen('game');
     if (isHost && restartGameBtn) restartGameBtn.disabled = false;

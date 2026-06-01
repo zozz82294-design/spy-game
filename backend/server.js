@@ -11,7 +11,6 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.static(path.resolve(__dirname, '..', 'public')));
 
-// مسار فحص الصحة عشان Render ميفصلش السيرفر
 app.get('/health', (req, res) => res.status(200).send('OK'));
 
 let rooms = {};
@@ -24,9 +23,8 @@ const categorizedWords = {
     "حيوانات ونباتات": ["أسد", "نمر", "فهد", "ذئب", "ثعلب", "كلب", "قطة", "فار", "أرنب", "قرد", "نسناس", "فيل", "زرافة", "حصان", "حمار", "جمل", "بقرة", "جاموسة", "خروف", "معزة", "خنزير", "غزال", "دب", "باندا", "كنغر", "كوالا", "تمساح", "ثعبان", "سحلية", "برص", "سلحفاة", "ضفدع", "سمكة", "قرش", "حوت", "دولفين", "أخطبوط", "قنديل بحر", "استاكوزا", "كابوريا", "نحلة", "نملة", "دبانة", "ناموسة", "صرصار", "عنكبوت", "عقرب", "فراشة", "غراب", "حمامة", "عصفور", "صقر", "نسر", "بومة", "ببغاء", "بطة", "وزة", "فرخة", "ديك", "ديك رومي", "نعامة", "بطريق", "شجرة", "نخلة", "صبار", "نجيلة", "غصن", "ورقة شجر", "ليمونة", "برتقالة", "بذرة"]
 };
 
-// 🔥 درع الانهيار (عشان السيرفر ميقفلش لو حصل Error)
-process.on('uncaughtException', (err) => { console.error('Uncaught Exception Error:', err); });
-process.on('unhandledRejection', (reason, promise) => { console.error('Unhandled Rejection Error:', reason); });
+process.on('uncaughtException', (err) => { console.error('Uncaught Exception:', err); });
+process.on('unhandledRejection', (reason, promise) => { console.error('Unhandled Rejection:', reason); });
 
 function shuffleArray(array) {
     let currentIndex = array.length, randomIndex;
@@ -58,12 +56,10 @@ function getSimilarWords(correctWord, categoryName) {
     return shuffleArray(selected); 
 }
 
-// 🔥 مكنسة الذاكرة لتنظيف الغرف بالكامل
 function cleanupRoom(roomId) {
     if (!rooms[roomId]) return;
     if (rooms[roomId].guessTimer) clearTimeout(rooms[roomId].guessTimer);
     if (rooms[roomId].tieTimer) clearTimeout(rooms[roomId].tieTimer);
-    
     if (rooms[roomId].players) {
         Object.values(rooms[roomId].players).forEach(p => {
             if (p.disconnectTimeout) clearTimeout(p.disconnectTimeout);
@@ -74,24 +70,19 @@ function cleanupRoom(roomId) {
 
 function checkVotingResult(roomId) {
     if (!rooms[roomId]) return;
-    
     const voteCounts = {};
     Object.values(rooms[roomId].votes).forEach(id => { voteCounts[id] = (voteCounts[id] || 0) + 1; });
-    
     let maxVotes = 0;
     for (const count of Object.values(voteCounts)) { if (count > maxVotes) maxVotes = count; }
-
     const tiedIds = [];
     for (const [id, count] of Object.entries(voteCounts)) { if (count === maxVotes) tiedIds.push(id); }
-
     const totalPlayers = Object.keys(rooms[roomId].players).length;
+    
     if (tiedIds.length > 1 && totalPlayers > 1) {
         rooms[roomId].gameState = 'voting_tied';
         const tiedNames = tiedIds.map(id => rooms[roomId].players[id] ? rooms[roomId].players[id].name : "لاعب غادر").join(' و ');
-        
         io.to(roomId).emit('votingTied', { tiedNames: tiedNames });
         rooms[roomId].votes = {}; 
-
         if (rooms[roomId].tieTimer) clearTimeout(rooms[roomId].tieTimer);
         rooms[roomId].tieTimer = setTimeout(() => {
             if(rooms[roomId] && rooms[roomId].gameState === 'voting_tied') {
@@ -115,7 +106,6 @@ function checkVotingResult(roomId) {
 
 function handlePlayerLeave(roomId, playerId) {
     if (!rooms[roomId] || !rooms[roomId].players[playerId]) return;
-
     const isHost = rooms[roomId].players[playerId].isHost;
     const wasVoting = (rooms[roomId].gameState === 'voting');
     let gameAborted = false;
@@ -123,7 +113,7 @@ function handlePlayerLeave(roomId, playerId) {
     if (isHost) {
         const hostName = rooms[roomId].players[playerId].name;
         io.to(roomId).emit('hostLeftRoom', hostName);
-        cleanupRoom(roomId); // مسح آمن للغرفة
+        cleanupRoom(roomId);
         return; 
     }
 
@@ -140,42 +130,29 @@ function handlePlayerLeave(roomId, playerId) {
 
     if (rooms[roomId]) {
         io.to(roomId).emit('updatePlayers', Object.values(rooms[roomId].players));
-        
-        // لو الغرفة فضيت خالص امسحها
         if (Object.keys(rooms[roomId].players).length === 0) {
-            cleanupRoom(roomId);
-            return;
+            cleanupRoom(roomId); return;
         }
-
         if (wasVoting && !gameAborted) {
             if (rooms[roomId].votes[playerId]) delete rooms[roomId].votes[playerId];
             const totalVotes = Object.keys(rooms[roomId].votes).length;
             const remainingPlayersCount = Object.keys(rooms[roomId].players).length;
-
             io.to(roomId).emit('playerRemovedFromVoting', playerId);
             io.to(roomId).emit('voteRegistered', { voterName: "النظام", targetName: "", currentVotes: totalVotes, totalRequired: remainingPlayersCount });
-
-            if (totalVotes >= remainingPlayersCount && remainingPlayersCount > 0) {
-                checkVotingResult(roomId);
-            }
+            if (totalVotes >= remainingPlayersCount && remainingPlayersCount > 0) checkVotingResult(roomId);
         }
     }
 }
 
 io.on('connection', (socket) => {
-
     socket.on('createRoom', (data) => {
         try {
             const roomId = data.roomId; const playerId = data.playerId; 
             socket.join(roomId); socket.roomId = roomId; socket.playerId = playerId;
             
-            if (!rooms[roomId]) {
-                rooms[roomId] = { players: {}, gameState: 'waiting', word: '', category: '', spyId: null, votes: {}, guessingWords: [], guessTimer: null, tieTimer: null, guessEndTime: 0, featureVotes: { hints: [], questions: [] } };
-            }
+            if (!rooms[roomId]) rooms[roomId] = { players: {}, gameState: 'waiting', word: '', category: '', spyId: null, votes: {}, guessingWords: [], guessTimer: null, tieTimer: null, guessEndTime: 0, featureVotes: { hints: [], questions: [] } };
             
-            if (rooms[roomId].players[playerId] && rooms[roomId].players[playerId].disconnectTimeout) {
-                clearTimeout(rooms[roomId].players[playerId].disconnectTimeout); rooms[roomId].players[playerId].disconnectTimeout = null;
-            }
+            if (rooms[roomId].players[playerId] && rooms[roomId].players[playerId].disconnectTimeout) { clearTimeout(rooms[roomId].players[playerId].disconnectTimeout); rooms[roomId].players[playerId].disconnectTimeout = null; }
             const existingName = rooms[roomId].players[playerId] ? rooms[roomId].players[playerId].name : '𝐒𝐀𝐒𝐔𝐊𝐄';
             rooms[roomId].players[playerId] = { id: playerId, socketId: socket.id, name: existingName, isHost: true };
             io.to(roomId).emit('updatePlayers', Object.values(rooms[roomId].players));
@@ -184,22 +161,17 @@ io.on('connection', (socket) => {
             socket.emit('syncState', state);
 
             if(['playing', 'voting', 'guessing', 'voting_result', 'voting_tied'].includes(state)) {
-                const isSpy = rooms[roomId].spyId === playerId;
-                socket.emit('gameStarted', { word: rooms[roomId].word, isSpy: isSpy, category: rooms[roomId].category });
-                
+                socket.emit('gameStarted', { word: rooms[roomId].word, isSpy: rooms[roomId].spyId === playerId, category: rooms[roomId].category });
                 if (state === 'voting' || state === 'voting_result' || state === 'voting_tied') {
                     socket.emit('votingStarted', Object.values(rooms[roomId].players));
-                    const totalVotes = Object.keys(rooms[roomId].votes).length;
-                    const totalRequired = Object.keys(rooms[roomId].players).length;
-                    socket.emit('voteRegistered', { voterName: "النظام", targetName: "", currentVotes: totalVotes, totalRequired: totalRequired });
+                    socket.emit('voteRegistered', { voterName: "النظام", targetName: "", currentVotes: Object.keys(rooms[roomId].votes).length, totalRequired: Object.keys(rooms[roomId].players).length });
                     if (rooms[roomId].votes[playerId]) socket.emit('youAlreadyVoted', rooms[roomId].votes[playerId]);
                 } else if (state === 'guessing') {
-                    let timeLeft = 30;
-                    if (rooms[roomId].guessEndTime) timeLeft = Math.max(1, Math.ceil((rooms[roomId].guessEndTime - Date.now()) / 1000));
+                    let timeLeft = rooms[roomId].guessEndTime ? Math.max(1, Math.ceil((rooms[roomId].guessEndTime - Date.now()) / 1000)) : 30;
                     socket.emit('guessingPhaseStarted', { words: rooms[roomId].guessingWords, duration: timeLeft });
                 }
             }
-        } catch (e) { console.error("Error in createRoom:", e); }
+        } catch (e) {}
     });
 
     socket.on('joinRoom', (data) => {
@@ -207,10 +179,7 @@ io.on('connection', (socket) => {
             const roomId = data.roomId; const playerId = data.playerId;
             if (rooms[roomId]) {
                 const isExistingPlayer = !!rooms[roomId].players[playerId];
-                if (!isExistingPlayer && rooms[roomId].gameState !== 'waiting') {
-                    socket.emit('errorMsg', 'لقد بدأت اللعبة بالفعل! 🚫 لا يمكنك الانضمام الآن.');
-                    return;
-                }
+                if (!isExistingPlayer && rooms[roomId].gameState !== 'waiting') { socket.emit('errorMsg', 'لقد بدأت اللعبة بالفعل! 🚫 لا يمكنك الانضمام الآن.'); return; }
 
                 socket.join(roomId); socket.roomId = roomId; socket.playerId = playerId;
                 
@@ -228,107 +197,45 @@ io.on('connection', (socket) => {
                 socket.emit('syncState', state);
 
                 if(['playing', 'voting', 'guessing', 'voting_result', 'voting_tied'].includes(state)) {
-                    const isSpy = rooms[roomId].spyId === playerId;
-                    socket.emit('gameStarted', { word: rooms[roomId].word, isSpy: isSpy, category: rooms[roomId].category });
-                    
+                    socket.emit('gameStarted', { word: rooms[roomId].word, isSpy: rooms[roomId].spyId === playerId, category: rooms[roomId].category });
                     if (state === 'voting' || state === 'voting_result' || state === 'voting_tied') {
                         socket.emit('votingStarted', Object.values(rooms[roomId].players));
-                        const totalVotes = Object.keys(rooms[roomId].votes).length;
-                        const totalRequired = Object.keys(rooms[roomId].players).length;
-                        socket.emit('voteRegistered', { voterName: "النظام", targetName: "", currentVotes: totalVotes, totalRequired: totalRequired });
+                        socket.emit('voteRegistered', { voterName: "النظام", targetName: "", currentVotes: Object.keys(rooms[roomId].votes).length, totalRequired: Object.keys(rooms[roomId].players).length });
                         if (rooms[roomId].votes[playerId]) socket.emit('youAlreadyVoted', rooms[roomId].votes[playerId]);
                     } else if (state === 'guessing') {
-                        let timeLeft = 30;
-                        if (rooms[roomId].guessEndTime) timeLeft = Math.max(1, Math.ceil((rooms[roomId].guessEndTime - Date.now()) / 1000));
+                        let timeLeft = rooms[roomId].guessEndTime ? Math.max(1, Math.ceil((rooms[roomId].guessEndTime - Date.now()) / 1000)) : 30;
                         socket.emit('guessingPhaseStarted', { words: rooms[roomId].guessingWords, duration: timeLeft });
                     }
                 }
-            } else {
-                socket.emit('errorMsg', 'الغرفة دي مش موجودة أو الهوست قفل اللعبة!');
-            }
-        } catch (e) { console.error("Error in joinRoom:", e); }
+            } else socket.emit('errorMsg', 'الغرفة دي مش موجودة أو الهوست قفل اللعبة!');
+        } catch (e) {}
     });
 
-    socket.on('changePlayerName', (data) => {
-        try {
-            if(socket.roomId && rooms[socket.roomId] && rooms[socket.roomId].players[data.targetId]) {
-                rooms[socket.roomId].players[data.targetId].name = data.newName;
-                io.to(socket.roomId).emit('updatePlayers', Object.values(rooms[socket.roomId].players));
-            }
-        } catch(e){}
-    });
+    socket.on('changePlayerName', (data) => { try { if(socket.roomId && rooms[socket.roomId] && rooms[socket.roomId].players[data.targetId]) { rooms[socket.roomId].players[data.targetId].name = data.newName; io.to(socket.roomId).emit('updatePlayers', Object.values(rooms[socket.roomId].players)); } } catch(e){} });
+    socket.on('kickPlayer', (targetId) => { try { const roomId = socket.roomId; if(roomId && rooms[roomId] && rooms[roomId].players[targetId]) { io.to(rooms[roomId].players[targetId].socketId).emit('youAreKickedPermanently'); handlePlayerLeave(roomId, targetId); } } catch(e){} });
+    socket.on('leaveRoom', () => { try { const roomId = socket.roomId; const playerId = socket.playerId; if (roomId && rooms[roomId] && rooms[roomId].players[playerId]) { handlePlayerLeave(roomId, playerId); socket.leave(roomId); } } catch(e){} });
 
-    socket.on('kickPlayer', (targetId) => {
-        try {
-            const roomId = socket.roomId;
-            if(roomId && rooms[roomId] && rooms[roomId].players[targetId]) {
-                const targetSocketId = rooms[roomId].players[targetId].socketId;
-                if (rooms[roomId].players[targetId].disconnectTimeout) clearTimeout(rooms[roomId].players[targetId].disconnectTimeout);
-                io.to(targetSocketId).emit('youAreKickedPermanently');
-                handlePlayerLeave(roomId, targetId);
-            }
-        } catch(e){}
-    });
-
-    socket.on('leaveRoom', () => {
-        try {
-            const roomId = socket.roomId; const playerId = socket.playerId;
-            if (roomId && rooms[roomId] && rooms[roomId].players[playerId]) {
-                if (rooms[roomId].players[playerId].disconnectTimeout) clearTimeout(rooms[roomId].players[playerId].disconnectTimeout);
-                handlePlayerLeave(roomId, playerId);
-                socket.leave(roomId);
-            }
-        } catch(e){}
-    });
-
-    socket.on('goToModeSelection', () => { 
-        try {
-            if(socket.roomId && rooms[socket.roomId]) {
-                rooms[socket.roomId].featureVotes = { hints: [], questions: [] }; 
-                io.to(socket.roomId).emit('showModeSelection'); 
-            }
-        } catch(e){}
-    });
-
-    socket.on('selectMode', (modeName) => io.to(socket.roomId).emit('modeSelected', modeName));
-    socket.on('deselectMode', (modeName) => io.to(socket.roomId).emit('modeDeselected', modeName));
+    socket.on('goToModeSelection', () => { try { if(socket.roomId && rooms[socket.roomId]) { rooms[socket.roomId].featureVotes = { hints: [], questions: [] }; io.to(socket.roomId).emit('showModeSelection'); } } catch(e){} });
 
     socket.on('voteFeature', (feature) => {
         try {
             const roomId = socket.roomId; const playerId = socket.playerId;
             if(roomId && rooms[roomId]) {
                 rooms[roomId].featureVotes = rooms[roomId].featureVotes || { hints: [], questions: [] };
-                let hints = rooms[roomId].featureVotes.hints;
-                let questions = rooms[roomId].featureVotes.questions;
-
-                if (feature === 'hint') {
-                    if (hints.includes(playerId)) {
-                        hints = hints.filter(id => id !== playerId);
-                    } else {
-                        hints.push(playerId);
-                        questions = questions.filter(id => id !== playerId);
-                    }
-                } else if (feature === 'question') {
-                    if (questions.includes(playerId)) {
-                        questions = questions.filter(id => id !== playerId);
-                    } else {
-                        questions.push(playerId);
-                        hints = hints.filter(id => id !== playerId);
-                    }
-                }
-
-                rooms[roomId].featureVotes.hints = hints;
-                rooms[roomId].featureVotes.questions = questions;
-
-                io.to(roomId).emit('updateFeatureVotes', {
-                    hints: hints.length,
-                    questions: questions.length
-                });
+                let hints = rooms[roomId].featureVotes.hints; let questions = rooms[roomId].featureVotes.questions;
+                if (feature === 'hint') { if (hints.includes(playerId)) hints = hints.filter(id => id !== playerId); else { hints.push(playerId); questions = questions.filter(id => id !== playerId); } } 
+                else if (feature === 'question') { if (questions.includes(playerId)) questions = questions.filter(id => id !== playerId); else { questions.push(playerId); hints = hints.filter(id => id !== playerId); } }
+                rooms[roomId].featureVotes.hints = hints; rooms[roomId].featureVotes.questions = questions;
+                io.to(roomId).emit('updateFeatureVotes', { hints: hints.length, questions: questions.length });
             }
         } catch(e){}
     });
 
-    socket.on('startRandomMode', () => {
+    // أحداث اختيار التصنيف وعجلة الحظ الجديدة
+    socket.on('selectCategory', (cat) => { io.to(socket.roomId).emit('categorySelected', cat); });
+    socket.on('spinWheel', (targetCat) => { io.to(socket.roomId).emit('wheelSpinning', targetCat); });
+
+    socket.on('startGameWithCategory', (categoryName) => {
         try {
             const roomId = socket.roomId;
             if(roomId && rooms[roomId]) {
@@ -337,11 +244,12 @@ io.on('connection', (socket) => {
                 if(rooms[roomId].tieTimer) clearTimeout(rooms[roomId].tieTimer);
                 
                 const categories = Object.keys(categorizedWords);
-                const randomCategory = categories[Math.floor(Math.random() * categories.length)];
-                const wordsList = categorizedWords[randomCategory];
+                const finalCategory = categories.includes(categoryName) ? categoryName : categories[Math.floor(Math.random() * categories.length)];
+                
+                const wordsList = categorizedWords[finalCategory];
                 const randomWord = wordsList[Math.floor(Math.random() * wordsList.length)];
 
-                rooms[roomId].word = randomWord; rooms[roomId].category = randomCategory; 
+                rooms[roomId].word = randomWord; rooms[roomId].category = finalCategory; 
 
                 const playersArray = Object.values(rooms[roomId].players);
                 const guests = playersArray.filter(p => !p.isHost);
@@ -349,33 +257,22 @@ io.on('connection', (socket) => {
                 rooms[roomId].spyId = spyId;
 
                 playersArray.forEach(player => {
-                    io.to(player.socketId).emit('gameStarted', { word: randomWord, isSpy: player.id === spyId, category: randomCategory });
+                    io.to(player.socketId).emit('gameStarted', { word: randomWord, isSpy: player.id === spyId, category: finalCategory });
                 });
             }
         } catch(e){}
     });
 
-    socket.on('startVotingPhase', () => {
-        try {
-            const roomId = socket.roomId;
-            if(roomId && rooms[roomId]) {
-                rooms[roomId].gameState = 'voting'; io.to(roomId).emit('votingStarted', Object.values(rooms[roomId].players));
-            }
-        } catch(e){}
-    });
+    socket.on('startVotingPhase', () => { try { const roomId = socket.roomId; if(roomId && rooms[roomId]) { rooms[roomId].gameState = 'voting'; io.to(roomId).emit('votingStarted', Object.values(rooms[roomId].players)); } } catch(e){} });
 
     socket.on('submitVote', (targetId) => {
         try {
             const roomId = socket.roomId; const playerId = socket.playerId;
             if(roomId && rooms[roomId] && rooms[roomId].gameState === 'voting') {
-                const voterName = rooms[roomId].players[playerId].name;
-                const targetName = rooms[roomId].players[targetId] ? rooms[roomId].players[targetId].name : "لاعب غادر";
-                
                 rooms[roomId].votes[playerId] = targetId;
                 const totalVotes = Object.keys(rooms[roomId].votes).length;
                 const totalPlayers = Object.keys(rooms[roomId].players).length;
-
-                io.to(roomId).emit('voteRegistered', { voterName: voterName, targetName: targetName, currentVotes: totalVotes, totalRequired: totalPlayers });
+                io.to(roomId).emit('voteRegistered', { voterName: rooms[roomId].players[playerId].name, targetName: rooms[roomId].players[targetId] ? rooms[roomId].players[targetId].name : "لاعب غادر", currentVotes: totalVotes, totalRequired: totalPlayers });
                 if(totalVotes >= totalPlayers) checkVotingResult(roomId);
             }
         } catch(e){}
@@ -385,70 +282,19 @@ io.on('connection', (socket) => {
         try {
             const roomId = socket.roomId;
             if(roomId && rooms[roomId]) {
-                rooms[roomId].gameState = 'guessing';
-                rooms[roomId].guessingWords = getSimilarWords(rooms[roomId].word, rooms[roomId].category);
-                rooms[roomId].guessEndTime = Date.now() + 30000; 
-                
+                rooms[roomId].gameState = 'guessing'; rooms[roomId].guessingWords = getSimilarWords(rooms[roomId].word, rooms[roomId].category); rooms[roomId].guessEndTime = Date.now() + 30000; 
                 io.to(roomId).emit('guessingPhaseStarted', { words: rooms[roomId].guessingWords, duration: 30 });
-
                 if(rooms[roomId].guessTimer) clearTimeout(rooms[roomId].guessTimer);
-                rooms[roomId].guessTimer = setTimeout(() => {
-                    if(rooms[roomId] && rooms[roomId].gameState === 'guessing') {
-                        io.to(roomId).emit('spyTimeOut');
-                        rooms[roomId].gameState = 'waiting';
-                    }
-                }, 30000); 
+                rooms[roomId].guessTimer = setTimeout(() => { if(rooms[roomId] && rooms[roomId].gameState === 'guessing') { io.to(roomId).emit('spyTimeOut'); rooms[roomId].gameState = 'waiting'; } }, 30000); 
             }
         } catch(e){}
     });
 
-    socket.on('spyHoverWord', (word) => {
-        try {
-            const roomId = socket.roomId; const playerId = socket.playerId;
-            if(roomId && rooms[roomId]) {
-                const spyName = rooms[roomId].players[playerId].name;
-                io.to(roomId).emit('spySelectedWord', { word: word, spyName: spyName });
-            }
-        } catch(e){}
-    });
-
-    socket.on('spyConfirmWord', (chosenWord) => {
-        try {
-            const roomId = socket.roomId; const playerId = socket.playerId;
-            if(roomId && rooms[roomId]) {
-                if(rooms[roomId].guessTimer) clearTimeout(rooms[roomId].guessTimer); 
-                const correctWord = rooms[roomId].word;
-                const isCorrect = (chosenWord === correctWord);
-                const spyName = rooms[roomId].players[playerId].name;
-                io.to(roomId).emit('gameFinalResult', { spyName: spyName, chosenWord: chosenWord, correctWord: correctWord, isCorrect: isCorrect });
-            }
-        } catch(e){}
-    });
-
-    socket.on('restartGame', () => {
-        try {
-            if(socket.roomId && rooms[socket.roomId]) {
-                if(rooms[socket.roomId].guessTimer) clearTimeout(rooms[socket.roomId].guessTimer);
-                if(rooms[socket.roomId].tieTimer) clearTimeout(rooms[socket.roomId].tieTimer);
-                rooms[socket.roomId].gameState = 'waiting'; rooms[socket.roomId].votes = {}; 
-                io.to(socket.roomId).emit('gameRestarted');
-            }
-        } catch(e){}
-    });
-
-    socket.on('disconnect', () => {
-        try {
-            const roomId = socket.roomId; const playerId = socket.playerId;
-            if (roomId && rooms[roomId] && rooms[roomId].players[playerId]) {
-                // الهوست والضيف ليهم نفس المهلة لو النت رمش عشان الغرفة متطيرش فجأة
-                rooms[roomId].players[playerId].disconnectTimeout = setTimeout(() => {
-                    handlePlayerLeave(roomId, playerId);
-                }, 60000); 
-            }
-        } catch(e){}
-    });
+    socket.on('spyHoverWord', (word) => { try { const roomId = socket.roomId; const playerId = socket.playerId; if(roomId && rooms[roomId]) io.to(roomId).emit('spySelectedWord', { word: word, spyName: rooms[roomId].players[playerId].name }); } catch(e){} });
+    socket.on('spyConfirmWord', (chosenWord) => { try { const roomId = socket.roomId; const playerId = socket.playerId; if(roomId && rooms[roomId]) { if(rooms[roomId].guessTimer) clearTimeout(rooms[roomId].guessTimer); io.to(roomId).emit('gameFinalResult', { spyName: rooms[roomId].players[playerId].name, chosenWord: chosenWord, correctWord: rooms[roomId].word, isCorrect: (chosenWord === rooms[roomId].word) }); } } catch(e){} });
+    socket.on('restartGame', () => { try { if(socket.roomId && rooms[socket.roomId]) { if(rooms[socket.roomId].guessTimer) clearTimeout(rooms[socket.roomId].guessTimer); if(rooms[socket.roomId].tieTimer) clearTimeout(rooms[socket.roomId].tieTimer); rooms[socket.roomId].gameState = 'waiting'; rooms[socket.roomId].votes = {}; io.to(socket.roomId).emit('gameRestarted'); } } catch(e){} });
+    
+    socket.on('disconnect', () => { try { const roomId = socket.roomId; const playerId = socket.playerId; if (roomId && rooms[roomId] && rooms[roomId].players[playerId]) { rooms[roomId].players[playerId].disconnectTimeout = setTimeout(() => { handlePlayerLeave(roomId, playerId); }, 60000); } } catch(e){} });
 });
 
-server.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
-});
+server.listen(PORT, () => { console.log(`🚀 Server running on port ${PORT}`); });

@@ -8,7 +8,6 @@
     <link rel="stylesheet" href="styles/style.css">
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        /* 🔥 خلفية أنيقة وثابتة وخفيفة جداً على الأجهزة */
         body, html { 
             font-family: 'Cairo', sans-serif;
             overflow-x: hidden; min-height: 100vh; scroll-behavior: smooth; 
@@ -17,27 +16,23 @@
             color: #fff;
         }
 
-        button, .category-card, .vote-card, .word-card { cursor: pointer; }
-
-        body.pc-mode { cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='2,2 20,8 10,12 6,20' fill='%2300f3ff' stroke='%23ffffff' stroke-width='1.5' stroke-linejoin='round'/%3E%3C/svg%3E") 2 2, default !important; }
-        body.pc-mode button, body.pc-mode .category-card, body.pc-mode .vote-card, body.pc-mode .word-card, body.pc-mode input, body.pc-mode .general-settings-icon, body.pc-mode .host-settings-icon { cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='2,2 20,8 10,12 6,20' fill='%23ff0055' stroke='%23ffffff' stroke-width='1.5' stroke-linejoin='round'/%3E%3C/svg%3E") 2 2, pointer !important; }
+        /* 🔥 ماوس القناص للكمبيوتر: خفيف جداً (Zero Lag) ولايق على الجاسوس */
+        body.pc-mode { cursor: crosshair !important; }
+        body.pc-mode button, body.pc-mode .category-card, body.pc-mode .vote-card, body.pc-mode .word-card, body.pc-mode input, body.pc-mode .general-settings-icon, body.pc-mode .host-settings-icon { cursor: pointer !important; }
 
         body.mobile-mode #mainContainer { max-width: 450px !important; margin: 0 auto; width: 100%; position: relative; z-index: 10; }
         body.pc-mode #mainContainer { max-width: 1000px !important; margin: 0 auto; width: 100%; position: relative; z-index: 10; }
 
         .glass-container { margin-bottom: 100px; padding: 25px; transition: max-width 0.3s ease; }
 
-        /* 🔥 إضاءة ثابتة للرموز بدل الفلاتر الثقيلة */
         .spy-icon, .avatar-glow { display: inline-block; font-size: 5rem !important; margin-bottom: 10px; animation: floatSpy 3s ease-in-out infinite; text-shadow: 0 0 20px rgba(255, 0, 85, 0.8); }
         @keyframes floatSpy { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
 
         .logo-section { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; }
         
-        /* 🔥 نيون ثابت للعنوان بدل تغيير الألوان المزعج للجهاز */
         .rgb-title, #roleTitle { color: #ff0055; text-shadow: 0 0 15px #ff0055, 0 0 30px #ff0055; display: block; text-align: center !important; width: 100%; font-weight: 900; margin-bottom: 25px; font-size: 2.8rem; }
 
-        /* 🔥 زراير نيون ثابتة وشيك بدون أنيميشن شادو */
-        button { border: 1px solid var(--neon-blue, #00f3ff); box-shadow: 0 0 10px rgba(0, 243, 255, 0.3); transition: transform 0.2s, box-shadow 0.2s, background 0.2s; background: rgba(0,0,0,0.4); color: #fff; }
+        button { border: 1px solid var(--neon-blue, #00f3ff); box-shadow: 0 0 10px rgba(0, 243, 255, 0.3); transition: transform 0.2s, box-shadow 0.2s, background 0.2s; background: rgba(0,0,0,0.4); color: #fff; cursor: pointer; }
         button:hover { transform: scale(1.05); box-shadow: 0 0 20px rgba(0, 243, 255, 0.6); background: rgba(0, 243, 255, 0.1); }
         button:disabled { opacity: 0.5; pointer-events: none; }
 
@@ -48,7 +43,19 @@
         .btn-leave-room:hover { background: #ff0055; box-shadow: 0 0 25px #ff0055; transform: translateX(-50%) scale(1.02) !important; }
         
         .voting-grid, .words-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; margin-top: 20px; }
-        .vote-card, .word-card { background: rgba(15, 23, 42, 0.8); border: 1px solid #334155; border-radius: 8px; padding: 15px 5px; text-align: center; transition: 0.3s; font-weight: bold; }
+        
+        /* 🔥 هنا تم إصلاح كروت الكلمات (إضافة position: relative) عشان التاج يلزق فيها */
+        .vote-card, .word-card { 
+            background: rgba(15, 23, 42, 0.8); 
+            border: 1px solid #334155; 
+            border-radius: 8px; 
+            padding: 15px 5px; 
+            text-align: center; 
+            transition: 0.3s; 
+            font-weight: bold; 
+            position: relative; /* السطر اللي كان مخلي التاج يطير */
+            cursor: pointer;
+        }
         .vote-card:hover, .word-card.spy-active { border-color: #00f3ff; box-shadow: 0 0 15px rgba(0, 243, 255, 0.3); }
         .vote-card.voted { border-color: #00ff88; box-shadow: 0 0 15px #00ff88; pointer-events: none; opacity: 0.8; }
         .vote-card.disabled { pointer-events: none; opacity: 0.5; }
@@ -56,21 +63,37 @@
         .live-log-container { background: rgba(0,0,0,0.5); border-radius: 10px; padding: 10px; height: 130px; overflow-y: auto; margin-top: 20px; border: 1px solid rgba(255,255,255,0.1); text-align: right; font-size: 0.9rem; }
         .log-entry { margin-bottom: 5px; color: #ccc; animation: fadeIn 0.3s ease-in; } .target-name { color: #ff0055; font-weight: bold; }
         
-        .spy-tag { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: #00f3ff; color: #000; font-size: 0.65rem; padding: 2px 8px; border-radius: 10px; white-space: nowrap; animation: pop 0.3s ease; }
+        /* 🔥 تظبيط شكل التاج عشان يكون على زاوية الكارت بشكل شيك */
+        .spy-tag { 
+            position: absolute; 
+            top: -12px; 
+            left: 50%; 
+            transform: translateX(-50%); 
+            background: #00f3ff; 
+            color: #000; 
+            font-size: 0.75rem; 
+            font-weight: bold;
+            padding: 3px 10px; 
+            border-radius: 10px; 
+            white-space: nowrap; 
+            animation: pop 0.3s ease; 
+            box-shadow: 0 0 10px rgba(0, 243, 255, 0.5);
+            z-index: 10;
+        }
         
-        .general-settings-icon, .host-settings-icon { position: absolute; top: 20px; background: none; border: none; font-size: 1.9rem; z-index: 1000; transition: transform 0.3s, opacity 0.3s; box-shadow: none; border: none; }
+        .general-settings-icon, .host-settings-icon { position: absolute; top: 20px; background: none; border: none; font-size: 1.9rem; z-index: 1000; transition: transform 0.3s, opacity 0.3s; box-shadow: none; border: none; cursor: pointer; }
         .general-settings-icon { left: 20px; } .host-settings-icon { right: 20px; }
         .general-settings-icon:hover, .host-settings-icon:hover { transform: scale(1.1); box-shadow: none; background: transparent; }
         
         .toggle-switch-container { display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; margin-top: 20px; border: 1px solid rgba(255,255,255,0.1); }
-        .toggle-btn { padding: 9px 18px; border-radius: 8px; border: none; font-weight: bold; transition: 0.3s; }
+        .toggle-btn { padding: 9px 18px; border-radius: 8px; border: none; font-weight: bold; transition: 0.3s; cursor: pointer; }
         .toggle-btn.active { background: #00ff88; color: #000; box-shadow: 0 0 15px #00ff88; } .toggle-btn.inactive { background: #ff0055; color: #fff; box-shadow: 0 0 15px #ff0055; }
 
         .modal-player-item { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); padding: 12px 18px; border-radius: 10px; margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.05); }
         .modal-player-actions { display: flex; gap: 8px; margin-left: 0; } .player-name-wrapper { flex: 1; display: flex; align-items: center; gap: 8px; overflow: hidden; padding-right: 10px; } .player-name-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 130px; }
 
         .categories-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 15px; }
-        .category-card { background: rgba(15, 23, 42, 0.8); border: 1px solid #334155; border-radius: 8px; padding: 15px 5px; text-align: center; transition: 0.3s; font-weight: bold; font-size: 1rem; color: #ccc; position: relative; }
+        .category-card { background: rgba(15, 23, 42, 0.8); border: 1px solid #334155; border-radius: 8px; padding: 15px 5px; text-align: center; transition: 0.3s; font-weight: bold; font-size: 1rem; color: #ccc; position: relative; cursor: pointer; }
         .category-card:hover { border-color: #00f3ff; color: #fff; box-shadow: 0 0 10px rgba(0, 243, 255, 0.3); }
         .category-card.selected { border-color: #00ff88; background: rgba(0, 255, 136, 0.1); color: #00ff88; box-shadow: 0 0 10px rgba(0, 255, 136, 0.3); transform: scale(1.05); }
         .category-card.random-card { border-color: rgba(176, 0, 255, 0.5); color: #e08cff; }

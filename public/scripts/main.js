@@ -1,6 +1,6 @@
 const socket = io();
 
-// 🔥 تقليل النجوم لـ 20 نجمة بس عشان الأداء ميتأثرش
+// النجوم خفيفة جداً مش هتعمل لاج
 function createStars() {
     const container = document.getElementById('starsContainer'); container.innerHTML = '';
     for (let i = 0; i < 20; i++) {
@@ -12,7 +12,6 @@ function createStars() {
 }
 createStars(); 
 
-// دالة مبسطة جداً للنصوص بدل التعقيد القديم
 function applyRgbWaveToElement(element, text) { if (element) element.textContent = text; }
 
 const audioJoin = new Audio('audio/join.mp3'); const audioWaiting = new Audio('audio/waiting.mp3'); const audioStart = new Audio('audio/start.mp3');
@@ -160,7 +159,7 @@ socket.on('gameRestarted', () => { playSound('start'); if(guessInterval) clearIn
 window.editPlayerName = function(targetId) { const newName = prompt('أدخل الاسم الجديد:'); if (newName && newName.trim() !== '') socket.emit('changePlayerName', { targetId: targetId, newName: newName.trim() }); }; window.kickPlayer = function(targetId) { if (confirm('طرد نهائي لهذا اللاعب؟')) socket.emit('kickPlayer', targetId); };
 function showScreen(screenName) { Object.values(screens).forEach(s => { if(s) { s.classList.remove('active'); s.classList.add('hidden'); } }); if(screens[screenName]) { screens[screenName].classList.remove('hidden'); screens[screenName].classList.add('active'); void screens[screenName].offsetWidth; } }
 
-// 🔥 تفعيل الماوس الأنيق لما تختار وضع الـ PC
+// 🔥 تفعيل شكل ماوس القناص للـ PC (بدون لاج نهائيا)
 if(pcViewBtn) pcViewBtn.addEventListener('click', () => { document.body.className = 'pc-mode'; pcViewBtn.classList.add('active-view'); if(mobileViewBtn) mobileViewBtn.classList.remove('active-view'); }); 
 if(mobileViewBtn) mobileViewBtn.addEventListener('click', () => { document.body.className = 'mobile-mode'; mobileViewBtn.classList.add('active-view'); if(pcViewBtn) pcViewBtn.classList.remove('active-view'); });
 

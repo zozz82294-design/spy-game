@@ -12,11 +12,14 @@
             font-family: 'Cairo', sans-serif;
             overflow-x: hidden; min-height: 100vh; scroll-behavior: smooth; 
             -webkit-overflow-scrolling: touch; touch-action: manipulation; 
-            background: linear-gradient(135deg, #0a0a0f 0%, #1a0a2e 100%);
+            /* 🔥 رجعت الخلفية الأصلية */
+            background: #0a0a0f; 
+            background-image: radial-gradient(ellipse at 20% 50%, #1a0a2e 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, #0a1a2e 0%, transparent 60%); 
+            background-attachment: fixed; 
             color: #fff;
         }
 
-        /* 🔥 ماوس الجيمنج الجديد الشيك جداً والخفيف (زيرو لاج) للكمبيوتر */
+        /* 🔥 ماوس الجيمنج الجديد الشيك جداً للكمبيوتر */
         body.pc-mode { 
             cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 24 24' fill='%2300f3ff' stroke='%23ffffff' stroke-width='1.5'%3E%3Cpath d='M4 2L20 10L13 13L10 20L4 2Z'/%3E%3C/svg%3E") 4 2, auto !important; 
         }
@@ -29,25 +32,39 @@
 
         .glass-container { margin-bottom: 100px; padding: 25px; transition: max-width 0.3s ease; }
 
-        .spy-icon, .avatar-glow { display: inline-block; font-size: 5rem !important; margin-bottom: 10px; animation: floatSpy 3s ease-in-out infinite; text-shadow: 0 0 20px rgba(255, 0, 85, 0.8); }
+        .spy-icon, .avatar-glow { display: inline-block; font-size: 5rem !important; margin-bottom: 10px; animation: floatSpy 3s ease-in-out infinite, rgbDropShadow 6s infinite alternate !important; }
         @keyframes floatSpy { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+        @keyframes rgbDropShadow { 0% { filter: drop-shadow(0 0 20px #ff0055); } 25% { filter: drop-shadow(0 0 20px #00f3ff); } 50% { filter: drop-shadow(0 0 20px #00ff88); } 75% { filter: drop-shadow(0 0 20px #ffe600); } 100% { filter: drop-shadow(0 0 20px #b000ff); } }
 
         .logo-section { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; }
         
-        .rgb-title, #roleTitle { color: #ff0055; text-shadow: 0 0 15px #ff0055, 0 0 30px #ff0055; display: block; text-align: center !important; width: 100%; font-weight: 900; margin-bottom: 25px; font-size: 2.8rem; }
+        /* 🔥 رجعت أنيميشن الألوان الموجية للكلام */
+        @keyframes colorWave {
+            0% { color: #ff0055; text-shadow: 0 0 15px #ff0055; }
+            25% { color: #00f3ff; text-shadow: 0 0 15px #00f3ff; }
+            50% { color: #00ff88; text-shadow: 0 0 15px #00ff88; }
+            75% { color: #ffe600; text-shadow: 0 0 15px #ffe600; }
+            100% { color: #b000ff; text-shadow: 0 0 15px #b000ff; }
+        }
 
-        button { border: 1px solid var(--neon-blue, #00f3ff); box-shadow: 0 0 10px rgba(0, 243, 255, 0.3); transition: transform 0.2s, box-shadow 0.2s, background 0.2s; background: rgba(0,0,0,0.4); color: #fff; cursor: pointer; }
-        button:hover { transform: scale(1.05); box-shadow: 0 0 20px rgba(0, 243, 255, 0.6); background: rgba(0, 243, 255, 0.1); }
+        .rgb-title, #roleTitle { display: block; text-align: center !important; width: 100%; font-weight: 900; margin-bottom: 25px; font-size: 2.8rem; }
+        .rgb-title span, #roleTitle span { display: inline-block; animation: colorWave 3s infinite alternate; animation-delay: calc(var(--char-index) * 0.1s); }
+
+        @keyframes rgbGlow { 0% { box-shadow: 0 0 12px #ff0055, inset 0 0 8px #ff0055; border-color: #ff0055; } 25% { box-shadow: 0 0 12px #00f3ff, inset 0 0 8px #00f3ff; border-color: #00f3ff; } 50% { box-shadow: 0 0 12px #00ff88, inset 0 0 8px #00ff88; border-color: #00ff88; } 75% { box-shadow: 0 0 12px #ffe600, inset 0 0 8px #ffe600; border-color: #ffe600; } 100% { box-shadow: 0 0 12px #b000ff, inset 0 0 8px #b000ff; border-color: #b000ff; } }
+        
+        button { font-family: 'Cairo', sans-serif !important; animation: rgbGlow 6s infinite alternate !important; transition: transform 0.2s, box-shadow 0.2s !important; background: rgba(0,0,0,0.4); color: #fff; cursor: pointer; }
+        button:hover { transform: scale(1.05); }
         button:disabled { opacity: 0.5; pointer-events: none; }
 
-        .view-options .btn-view { box-shadow: none; opacity: 0.6; border-color: rgba(255,255,255,0.2); }
-        .view-options .btn-view.active-view { opacity: 1; border-color: #00f3ff; box-shadow: 0 0 10px rgba(0, 243, 255, 0.4); }
+        .view-options .btn-view { animation: none !important; box-shadow: none; opacity: 0.6; border-color: rgba(255,255,255,0.2); }
+        .view-options .btn-view.active-view { animation: rgbGlow 6s infinite alternate !important; opacity: 1; border-color: #00f3ff; }
         
         .btn-leave-room { position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%) !important; width: 85%; max-width: 350px; background: rgba(255, 51, 102, 0.15); border: 1px solid #ff0055; color: #fff; padding: 15px; border-radius: 12px; font-size: 1.1rem; font-weight: bold; transition: 0.3s; z-index: 100; text-align: center; box-shadow: 0 0 15px rgba(255, 51, 102, 0.2); }
         .btn-leave-room:hover { background: #ff0055; box-shadow: 0 0 25px #ff0055; transform: translateX(-50%) scale(1.02) !important; }
         
         .voting-grid, .words-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; margin-top: 20px; }
         
+        /* 🔥 الكروت متظبطة والتاج هيفضل في مكانه */
         .vote-card, .word-card { 
             background: rgba(15, 23, 42, 0.8); 
             border: 1px solid #334155; 
@@ -105,7 +122,7 @@
         @keyframes pop { 0% { transform: translateX(-50%) scale(0); } 100% { transform: translateX(-50%) scale(1); } }
         
         #starsContainer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; overflow: hidden; background: transparent; }
-        .falling-star { position: absolute; background: #fff; border-radius: 50%; box-shadow: 0 0 5px rgba(255,255,255,0.5); animation: starFall linear infinite; }
+        .falling-star { position: absolute; background: #fff; border-radius: 50%; box-shadow: 0 0 8px rgba(255,255,255,0.8); animation: starFall linear infinite; }
         @keyframes starFall { 0% { transform: translateY(-10vh); opacity: 0; } 10% { opacity: 1; } 80% { opacity: 1; } 100% { transform: translateY(110vh); opacity: 0; } }
     </style>
 </head>

@@ -1,9 +1,9 @@
 const socket = io();
 
-// النجوم خفيفة جداً مش هتعمل لاج
+// 🔥 رجعنا النجوم لـ 75 نجمة
 function createStars() {
     const container = document.getElementById('starsContainer'); container.innerHTML = '';
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 75; i++) {
         let star = document.createElement('div'); star.className = 'falling-star';
         let size = Math.random() * 3 + 1.5; star.style.width = size + 'px'; star.style.height = size + 'px';
         star.style.left = Math.random() * 100 + 'vw'; star.style.animationDuration = Math.random() * 3 + 3 + 's'; star.style.animationDelay = '-' + (Math.random() * 6) + 's'; 
@@ -12,7 +12,17 @@ function createStars() {
 }
 createStars(); 
 
-function applyRgbWaveToElement(element, text) { if (element) element.textContent = text; }
+// 🔥 رجعنا دالة تقسيم الحروف عشان تنور كذا لون (Wave)
+function applyRgbWaveToElement(element, text) {
+    if (!element) return;
+    element.innerHTML = '';
+    for (let i = 0; i < text.length; i++) {
+        const span = document.createElement('span');
+        if (text[i] === ' ') span.innerHTML = '&nbsp;'; 
+        else { span.textContent = text[i]; span.style.setProperty('--char-index', i); }
+        element.appendChild(span);
+    }
+}
 
 const audioJoin = new Audio('audio/join.mp3'); const audioWaiting = new Audio('audio/waiting.mp3'); const audioStart = new Audio('audio/start.mp3');
 const urlParamsSync = new URLSearchParams(window.location.search); const roomFromUrlSync = urlParamsSync.get('room'); const playerNameInput = document.getElementById('playerNameInput');
@@ -32,6 +42,7 @@ if (roomFromUrlSync) {
     document.addEventListener('click', playJoinAudio); if(playerNameInput) playerNameInput.addEventListener('focus', playJoinAudio);
 }
 
+function initRgbTitles() { document.querySelectorAll('.rgb-title').forEach(el => { if (!el.querySelector('span')) applyRgbWaveToElement(el, el.textContent); }); } initRgbTitles();
 const AudioContext = window.AudioContext || window.webkitAudioContext; let audioCtx;
 function initAudio() { if (!audioCtx) audioCtx = new AudioContext(); if (audioCtx.state === 'suspended') audioCtx.resume(); } document.addEventListener('click', initAudio, { once: true });
 function playSound(type) {
@@ -159,7 +170,6 @@ socket.on('gameRestarted', () => { playSound('start'); if(guessInterval) clearIn
 window.editPlayerName = function(targetId) { const newName = prompt('أدخل الاسم الجديد:'); if (newName && newName.trim() !== '') socket.emit('changePlayerName', { targetId: targetId, newName: newName.trim() }); }; window.kickPlayer = function(targetId) { if (confirm('طرد نهائي لهذا اللاعب؟')) socket.emit('kickPlayer', targetId); };
 function showScreen(screenName) { Object.values(screens).forEach(s => { if(s) { s.classList.remove('active'); s.classList.add('hidden'); } }); if(screens[screenName]) { screens[screenName].classList.remove('hidden'); screens[screenName].classList.add('active'); void screens[screenName].offsetWidth; } }
 
-// 🔥 تفعيل شكل ماوس القناص للـ PC (بدون لاج نهائيا)
 if(pcViewBtn) pcViewBtn.addEventListener('click', () => { document.body.className = 'pc-mode'; pcViewBtn.classList.add('active-view'); if(mobileViewBtn) mobileViewBtn.classList.remove('active-view'); }); 
 if(mobileViewBtn) mobileViewBtn.addEventListener('click', () => { document.body.className = 'mobile-mode'; mobileViewBtn.classList.add('active-view'); if(pcViewBtn) pcViewBtn.classList.remove('active-view'); });
 

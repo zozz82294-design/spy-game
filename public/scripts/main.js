@@ -23,6 +23,27 @@ function applyRgbWaveToElement(element, text) {
 const audioJoin = new Audio('audio/join.mp3'); const audioWaiting = new Audio('audio/waiting.mp3'); const audioStart = new Audio('audio/start.mp3');
 const urlParamsSync = new URLSearchParams(window.location.search); const roomFromUrlSync = urlParamsSync.get('room'); const playerNameInput = document.getElementById('playerNameInput');
 
+// 🔥 نظام حظر الاسم النهائي (عشان اللي يستظرف)
+socket.on('forceNameLock', (newName) => {
+    localStorage.setItem('lockedPlayerName', newName);
+    sessionStorage.setItem('guestName', newName);
+    if(playerNameInput) {
+        playerNameInput.value = newName;
+        playerNameInput.readOnly = true;
+        playerNameInput.style.background = 'rgba(0,0,0,0.5)';
+        playerNameInput.style.color = '#888';
+    }
+});
+
+// 🔥 تفعيل الحظر أول ما يفتح الصفحة لو محظور
+const lockedName = localStorage.getItem('lockedPlayerName');
+if (lockedName && playerNameInput) {
+    playerNameInput.value = lockedName;
+    playerNameInput.readOnly = true;
+    playerNameInput.style.background = 'rgba(0,0,0,0.5)';
+    playerNameInput.style.color = '#888';
+}
+
 if (roomFromUrlSync) {
     document.getElementById('goToWaitingBtn').classList.add('hidden'); if(playerNameInput) playerNameInput.classList.remove('hidden'); document.getElementById('joinRoomBtn').classList.remove('hidden');
     const welcomeTitle = document.querySelector('#welcomeScreen .sasuke-title'); if (welcomeTitle) welcomeTitle.textContent = "انـــضـــمـــام";
@@ -56,33 +77,37 @@ let tieInterval; let isPcMode = false; let isHost = false; let myRoleData = null
 let mouseX = window.innerWidth / 2, mouseY = window.innerHeight / 2; let f1X = mouseX, f1Y = mouseY, f2X = mouseX, f2Y = mouseY; document.addEventListener('mousemove', (e) => { mouseX = e.clientX; mouseY = e.clientY; });
 function animateCursor() { if (isPcMode) { f1X += (mouseX - f1X) * 0.2; f1Y += (mouseY - f1Y) * 0.2; f2X += (mouseX - f2X) * 0.1; f2Y += (mouseY - f2Y) * 0.1; if(customCursor) customCursor.style.transform = `translate(${mouseX}px, ${mouseY}px)`; if(follow1) follow1.style.transform = `translate(${f1X}px, ${f1Y}px)`; if(follow2) follow2.style.transform = `translate(${f2X}px, ${f2Y}px)`; } requestAnimationFrame(animateCursor); } requestAnimationFrame(animateCursor); document.addEventListener('mouseover', (e) => { if (isPcMode && e.target.closest('button') && customCursor) customCursor.classList.add('hovering'); }); document.addEventListener('mouseout', (e) => { if (isPcMode && e.target.closest('button') && customCursor) customCursor.classList.remove('hovering'); });
 
-// 🔥 المصفوفة بالترتيب الصحيح
 const availableCategories = ["حاجات جوا وبرا البيت", "أكل وشرب", "أدوات وأشياء", "أماكن ومواصلات", "حيوانات ونباتات", "مهن ووظائف", "رياضة وهوايات", "أجهزة وتكنولوجيا"];
 let chosenCategory = null; let isWheelSpinning = false;
 
-// 🔥 تم إصلاح نظام الاختيار اليدوي وبناء الكروت بشكل سليم
+// 🔥 إصلاح نظام الضغط اليدوي بالكامل
 function renderCategories() {
-    const catGrid = document.getElementById('categoriesGrid'); if(!catGrid) return; 
-    let htmlContent = '';
+    const catGrid = document.getElementById('categoriesGrid'); if(!catGrid) return; catGrid.innerHTML = '';
     availableCategories.forEach((cat, index) => {
-        htmlContent += `<div class="category-card" onclick="selectCategory(${index})" id="cat-idx-${index}">${cat}</div>`;
+        const card = document.createElement('div');
+        card.className = 'category-card';
+        card.id = `cat-idx-${index}`;
+        card.innerText = cat;
+        card.addEventListener('click', () => {
+            if(!isHost || isWheelSpinning) return;
+            playSound('click'); 
+            socket.emit('selectCategory', cat);
+        });
+        catGrid.appendChild(card);
     });
-    htmlContent += `<div class="category-card random-card" onclick="startWheel()" id="cat-random">اختيار عشوائي 🎡</div>`;
-    catGrid.innerHTML = htmlContent;
+    
+    const randomCard = document.createElement('div');
+    randomCard.className = 'category-card random-card';
+    randomCard.id = 'cat-random';
+    randomCard.innerText = 'اختيار عشوائي 🎡';
+    randomCard.addEventListener('click', () => {
+        if(!isHost || isWheelSpinning) return;
+        playSound('start'); 
+        const targetCat = availableCategories[Math.floor(Math.random() * availableCategories.length)];
+        socket.emit('spinWheel', targetCat);
+    });
+    catGrid.appendChild(randomCard);
 }
-
-window.selectCategory = function(index) {
-    if(!isHost || isWheelSpinning) return;
-    playSound('click'); 
-    socket.emit('selectCategory', availableCategories[index]);
-};
-
-window.startWheel = function() {
-    if(!isHost || isWheelSpinning) return;
-    playSound('start');
-    const targetCat = availableCategories[Math.floor(Math.random() * availableCategories.length)];
-    socket.emit('spinWheel', targetCat);
-};
 
 socket.on('categorySelected', (cat) => {
     const targetIdx = availableCategories.indexOf(cat);
@@ -92,7 +117,6 @@ socket.on('categorySelected', (cat) => {
     if(isHost) confirmStartGameBtn.classList.remove('hidden');
 });
 
-// 🔥 خوارزمية عجلة الحظ المتزامنة تماماً للجميع
 socket.on('wheelSpinning', (targetCat) => {
     isWheelSpinning = true;
     if(isHost) confirmStartGameBtn.classList.add('hidden');
@@ -102,58 +126,43 @@ socket.on('wheelSpinning', (targetCat) => {
     const targetIdx = availableCategories.indexOf(targetCat);
     const cards = availableCategories.map((_, i) => document.getElementById(`cat-idx-${i}`));
     
-    let currentStep = 0;
-    let steps = (3 * cards.length) + targetIdx; 
-    let delays = [];
+    let currentStep = 0; let steps = (3 * cards.length) + targetIdx; let delays = [];
+    for(let i = 0; i <= steps; i++) { let progress = i / steps; delays.push(40 + (progress * progress * 300)); }
     
-    // حساب التباطؤ الواقعي
-    for(let i = 0; i <= steps; i++) {
-        let progress = i / steps;
-        delays.push(40 + (progress * progress * 300));
-    }
-    
-    let totalTime = delays.reduce((a, b) => a + b, 0);
-    
-    // أمان لضمان إن اللعبة متقفش أبداً عند أي حد
-    let forceStop = setTimeout(() => { if(isWheelSpinning) finishSpin(targetCat, targetIdx, cards); }, totalTime + 1000);
-
     function tick() {
         if(!isWheelSpinning) return;
         if (currentStep <= steps) {
             cards.forEach(c => c.classList.remove('roulette-active'));
             cards[currentStep % cards.length].classList.add('roulette-active');
-            playSound('vote'); 
-            setTimeout(tick, delays[currentStep]);
-            currentStep++;
+            playSound('vote'); setTimeout(tick, delays[currentStep]); currentStep++;
         } else {
-            clearTimeout(forceStop);
-            finishSpin(targetCat, targetIdx, cards);
+            isWheelSpinning = false; cards.forEach(c => c.classList.remove('roulette-active'));
+            cards[targetIdx].classList.add('selected'); document.getElementById('cat-random').classList.remove('selected');
+            playSound('win'); chosenCategory = targetCat;
+            // 🔥 تأخير إظهار زر המتابعة عشان الكل يتزامن 100%
+            if(isHost) { setTimeout(() => { confirmStartGameBtn.classList.remove('hidden'); }, 1000); }
         }
     }
-    
     tick();
 });
-
-function finishSpin(cat, idx, cards) {
-    isWheelSpinning = false;
-    cards.forEach(c => c.classList.remove('roulette-active'));
-    cards[idx].classList.add('selected');
-    document.getElementById('cat-random').classList.remove('selected');
-    playSound('win');
-    chosenCategory = cat;
-    
-    // 🔥 تأخير إظهار زر المتابعة للهوست عشان نضمن إن الكل شاف النتيجة
-    if(isHost) {
-        setTimeout(() => {
-            confirmStartGameBtn.classList.remove('hidden');
-        }, 1500);
-    }
-}
 
 socket.on('connect', () => { const urlParams = new URLSearchParams(window.location.search); const roomFromUrl = urlParams.get('room'); const hostRoomId = sessionStorage.getItem('hostRoomId'); const guestName = sessionStorage.getItem('guestName'); if (hostRoomId) { isHost = true; if(hostSettingsBtn) hostSettingsBtn.classList.remove('hidden'); socket.emit('createRoom', { roomId: hostRoomId, playerId: myPlayerId }); updateLeaveBtnState(); } else if (roomFromUrl) { isHost = false; if (guestName) { if(playerNameInput) playerNameInput.value = guestName; socket.emit('joinRoom', { roomId: roomFromUrl, name: guestName, playerId: myPlayerId }); updateLeaveBtnState(); } } else { sessionStorage.removeItem('hostRoomId'); sessionStorage.removeItem('guestName'); showScreen('welcome'); updateLeaveBtnState(); } });
 socket.on('syncState', (state) => { if (state === 'waiting') { showScreen('waiting'); } else if (state === 'modeSelection') { showScreen('modeSelection'); } });
 if(goToWaitingBtn) goToWaitingBtn.addEventListener('click', () => { isHost = true; if(hostSettingsBtn) hostSettingsBtn.classList.remove('hidden'); if(copyInviteBtn) copyInviteBtn.classList.remove('hidden'); const newRoomId = Math.random().toString(36).substring(2, 8); sessionStorage.setItem('hostRoomId', newRoomId); socket.emit('createRoom', { roomId: newRoomId, playerId: myPlayerId }); showScreen('waiting'); updateLeaveBtnState(); });
-if(joinRoomBtn) joinRoomBtn.addEventListener('click', () => { const enteredName = playerNameInput ? playerNameInput.value.trim() : ''; if(!enteredName) { alert("اكتب اسمك الأول يا بطل!"); return; } isHost = false; if(copyInviteBtn) copyInviteBtn.classList.add('hidden'); sessionStorage.setItem('guestName', enteredName); const roomIdToJoin = new URLSearchParams(window.location.search).get('room'); socket.emit('joinRoom', { roomId: roomIdToJoin, name: enteredName, playerId: myPlayerId }); showScreen('waiting'); updateLeaveBtnState(); audioWaiting.play().catch(e => console.log(e)); });
+
+// 🔥 تعديل الدخول عشان لو اسمه مقفول ميقدرش يغيره
+if(joinRoomBtn) joinRoomBtn.addEventListener('click', () => { 
+    let enteredName = playerNameInput ? playerNameInput.value.trim() : ''; 
+    const lockedName = localStorage.getItem('lockedPlayerName');
+    if(lockedName) enteredName = lockedName; // إجبار الاسم المقفول
+
+    if(!enteredName) { alert("اكتب اسمك الأول يا بطل!"); return; } 
+    isHost = false; if(copyInviteBtn) copyInviteBtn.classList.add('hidden'); sessionStorage.setItem('guestName', enteredName); 
+    const roomIdToJoin = new URLSearchParams(window.location.search).get('room'); 
+    socket.emit('joinRoom', { roomId: roomIdToJoin, name: enteredName, playerId: myPlayerId }); 
+    showScreen('waiting'); updateLeaveBtnState(); audioWaiting.play().catch(e => console.log(e)); 
+});
+
 if(leaveRoomBtn) leaveRoomBtn.addEventListener('click', () => { if(confirm('هل أنت متأكد من مغادرة الغرفة؟')) { socket.emit('leaveRoom'); sessionStorage.clear(); leaveRoomBtn.classList.add('hidden'); if(leftRoomModal) leftRoomModal.classList.remove('hidden'); } });
 socket.on('errorMsg', (msg) => { if(invalidRoomModal && errorMsgText) { errorMsgText.innerText = msg; invalidRoomModal.classList.remove('hidden'); if (mainContainer) mainContainer.classList.add('hidden'); } });
 

@@ -10,7 +10,6 @@ const io = socketIo(server);
 const PORT = process.env.PORT || 3000;
 
 app.use(express.static(path.resolve(__dirname, '..', 'public')));
-
 app.get('/health', (req, res) => res.status(200).send('OK'));
 
 let rooms = {};
@@ -32,8 +31,7 @@ process.on('unhandledRejection', (reason, promise) => { console.error('Unhandled
 function shuffleArray(array) {
     let currentIndex = array.length, randomIndex;
     while (currentIndex !== 0) {
-        randomIndex = Math.floor(Math.random() * currentIndex);
-        currentIndex--;
+        randomIndex = Math.floor(Math.random() * currentIndex); currentIndex--;
         [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
     }
     return array;
@@ -47,27 +45,19 @@ function getSimilarWords(correctWord, categoryName) {
 
     if (selected.length < 14) {
         let otherWords = [];
-        Object.keys(categorizedWords).forEach(cat => {
-            if (cat !== categoryName) otherWords.push(...categorizedWords[cat]);
-        });
+        Object.keys(categorizedWords).forEach(cat => { if (cat !== categoryName) otherWords.push(...categorizedWords[cat]); });
         otherWords = otherWords.filter(w => w !== correctWord && !selected.includes(w));
         otherWords = shuffleArray(otherWords);
         selected = selected.concat(otherWords.slice(0, 14 - selected.length));
     }
-    
-    selected.push(correctWord);
-    return shuffleArray(selected); 
+    selected.push(correctWord); return shuffleArray(selected); 
 }
 
 function cleanupRoom(roomId) {
     if (!rooms[roomId]) return;
     if (rooms[roomId].guessTimer) clearTimeout(rooms[roomId].guessTimer);
     if (rooms[roomId].tieTimer) clearTimeout(rooms[roomId].tieTimer);
-    if (rooms[roomId].players) {
-        Object.values(rooms[roomId].players).forEach(p => {
-            if (p.disconnectTimeout) clearTimeout(p.disconnectTimeout);
-        });
-    }
+    if (rooms[roomId].players) { Object.values(rooms[roomId].players).forEach(p => { if (p.disconnectTimeout) clearTimeout(p.disconnectTimeout); }); }
     delete rooms[roomId];
 }
 
@@ -89,8 +79,7 @@ function checkVotingResult(roomId) {
         if (rooms[roomId].tieTimer) clearTimeout(rooms[roomId].tieTimer);
         rooms[roomId].tieTimer = setTimeout(() => {
             if(rooms[roomId] && rooms[roomId].gameState === 'voting_tied') {
-                rooms[roomId].gameState = 'voting';
-                io.to(roomId).emit('votingStarted', Object.values(rooms[roomId].players));
+                rooms[roomId].gameState = 'voting'; io.to(roomId).emit('votingStarted', Object.values(rooms[roomId].players));
             }
         }, 12000); 
         return;
@@ -99,11 +88,8 @@ function checkVotingResult(roomId) {
     rooms[roomId].gameState = 'voting_result';
     const topVotedId = tiedIds[0];
     const isSpyCaught = (topVotedId === rooms[roomId].spyId);
-    const votedPlayer = rooms[roomId].players[topVotedId];
-    const votedPlayerName = votedPlayer ? votedPlayer.name : "لاعب غادر";
-    const spyPlayer = rooms[roomId].players[rooms[roomId].spyId];
-    const spyName = spyPlayer ? spyPlayer.name : "الجاسوس";
-
+    const votedPlayer = rooms[roomId].players[topVotedId]; const votedPlayerName = votedPlayer ? votedPlayer.name : "لاعب غادر";
+    const spyPlayer = rooms[roomId].players[rooms[roomId].spyId]; const spyName = spyPlayer ? spyPlayer.name : "الجاسوس";
     io.to(roomId).emit('votingEnded', { isSpyCaught: isSpyCaught, votedPlayerName: votedPlayerName, spyName: spyName, spyId: rooms[roomId].spyId });
 }
 
@@ -114,34 +100,23 @@ function handlePlayerLeave(roomId, playerId) {
     let gameAborted = false;
 
     if (isHost) {
-        const hostName = rooms[roomId].players[playerId].name;
-        io.to(roomId).emit('hostLeftRoom', hostName);
-        cleanupRoom(roomId);
-        return; 
+        const hostName = rooms[roomId].players[playerId].name; io.to(roomId).emit('hostLeftRoom', hostName); cleanupRoom(roomId); return; 
     }
 
     if (rooms[roomId].spyId === playerId && ['playing', 'voting', 'guessing', 'voting_result', 'voting_tied'].includes(rooms[roomId].gameState)) {
-        if(rooms[roomId].guessTimer) clearTimeout(rooms[roomId].guessTimer);
-        if(rooms[roomId].tieTimer) clearTimeout(rooms[roomId].tieTimer);
-        rooms[roomId].gameState = 'waiting';
-        rooms[roomId].votes = {};
-        io.to(roomId).emit('gameRestarted'); 
-        gameAborted = true;
+        if(rooms[roomId].guessTimer) clearTimeout(rooms[roomId].guessTimer); if(rooms[roomId].tieTimer) clearTimeout(rooms[roomId].tieTimer);
+        rooms[roomId].gameState = 'waiting'; rooms[roomId].votes = {}; io.to(roomId).emit('gameRestarted'); gameAborted = true;
     }
 
     delete rooms[roomId].players[playerId];
 
     if (rooms[roomId]) {
         io.to(roomId).emit('updatePlayers', Object.values(rooms[roomId].players));
-        if (Object.keys(rooms[roomId].players).length === 0) {
-            cleanupRoom(roomId); return;
-        }
+        if (Object.keys(rooms[roomId].players).length === 0) { cleanupRoom(roomId); return; }
         if (wasVoting && !gameAborted) {
             if (rooms[roomId].votes[playerId]) delete rooms[roomId].votes[playerId];
-            const totalVotes = Object.keys(rooms[roomId].votes).length;
-            const remainingPlayersCount = Object.keys(rooms[roomId].players).length;
-            io.to(roomId).emit('playerRemovedFromVoting', playerId);
-            io.to(roomId).emit('voteRegistered', { voterName: "النظام", targetName: "", currentVotes: totalVotes, totalRequired: remainingPlayersCount });
+            const totalVotes = Object.keys(rooms[roomId].votes).length; const remainingPlayersCount = Object.keys(rooms[roomId].players).length;
+            io.to(roomId).emit('playerRemovedFromVoting', playerId); io.to(roomId).emit('voteRegistered', { voterName: "النظام", targetName: "", currentVotes: totalVotes, totalRequired: remainingPlayersCount });
             if (totalVotes >= remainingPlayersCount && remainingPlayersCount > 0) checkVotingResult(roomId);
         }
     }
@@ -155,11 +130,7 @@ io.on('connection', (socket) => {
             
             if (!rooms[roomId]) {
                 rooms[roomId] = { players: {}, gameState: 'waiting', word: '', category: '', spyId: null, votes: {}, guessingWords: [], guessTimer: null, tieTimer: null, guessEndTime: 0, featureVotes: { hints: [], questions: [] }, wordMapping: {}, playedRounds: {} };
-                // 🔥 تجهيز الجولات بربط كل كلمة برقم جولة بدون تكرار
-                for (let cat in categorizedWords) {
-                    rooms[roomId].wordMapping[cat] = shuffleArray([...categorizedWords[cat]]);
-                    rooms[roomId].playedRounds[cat] = [];
-                }
+                for (let cat in categorizedWords) { rooms[roomId].wordMapping[cat] = shuffleArray([...categorizedWords[cat]]); rooms[roomId].playedRounds[cat] = []; }
             }
             
             if (rooms[roomId].players[playerId] && rooms[roomId].players[playerId].disconnectTimeout) { clearTimeout(rooms[roomId].players[playerId].disconnectTimeout); rooms[roomId].players[playerId].disconnectTimeout = null; }
@@ -167,8 +138,7 @@ io.on('connection', (socket) => {
             rooms[roomId].players[playerId] = { id: playerId, socketId: socket.id, name: existingName, isHost: true };
             io.to(roomId).emit('updatePlayers', Object.values(rooms[roomId].players));
             
-            const state = rooms[roomId].gameState;
-            socket.emit('syncState', state);
+            const state = rooms[roomId].gameState; socket.emit('syncState', state);
 
             if(['playing', 'voting', 'guessing', 'voting_result', 'voting_tied'].includes(state)) {
                 socket.emit('gameStarted', { word: rooms[roomId].word, isSpy: rooms[roomId].spyId === playerId, category: rooms[roomId].category });
@@ -203,8 +173,7 @@ io.on('connection', (socket) => {
                 }
                 io.to(roomId).emit('updatePlayers', Object.values(rooms[roomId].players));
                 
-                const state = rooms[roomId].gameState;
-                socket.emit('syncState', state);
+                const state = rooms[roomId].gameState; socket.emit('syncState', state);
 
                 if(['playing', 'voting', 'guessing', 'voting_result', 'voting_tied'].includes(state)) {
                     socket.emit('gameStarted', { word: rooms[roomId].word, isSpy: rooms[roomId].spyId === playerId, category: rooms[roomId].category });
@@ -221,15 +190,39 @@ io.on('connection', (socket) => {
         } catch (e) {}
     });
 
-    socket.on('changePlayerName', (data) => { try { if(socket.roomId && rooms[socket.roomId] && rooms[socket.roomId].players[data.targetId]) { rooms[socket.roomId].players[data.targetId].name = data.newName; io.to(socket.roomId).emit('updatePlayers', Object.values(rooms[socket.roomId].players)); } } catch(e){} });
+    // 🔥 تعديل أمر تغيير الاسم عشان نقفله نهائياً على اللاعب
+    socket.on('changePlayerName', (data) => { 
+        try { 
+            if(socket.roomId && rooms[socket.roomId] && rooms[socket.roomId].players[data.targetId]) { 
+                rooms[socket.roomId].players[data.targetId].name = data.newName; 
+                io.to(socket.roomId).emit('updatePlayers', Object.values(rooms[socket.roomId].players)); 
+                // إرسال أمر إغلاق الاسم للاعب المستهدف
+                io.to(rooms[socket.roomId].players[data.targetId].socketId).emit('forceNameLock', data.newName);
+            } 
+        } catch(e){} 
+    });
+
     socket.on('kickPlayer', (targetId) => { try { const roomId = socket.roomId; if(roomId && rooms[roomId] && rooms[roomId].players[targetId]) { io.to(rooms[roomId].players[targetId].socketId).emit('youAreKickedPermanently'); handlePlayerLeave(roomId, targetId); } } catch(e){} });
     socket.on('leaveRoom', () => { try { const roomId = socket.roomId; const playerId = socket.playerId; if (roomId && rooms[roomId] && rooms[roomId].players[playerId]) { handlePlayerLeave(roomId, playerId); socket.leave(roomId); } } catch(e){} });
-
     socket.on('goToModeSelection', () => { try { if(socket.roomId && rooms[socket.roomId]) { rooms[socket.roomId].featureVotes = { hints: [], questions: [] }; io.to(socket.roomId).emit('showModeSelection'); } } catch(e){} });
 
+    socket.on('voteFeature', (feature) => {
+        try {
+            const roomId = socket.roomId; const playerId = socket.playerId;
+            if(roomId && rooms[roomId]) {
+                rooms[roomId].featureVotes = rooms[roomId].featureVotes || { hints: [], questions: [] };
+                let hints = rooms[roomId].featureVotes.hints; let questions = rooms[roomId].featureVotes.questions;
+                if (feature === 'hint') { if (hints.includes(playerId)) hints = hints.filter(id => id !== playerId); else { hints.push(playerId); questions = questions.filter(id => id !== playerId); } } 
+                else if (feature === 'question') { if (questions.includes(playerId)) questions = questions.filter(id => id !== playerId); else { questions.push(playerId); hints = hints.filter(id => id !== playerId); } }
+                rooms[roomId].featureVotes.hints = hints; rooms[roomId].featureVotes.questions = questions;
+                io.to(roomId).emit('updateFeatureVotes', { hints: hints.length, questions: questions.length });
+            }
+        } catch(e){}
+    });
+
+    socket.on('selectCategory', (cat) => { io.to(socket.roomId).emit('categorySelected', cat); });
     socket.on('spinWheel', (targetCat) => { io.to(socket.roomId).emit('wheelSpinning', targetCat); });
 
-    // 🔥 طلب الجولات بعد اختيار التصنيف
     socket.on('requestRounds', (categoryName) => {
         try {
             const roomId = socket.roomId;
@@ -241,48 +234,28 @@ io.on('connection', (socket) => {
         } catch(e){}
     });
 
-    // 🔥 بدء اللعبة من جولة معينة اختارها الهوست
     socket.on('startRound', (data) => {
         try {
-            const roomId = socket.roomId;
-            const categoryName = data.category;
-            const roundIndex = data.roundIndex;
-            
+            const roomId = socket.roomId; const categoryName = data.category; const roundIndex = data.roundIndex;
             if(roomId && rooms[roomId]) {
                 rooms[roomId].gameState = 'playing'; rooms[roomId].votes = {}; 
-                if(rooms[roomId].guessTimer) clearTimeout(rooms[roomId].guessTimer);
-                if(rooms[roomId].tieTimer) clearTimeout(rooms[roomId].tieTimer);
-                
-                // تسجيل الجولة إنها اتلعبت
-                if (!rooms[roomId].playedRounds[categoryName].includes(roundIndex)) {
-                    rooms[roomId].playedRounds[categoryName].push(roundIndex);
-                }
-
+                if(rooms[roomId].guessTimer) clearTimeout(rooms[roomId].guessTimer); if(rooms[roomId].tieTimer) clearTimeout(rooms[roomId].tieTimer);
+                if (!rooms[roomId].playedRounds[categoryName].includes(roundIndex)) { rooms[roomId].playedRounds[categoryName].push(roundIndex); }
                 const selectedWord = rooms[roomId].wordMapping[categoryName][roundIndex];
                 rooms[roomId].word = selectedWord; rooms[roomId].category = categoryName; 
-
-                const playersArray = Object.values(rooms[roomId].players);
-                const guests = playersArray.filter(p => !p.isHost);
-                // الهوست مستحيل يكون جاسوس لو في ضيوف
-                let spyId = guests.length > 0 ? guests[Math.floor(Math.random() * guests.length)].id : playersArray[0].id;
-                rooms[roomId].spyId = spyId;
-
-                playersArray.forEach(player => {
-                    io.to(player.socketId).emit('gameStarted', { word: selectedWord, isSpy: player.id === spyId, category: categoryName });
-                });
+                const playersArray = Object.values(rooms[roomId].players); const guests = playersArray.filter(p => !p.isHost);
+                let spyId = guests.length > 0 ? guests[Math.floor(Math.random() * guests.length)].id : playersArray[0].id; rooms[roomId].spyId = spyId;
+                playersArray.forEach(player => { io.to(player.socketId).emit('gameStarted', { word: selectedWord, isSpy: player.id === spyId, category: categoryName }); });
             }
         } catch(e){}
     });
 
     socket.on('startVotingPhase', () => { try { const roomId = socket.roomId; if(roomId && rooms[roomId]) { rooms[roomId].gameState = 'voting'; io.to(roomId).emit('votingStarted', Object.values(rooms[roomId].players)); } } catch(e){} });
-
     socket.on('submitVote', (targetId) => {
         try {
             const roomId = socket.roomId; const playerId = socket.playerId;
             if(roomId && rooms[roomId] && rooms[roomId].gameState === 'voting') {
-                rooms[roomId].votes[playerId] = targetId;
-                const totalVotes = Object.keys(rooms[roomId].votes).length;
-                const totalPlayers = Object.keys(rooms[roomId].players).length;
+                rooms[roomId].votes[playerId] = targetId; const totalVotes = Object.keys(rooms[roomId].votes).length; const totalPlayers = Object.keys(rooms[roomId].players).length;
                 io.to(roomId).emit('voteRegistered', { voterName: rooms[roomId].players[playerId].name, targetName: rooms[roomId].players[targetId] ? rooms[roomId].players[targetId].name : "لاعب غادر", currentVotes: totalVotes, totalRequired: totalPlayers });
                 if(totalVotes >= totalPlayers) checkVotingResult(roomId);
             }
@@ -304,7 +277,6 @@ io.on('connection', (socket) => {
     socket.on('spyHoverWord', (word) => { try { const roomId = socket.roomId; const playerId = socket.playerId; if(roomId && rooms[roomId]) io.to(roomId).emit('spySelectedWord', { word: word, spyName: rooms[roomId].players[playerId].name }); } catch(e){} });
     socket.on('spyConfirmWord', (chosenWord) => { try { const roomId = socket.roomId; const playerId = socket.playerId; if(roomId && rooms[roomId]) { if(rooms[roomId].guessTimer) clearTimeout(rooms[roomId].guessTimer); io.to(roomId).emit('gameFinalResult', { spyName: rooms[roomId].players[playerId].name, chosenWord: chosenWord, correctWord: rooms[roomId].word, isCorrect: (chosenWord === rooms[roomId].word) }); } } catch(e){} });
     socket.on('restartGame', () => { try { if(socket.roomId && rooms[socket.roomId]) { if(rooms[socket.roomId].guessTimer) clearTimeout(rooms[socket.roomId].guessTimer); if(rooms[socket.roomId].tieTimer) clearTimeout(rooms[socket.roomId].tieTimer); rooms[socket.roomId].gameState = 'waiting'; rooms[socket.roomId].votes = {}; io.to(socket.roomId).emit('gameRestarted'); } } catch(e){} });
-    
     socket.on('disconnect', () => { try { const roomId = socket.roomId; const playerId = socket.playerId; if (roomId && rooms[roomId] && rooms[roomId].players[playerId]) { rooms[roomId].players[playerId].disconnectTimeout = setTimeout(() => { handlePlayerLeave(roomId, playerId); }, 60000); } } catch(e){} });
 });
 

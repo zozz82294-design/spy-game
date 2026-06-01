@@ -8,14 +8,20 @@
     <link rel="stylesheet" href="styles/style.css">
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        body, html, button, input, p, h1, h2, h3, span, div { font-family: 'Cairo', sans-serif; }
-        
+        /* 🔥 تم إضافة ماوس CSS فخم جداً ومبيسحبش من الجهاز أي حاجة */
         body, html { 
+            font-family: 'Cairo', sans-serif;
             overflow-x: hidden; min-height: 100vh; scroll-behavior: smooth; 
             -webkit-overflow-scrolling: touch; touch-action: manipulation; 
             background: #0a0a0f; 
             background-image: radial-gradient(ellipse at 20% 50%, #1a0a2e 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, #0a1a2e 0%, transparent 60%); 
             background-attachment: fixed; 
+            cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath fill='%2300f3ff' d='M5.5 3.21V20.8c0 .45.54.67.85.35l4.86-4.86a.5.5 0 0 1 .35-.15h6.42c.45 0 .67-.54.35-.85L5.5 3.21z'/%3E%3C/svg%3E"), auto;
+        }
+
+        button, .category-card, .vote-card, .word-card, input {
+            font-family: 'Cairo', sans-serif;
+            cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath fill='%23ff0055' d='M5.5 3.21V20.8c0 .45.54.67.85.35l4.86-4.86a.5.5 0 0 1 .35-.15h6.42c.45 0 .67-.54.35-.85L5.5 3.21z'/%3E%3C/svg%3E"), pointer !important;
         }
 
         body.mobile-mode #mainContainer { max-width: 450px !important; margin: 0 auto; width: 100%; position: relative; z-index: 10; }
@@ -23,15 +29,7 @@
 
         .glass-container { max-height: none; overflow-y: visible; margin-bottom: 100px; padding: 25px; transition: max-width 0.3s ease; }
         
-        .custom-cursor, .cursor-follow { top: 0 !important; left: 0 !important; z-index: 99999999 !important; transition: none !important; pointer-events: none; }
-        
-        @keyframes rgbGlow {
-            0% { box-shadow: 0 0 12px #ff0055, inset 0 0 8px #ff0055; border-color: #ff0055; }
-            25% { box-shadow: 0 0 12px #00f3ff, inset 0 0 8px #00f3ff; border-color: #00f3ff; }
-            50% { box-shadow: 0 0 12px #00ff88, inset 0 0 8px #00ff88; border-color: #00ff88; }
-            75% { box-shadow: 0 0 12px #ffe600, inset 0 0 8px #ffe600; border-color: #ffe600; }
-            100% { box-shadow: 0 0 12px #b000ff, inset 0 0 8px #b000ff; border-color: #b000ff; }
-        }
+        @keyframes rgbGlow { 0% { box-shadow: 0 0 12px #ff0055, inset 0 0 8px #ff0055; border-color: #ff0055; } 25% { box-shadow: 0 0 12px #00f3ff, inset 0 0 8px #00f3ff; border-color: #00f3ff; } 50% { box-shadow: 0 0 12px #00ff88, inset 0 0 8px #00ff88; border-color: #00ff88; } 75% { box-shadow: 0 0 12px #ffe600, inset 0 0 8px #ffe600; border-color: #ffe600; } 100% { box-shadow: 0 0 12px #b000ff, inset 0 0 8px #b000ff; border-color: #b000ff; } }
         @keyframes hueShift { 0% { filter: hue-rotate(0deg); } 100% { filter: hue-rotate(360deg); } }
 
         .spy-icon, .avatar-glow { display: inline-block; background: transparent !important; box-shadow: none !important; animation: floatSpy 3s ease-in-out infinite, rgbDropShadow 6s infinite alternate !important; font-size: 5rem !important; margin-bottom: 10px; }
@@ -42,16 +40,16 @@
         .rgb-title, #roleTitle { color: #ff0055; text-shadow: 0 0 15px #ff0055, 0 0 30px #ff0055; animation: hueShift 4s linear infinite !important; display: block; text-align: center !important; width: 100%; margin-left: auto; margin-right: auto; font-weight: 900; }
         .rgb-title { font-size: 2.8rem !important; margin-bottom: 25px !important; }
 
-        button { font-family: 'Cairo', sans-serif !important; animation: rgbGlow 6s infinite alternate !important; transition: transform 0.2s, box-shadow 0.2s !important; }
+        button { animation: rgbGlow 6s infinite alternate !important; transition: transform 0.2s, box-shadow 0.2s !important; }
         button:hover { transform: scale(1.05); }
 
         .view-options .btn-view { animation: none !important; box-shadow: none; opacity: 0.6; }
         .view-options .btn-view.active-view { animation: rgbGlow 6s infinite alternate !important; opacity: 1; border-color: #00f3ff; }
-        .btn-leave-room { position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%) !important; width: 85%; max-width: 350px; background: rgba(255, 51, 102, 0.15); border: 1px solid var(--neon-red); color: #fff; padding: 15px; border-radius: 12px; font-size: 1.1rem; font-weight: bold; cursor: pointer; transition: background 0.3s, box-shadow 0.3s; z-index: 100; text-align: center; box-shadow: 0 0 15px rgba(255, 51, 102, 0.2); }
+        .btn-leave-room { position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%) !important; width: 85%; max-width: 350px; background: rgba(255, 51, 102, 0.15); border: 1px solid var(--neon-red); color: #fff; padding: 15px; border-radius: 12px; font-size: 1.1rem; font-weight: bold; transition: background 0.3s, box-shadow 0.3s; z-index: 100; text-align: center; box-shadow: 0 0 15px rgba(255, 51, 102, 0.2); }
         .btn-leave-room:hover { background: var(--neon-red); box-shadow: 0 0 25px var(--neon-red); transform: translateX(-50%) !important; }
         
         .voting-grid, .words-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; margin-top: 20px; }
-        .vote-card, .word-card { background: rgba(15, 23, 42, 0.8); border: 1px solid #334155; border-radius: 8px; padding: 15px 5px; text-align: center; cursor: pointer; transition: 0.3s; font-weight: bold; }
+        .vote-card, .word-card { background: rgba(15, 23, 42, 0.8); border: 1px solid #334155; border-radius: 8px; padding: 15px 5px; text-align: center; transition: 0.3s; font-weight: bold; }
         .vote-card:hover, .word-card.spy-active { border-color: var(--neon-blue); box-shadow: 0 0 15px rgba(0, 243, 255, 0.3); }
         .vote-card.voted { border-color: var(--neon-green); box-shadow: 0 0 15px var(--neon-green); pointer-events: none; opacity: 0.8; }
         .vote-card.disabled { pointer-events: none; opacity: 0.5; }
@@ -61,30 +59,22 @@
         
         .spy-tag { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: var(--neon-blue); color: #000; font-size: 0.65rem; padding: 2px 8px; border-radius: 10px; white-space: nowrap; animation: pop 0.3s ease; }
         
-        .general-settings-icon, .host-settings-icon { position: absolute; top: 20px; background: none; border: none; font-size: 1.9rem; cursor: pointer; z-index: 1000; transition: transform 0.3s, opacity 0.3s; animation: none !important; box-shadow: none !important; }
+        .general-settings-icon, .host-settings-icon { position: absolute; top: 20px; background: none; border: none; font-size: 1.9rem; z-index: 1000; transition: transform 0.3s, opacity 0.3s; animation: none !important; box-shadow: none !important; }
         .general-settings-icon { left: 20px; } .host-settings-icon { right: 20px; }
         
         .toggle-switch-container { display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; margin-top: 20px; border: 1px solid rgba(255,255,255,0.1); }
-        .toggle-btn { padding: 9px 18px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; transition: 0.3s; animation: none !important; }
+        .toggle-btn { padding: 9px 18px; border-radius: 8px; border: none; font-weight: bold; transition: 0.3s; animation: none !important; }
         .toggle-btn.active { background: var(--neon-green); color: #000; box-shadow: 0 0 15px var(--neon-green); } .toggle-btn.inactive { background: var(--neon-red); color: #fff; box-shadow: 0 0 15px var(--neon-red); }
 
         .modal-player-item { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); padding: 12px 18px; border-radius: 10px; margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.05); }
         .modal-player-actions { display: flex; gap: 8px; margin-left: 0; } .player-name-wrapper { flex: 1; display: flex; align-items: center; gap: 8px; overflow: hidden; padding-right: 10px; } .player-name-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 130px; }
 
         .categories-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 15px; }
-        .category-card { background: rgba(15, 23, 42, 0.8); border: 1px solid #334155; border-radius: 8px; padding: 15px 5px; text-align: center; cursor: pointer; transition: 0.3s; font-weight: bold; font-size: 1rem; color: #ccc; position: relative; }
+        .category-card { background: rgba(15, 23, 42, 0.8); border: 1px solid #334155; border-radius: 8px; padding: 15px 5px; text-align: center; transition: 0.3s; font-weight: bold; font-size: 1rem; color: #ccc; position: relative; }
         .category-card:hover { border-color: var(--neon-blue); color: #fff; }
         .category-card.selected { border-color: var(--neon-green); background: rgba(0, 255, 136, 0.1); color: var(--neon-green); box-shadow: 0 0 10px rgba(0, 255, 136, 0.3); transform: scale(1.05); }
         .category-card.random-card { border-color: rgba(176, 0, 255, 0.5); color: #e08cff; }
-        
-        /* 🔥 ستايل الروليت الجديد على الكروت */
         .category-card.roulette-active { border-color: #fff; background: rgba(255, 255, 255, 0.2); color: #fff; box-shadow: 0 0 20px #fff; transform: scale(1.1); z-index: 5; }
-
-        /* 🔥 ستايل الجولات الجديد */
-        .rounds-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(70px, 1fr)); gap: 8px; margin-top: 15px; max-height: 400px; overflow-y: auto; padding-right: 5px; }
-        .round-btn { background: transparent; border: 1px solid var(--neon-blue); color: #fff; padding: 10px 5px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.3s; font-family: 'Cairo', sans-serif; }
-        .round-btn:hover { background: var(--neon-blue); color: #000; box-shadow: 0 0 10px var(--neon-blue); }
-        .round-btn.played { opacity: 0.3; pointer-events: none; border-color: var(--neon-red); background: rgba(255, 51, 102, 0.1); color: #666; animation: none !important; box-shadow: none !important; }
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes pop { 0% { transform: translateX(-50%) scale(0); } 100% { transform: translateX(-50%) scale(1); } }
@@ -101,7 +91,6 @@
     <button id="hostSettingsBtn" class="host-settings-icon hidden" title="إدارة اللاعبين">👥</button>
     <button id="leaveRoomBtn" class="btn-leave-room hidden" title="مغادرة الغرفة">🚪 مغادرة الغرفة</button>
 
-    <div id="customCursor" class="custom-cursor hidden"></div><div id="cursorFollow1" class="cursor-follow hidden"></div><div id="cursorFollow2" class="cursor-follow hidden"></div>
     <div id="notificationToast" class="toast hidden">تم النسخ! 📋</div>
 
     <div id="generalSettingsModal" class="modal-overlay hidden" style="z-index: 10000;"><div class="modal-content glass-container"><h2 class="neon-text" style="margin-bottom: 25px;">الإعدادات ⚙️</h2><div class="toggle-switch-container"><span style="color: #fff; font-size: 1.1rem; font-weight: bold;">زر المغادرة (للضيوف)</span><button id="toggleLeaveBtn" class="toggle-btn active">مفعل ✔️</button></div><button id="closeGeneralSettingsBtn" class="btn-close-modal" style="margin-top: 30px; width: 100%;">إغلاق</button></div></div>
@@ -136,24 +125,7 @@
         <div id="modeSelectionScreen" class="screen hidden">
             <h2 class="game-main-title rgb-title" style="margin-bottom: 25px;">اختيار التصنيف</h2>
             <div class="categories-grid" id="categoriesGrid"></div>
-            
-            <button id="confirmStartGameBtn" class="btn-start-game active-start hidden" style="margin-top: 25px; width: 100%;">متابعة لاختيار الجولة 🚀</button>
-        </div>
-
-        <!-- 🔥 شاشة الجولات الجديدة -->
-        <div id="roundsScreen" class="screen hidden">
-            <h2 class="game-main-title rgb-title" style="margin-bottom: 15px;">اختيار الجولة</h2>
-            <p style="color: var(--neon-blue); text-align: center; margin-bottom: 15px; font-weight: bold;">تصنيف: <span id="roundsCategoryName" style="color: #fff;"></span></p>
-            <p style="color: #64748b; font-size: 0.9rem; text-align: center; margin-bottom: 15px;">اختر جولة لبدء اللعبة. كل جولة تحتوي على كلمة مختلفة ولن تتكرر أبداً.</p>
-            
-            <div class="rounds-grid" id="roundsGrid"></div>
-        </div>
-
-        <!-- 🔥 شاشة انتظار للضيوف وقت ما الهوست بيختار الجولة -->
-        <div id="guestWaitingRoundsScreen" class="screen hidden" style="text-align: center;">
-            <div class="avatar-glow">⏳</div>
-            <h2 class="game-main-title rgb-title" style="margin-bottom: 15px;">جاري تجهيز الجولة</h2>
-            <p style="color: #ccc; font-size: 1.2rem; line-height: 1.6;">في انتظار الهوست لاختيار الجولة من تصنيف: <br><span id="guestWaitingCategoryName" style="color: var(--neon-blue); font-weight: bold;"></span></p>
+            <button id="confirmStartGameBtn" class="btn-start-game active-start hidden" style="margin-top: 25px; width: 100%;">متابعة وبدء اللعب 🚀</button>
         </div>
 
         <div id="gameScreen" class="screen hidden">

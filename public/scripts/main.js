@@ -23,26 +23,13 @@ function applyRgbWaveToElement(element, text) {
 const audioJoin = new Audio('audio/join.mp3'); const audioWaiting = new Audio('audio/waiting.mp3'); const audioStart = new Audio('audio/start.mp3');
 const urlParamsSync = new URLSearchParams(window.location.search); const roomFromUrlSync = urlParamsSync.get('room'); const playerNameInput = document.getElementById('playerNameInput');
 
-// 🔥 نظام حظر الاسم النهائي (عشان اللي يستظرف)
 socket.on('forceNameLock', (newName) => {
-    localStorage.setItem('lockedPlayerName', newName);
-    sessionStorage.setItem('guestName', newName);
-    if(playerNameInput) {
-        playerNameInput.value = newName;
-        playerNameInput.readOnly = true;
-        playerNameInput.style.background = 'rgba(0,0,0,0.5)';
-        playerNameInput.style.color = '#888';
-    }
+    localStorage.setItem('lockedPlayerName', newName); sessionStorage.setItem('guestName', newName);
+    if(playerNameInput) { playerNameInput.value = newName; playerNameInput.readOnly = true; playerNameInput.style.background = 'rgba(0,0,0,0.5)'; playerNameInput.style.color = '#888'; }
 });
 
-// 🔥 تفعيل الحظر أول ما يفتح الصفحة لو محظور
 const lockedName = localStorage.getItem('lockedPlayerName');
-if (lockedName && playerNameInput) {
-    playerNameInput.value = lockedName;
-    playerNameInput.readOnly = true;
-    playerNameInput.style.background = 'rgba(0,0,0,0.5)';
-    playerNameInput.style.color = '#888';
-}
+if (lockedName && playerNameInput) { playerNameInput.value = lockedName; playerNameInput.readOnly = true; playerNameInput.style.background = 'rgba(0,0,0,0.5)'; playerNameInput.style.color = '#888'; }
 
 if (roomFromUrlSync) {
     document.getElementById('goToWaitingBtn').classList.add('hidden'); if(playerNameInput) playerNameInput.classList.remove('hidden'); document.getElementById('joinRoomBtn').classList.remove('hidden');
@@ -70,96 +57,62 @@ let isLeaveBtnEnabled = localStorage.getItem('leaveBtnEnabled') !== 'false';
 function updateLeaveBtnState() { if (isLeaveBtnEnabled) { toggleLeaveBtn.innerText = "مفعل ✔️"; toggleLeaveBtn.className = "toggle-btn active"; if (!isHost && !document.getElementById('welcomeScreen').classList.contains('active')) leaveRoomBtn.classList.remove('hidden'); } else { toggleLeaveBtn.innerText = "معطل ❌"; toggleLeaveBtn.className = "toggle-btn inactive"; leaveRoomBtn.classList.add('hidden'); } if (isHost) { generalSettingsBtn.classList.add('hidden'); } else { generalSettingsBtn.classList.remove('hidden'); } }
 if(generalSettingsBtn) generalSettingsBtn.addEventListener('click', () => generalSettingsModal.classList.remove('hidden')); if(closeGeneralSettingsBtn) closeGeneralSettingsBtn.addEventListener('click', () => generalSettingsModal.classList.add('hidden')); if(toggleLeaveBtn) toggleLeaveBtn.addEventListener('click', () => { isLeaveBtnEnabled = !isLeaveBtnEnabled; localStorage.setItem('leaveBtnEnabled', isLeaveBtnEnabled); updateLeaveBtnState(); });
 
-const screens = { welcome: document.getElementById('welcomeScreen'), waiting: document.getElementById('waitingScreen'), modeSelection: document.getElementById('modeSelectionScreen'), rounds: document.getElementById('roundsScreen'), guestWaitingRounds: document.getElementById('guestWaitingRoundsScreen'), game: document.getElementById('gameScreen'), voting: document.getElementById('votingScreen'), guessing: document.getElementById('guessingScreen') };
-const mainContainer = document.getElementById('mainContainer'); const pcViewBtn = document.getElementById('pcViewBtn'); const mobileViewBtn = document.getElementById('mobileViewBtn'); const goToWaitingBtn = document.getElementById('goToWaitingBtn'); const joinRoomBtn = document.getElementById('joinRoomBtn'); const copyInviteBtn = document.getElementById('copyInviteBtn'); const playerCountSpan = document.getElementById('playerCount'); const playersListDiv = document.getElementById('playersList'); const startGameBtn = document.getElementById('startGameBtn'); const actualStartBtn = document.getElementById('actualStartBtn'); const hostSettingsBtn = document.getElementById('hostSettingsBtn'); const hostSettingsModal = document.getElementById('hostSettingsModal'); const closeModalBtn = document.getElementById('closeModalBtn'); const modalPlayersList = document.getElementById('modalPlayersList'); const restartGameBtn = document.getElementById('restartGameBtn'); const hostLeftModal = document.getElementById('hostLeftModal'); const kickedModal = document.getElementById('kickedModal'); const leftRoomModal = document.getElementById('leftRoomModal'); const invalidRoomModal = document.getElementById('invalidRoomModal'); const errorMsgText = document.getElementById('errorMsgText'); const tieBreakerModal = document.getElementById('tieBreakerModal'); const tiedPlayersNames = document.getElementById('tiedPlayersNames'); const tieTimerEl = document.getElementById('tieTimer'); const guestWaitingHostModal = document.getElementById('guestWaitingHostModal'); const confirmStartGameBtn = document.getElementById('confirmStartGameBtn'); const startVotingPhaseBtn = document.getElementById('startVotingPhaseBtn'); const voteCounter = document.getElementById('voteCounter'); const liveVoteLog = document.getElementById('liveVoteLog'); const votingGrid = document.getElementById('votingGrid'); const votingResultModal = document.getElementById('votingResultModal'); const spyProceedBtn = document.getElementById('spyProceedBtn'); const wordsGrid = document.getElementById('wordsGrid'); const confirmGuessBtn = document.getElementById('confirmGuessBtn'); const finalResultModal = document.getElementById('finalResultModal'); const finalOkBtn = document.getElementById('finalOkBtn'); const customCursor = document.getElementById('customCursor'); const follow1 = document.getElementById('cursorFollow1'); const follow2 = document.getElementById('cursorFollow2');
+const screens = { welcome: document.getElementById('welcomeScreen'), waiting: document.getElementById('waitingScreen'), modeSelection: document.getElementById('modeSelectionScreen'), game: document.getElementById('gameScreen'), voting: document.getElementById('votingScreen'), guessing: document.getElementById('guessingScreen') };
+const mainContainer = document.getElementById('mainContainer'); const pcViewBtn = document.getElementById('pcViewBtn'); const mobileViewBtn = document.getElementById('mobileViewBtn'); const goToWaitingBtn = document.getElementById('goToWaitingBtn'); const joinRoomBtn = document.getElementById('joinRoomBtn'); const copyInviteBtn = document.getElementById('copyInviteBtn'); const playerCountSpan = document.getElementById('playerCount'); const playersListDiv = document.getElementById('playersList'); const startGameBtn = document.getElementById('startGameBtn'); const actualStartBtn = document.getElementById('actualStartBtn'); const hostSettingsBtn = document.getElementById('hostSettingsBtn'); const hostSettingsModal = document.getElementById('hostSettingsModal'); const closeModalBtn = document.getElementById('closeModalBtn'); const modalPlayersList = document.getElementById('modalPlayersList'); const restartGameBtn = document.getElementById('restartGameBtn'); const hostLeftModal = document.getElementById('hostLeftModal'); const kickedModal = document.getElementById('kickedModal'); const leftRoomModal = document.getElementById('leftRoomModal'); const invalidRoomModal = document.getElementById('invalidRoomModal'); const errorMsgText = document.getElementById('errorMsgText'); const tieBreakerModal = document.getElementById('tieBreakerModal'); const tiedPlayersNames = document.getElementById('tiedPlayersNames'); const tieTimerEl = document.getElementById('tieTimer'); const guestWaitingHostModal = document.getElementById('guestWaitingHostModal'); const confirmStartGameBtn = document.getElementById('confirmStartGameBtn'); const startVotingPhaseBtn = document.getElementById('startVotingPhaseBtn'); const voteCounter = document.getElementById('voteCounter'); const liveVoteLog = document.getElementById('liveVoteLog'); const votingGrid = document.getElementById('votingGrid'); const votingResultModal = document.getElementById('votingResultModal'); const spyProceedBtn = document.getElementById('spyProceedBtn'); const wordsGrid = document.getElementById('wordsGrid'); const confirmGuessBtn = document.getElementById('confirmGuessBtn'); const finalResultModal = document.getElementById('finalResultModal'); const finalOkBtn = document.getElementById('finalOkBtn');
 
 let tieInterval; let isPcMode = false; let isHost = false; let myRoleData = null; let selectedSpyWord = null; let guessInterval;
-let mouseX = window.innerWidth / 2, mouseY = window.innerHeight / 2; let f1X = mouseX, f1Y = mouseY, f2X = mouseX, f2Y = mouseY; document.addEventListener('mousemove', (e) => { mouseX = e.clientX; mouseY = e.clientY; });
-function animateCursor() { if (isPcMode) { f1X += (mouseX - f1X) * 0.2; f1Y += (mouseY - f1Y) * 0.2; f2X += (mouseX - f2X) * 0.1; f2Y += (mouseY - f2Y) * 0.1; if(customCursor) customCursor.style.transform = `translate(${mouseX}px, ${mouseY}px)`; if(follow1) follow1.style.transform = `translate(${f1X}px, ${f1Y}px)`; if(follow2) follow2.style.transform = `translate(${f2X}px, ${f2Y}px)`; } requestAnimationFrame(animateCursor); } requestAnimationFrame(animateCursor); document.addEventListener('mouseover', (e) => { if (isPcMode && e.target.closest('button') && customCursor) customCursor.classList.add('hovering'); }); document.addEventListener('mouseout', (e) => { if (isPcMode && e.target.closest('button') && customCursor) customCursor.classList.remove('hovering'); });
 
 const availableCategories = ["حاجات جوا وبرا البيت", "أكل وشرب", "أدوات وأشياء", "أماكن ومواصلات", "حيوانات ونباتات", "مهن ووظائف", "رياضة وهوايات", "أجهزة وتكنولوجيا"];
 let chosenCategory = null; let isWheelSpinning = false;
 
-// 🔥 إصلاح نظام الضغط اليدوي بالكامل
 function renderCategories() {
     const catGrid = document.getElementById('categoriesGrid'); if(!catGrid) return; catGrid.innerHTML = '';
     availableCategories.forEach((cat, index) => {
         const card = document.createElement('div');
-        card.className = 'category-card';
-        card.id = `cat-idx-${index}`;
-        card.innerText = cat;
-        card.addEventListener('click', () => {
-            if(!isHost || isWheelSpinning) return;
-            playSound('click'); 
-            socket.emit('selectCategory', cat);
-        });
+        card.className = 'category-card'; card.id = `cat-idx-${index}`; card.innerText = cat;
+        card.addEventListener('click', () => { if(!isHost || isWheelSpinning) return; playSound('click'); socket.emit('selectCategory', cat); });
         catGrid.appendChild(card);
     });
-    
-    const randomCard = document.createElement('div');
-    randomCard.className = 'category-card random-card';
-    randomCard.id = 'cat-random';
-    randomCard.innerText = 'اختيار عشوائي 🎡';
-    randomCard.addEventListener('click', () => {
-        if(!isHost || isWheelSpinning) return;
-        playSound('start'); 
-        const targetCat = availableCategories[Math.floor(Math.random() * availableCategories.length)];
-        socket.emit('spinWheel', targetCat);
-    });
+    const randomCard = document.createElement('div'); randomCard.className = 'category-card random-card'; randomCard.id = 'cat-random'; randomCard.innerText = 'اختيار عشوائي 🎡';
+    randomCard.addEventListener('click', () => { if(!isHost || isWheelSpinning) return; playSound('start'); const targetCat = availableCategories[Math.floor(Math.random() * availableCategories.length)]; socket.emit('spinWheel', targetCat); });
     catGrid.appendChild(randomCard);
 }
 
 socket.on('categorySelected', (cat) => {
-    const targetIdx = availableCategories.indexOf(cat);
-    document.querySelectorAll('.category-card').forEach(c => c.classList.remove('selected', 'roulette-active'));
-    const card = document.getElementById(`cat-idx-${targetIdx}`); if(card) card.classList.add('selected');
-    chosenCategory = cat;
-    if(isHost) confirmStartGameBtn.classList.remove('hidden');
+    const targetIdx = availableCategories.indexOf(cat); document.querySelectorAll('.category-card').forEach(c => c.classList.remove('selected', 'roulette-active'));
+    const card = document.getElementById(`cat-idx-${targetIdx}`); if(card) card.classList.add('selected'); chosenCategory = cat; if(isHost) confirmStartGameBtn.classList.remove('hidden');
 });
 
 socket.on('wheelSpinning', (targetCat) => {
-    isWheelSpinning = true;
-    if(isHost) confirmStartGameBtn.classList.add('hidden');
-    document.querySelectorAll('.category-card').forEach(c => c.classList.remove('selected', 'roulette-active'));
-    document.getElementById('cat-random').classList.add('selected');
-    
-    const targetIdx = availableCategories.indexOf(targetCat);
-    const cards = availableCategories.map((_, i) => document.getElementById(`cat-idx-${i}`));
-    
+    isWheelSpinning = true; if(isHost) confirmStartGameBtn.classList.add('hidden');
+    document.querySelectorAll('.category-card').forEach(c => c.classList.remove('selected', 'roulette-active')); document.getElementById('cat-random').classList.add('selected');
+    const targetIdx = availableCategories.indexOf(targetCat); const cards = availableCategories.map((_, i) => document.getElementById(`cat-idx-${i}`));
     let currentStep = 0; let steps = (3 * cards.length) + targetIdx; let delays = [];
     for(let i = 0; i <= steps; i++) { let progress = i / steps; delays.push(40 + (progress * progress * 300)); }
-    
+    let totalTime = delays.reduce((a, b) => a + b, 0);
+    let forceStop = setTimeout(() => { if(isWheelSpinning) finishSpin(targetCat, targetIdx, cards); }, totalTime + 1000);
     function tick() {
         if(!isWheelSpinning) return;
-        if (currentStep <= steps) {
-            cards.forEach(c => c.classList.remove('roulette-active'));
-            cards[currentStep % cards.length].classList.add('roulette-active');
-            playSound('vote'); setTimeout(tick, delays[currentStep]); currentStep++;
-        } else {
-            isWheelSpinning = false; cards.forEach(c => c.classList.remove('roulette-active'));
-            cards[targetIdx].classList.add('selected'); document.getElementById('cat-random').classList.remove('selected');
-            playSound('win'); chosenCategory = targetCat;
-            // 🔥 تأخير إظهار زر המتابعة عشان الكل يتزامن 100%
-            if(isHost) { setTimeout(() => { confirmStartGameBtn.classList.remove('hidden'); }, 1000); }
-        }
+        if (currentStep <= steps) { cards.forEach(c => c.classList.remove('roulette-active')); cards[currentStep % cards.length].classList.add('roulette-active'); playSound('vote'); setTimeout(tick, delays[currentStep]); currentStep++; } 
+        else { clearTimeout(forceStop); finishSpin(targetCat, targetIdx, cards); }
     }
     tick();
 });
+
+function finishSpin(cat, idx, cards) {
+    isWheelSpinning = false; cards.forEach(c => c.classList.remove('roulette-active')); cards[idx].classList.add('selected'); document.getElementById('cat-random').classList.remove('selected'); playSound('win'); chosenCategory = cat;
+    if(isHost) { setTimeout(() => { confirmStartGameBtn.classList.remove('hidden'); }, 1000); }
+}
 
 socket.on('connect', () => { const urlParams = new URLSearchParams(window.location.search); const roomFromUrl = urlParams.get('room'); const hostRoomId = sessionStorage.getItem('hostRoomId'); const guestName = sessionStorage.getItem('guestName'); if (hostRoomId) { isHost = true; if(hostSettingsBtn) hostSettingsBtn.classList.remove('hidden'); socket.emit('createRoom', { roomId: hostRoomId, playerId: myPlayerId }); updateLeaveBtnState(); } else if (roomFromUrl) { isHost = false; if (guestName) { if(playerNameInput) playerNameInput.value = guestName; socket.emit('joinRoom', { roomId: roomFromUrl, name: guestName, playerId: myPlayerId }); updateLeaveBtnState(); } } else { sessionStorage.removeItem('hostRoomId'); sessionStorage.removeItem('guestName'); showScreen('welcome'); updateLeaveBtnState(); } });
 socket.on('syncState', (state) => { if (state === 'waiting') { showScreen('waiting'); } else if (state === 'modeSelection') { showScreen('modeSelection'); } });
 if(goToWaitingBtn) goToWaitingBtn.addEventListener('click', () => { isHost = true; if(hostSettingsBtn) hostSettingsBtn.classList.remove('hidden'); if(copyInviteBtn) copyInviteBtn.classList.remove('hidden'); const newRoomId = Math.random().toString(36).substring(2, 8); sessionStorage.setItem('hostRoomId', newRoomId); socket.emit('createRoom', { roomId: newRoomId, playerId: myPlayerId }); showScreen('waiting'); updateLeaveBtnState(); });
 
-// 🔥 تعديل الدخول عشان لو اسمه مقفول ميقدرش يغيره
 if(joinRoomBtn) joinRoomBtn.addEventListener('click', () => { 
-    let enteredName = playerNameInput ? playerNameInput.value.trim() : ''; 
-    const lockedName = localStorage.getItem('lockedPlayerName');
-    if(lockedName) enteredName = lockedName; // إجبار الاسم المقفول
-
+    let enteredName = playerNameInput ? playerNameInput.value.trim() : ''; const lockedName = localStorage.getItem('lockedPlayerName'); if(lockedName) enteredName = lockedName;
     if(!enteredName) { alert("اكتب اسمك الأول يا بطل!"); return; } 
     isHost = false; if(copyInviteBtn) copyInviteBtn.classList.add('hidden'); sessionStorage.setItem('guestName', enteredName); 
-    const roomIdToJoin = new URLSearchParams(window.location.search).get('room'); 
-    socket.emit('joinRoom', { roomId: roomIdToJoin, name: enteredName, playerId: myPlayerId }); 
+    const roomIdToJoin = new URLSearchParams(window.location.search).get('room'); socket.emit('joinRoom', { roomId: roomIdToJoin, name: enteredName, playerId: myPlayerId }); 
     showScreen('waiting'); updateLeaveBtnState(); audioWaiting.play().catch(e => console.log(e)); 
 });
 
@@ -178,24 +131,8 @@ socket.on('showModeSelection', () => { showScreen('modeSelection'); chosenCatego
 
 if(confirmStartGameBtn) confirmStartGameBtn.addEventListener('click', (e) => { 
     e.target.disabled = true; playSound('start'); 
-    socket.emit('requestRounds', chosenCategory); 
+    socket.emit('startGameWithCategory', chosenCategory); 
     setTimeout(() => e.target.disabled = false, 2000); 
-});
-
-socket.on('showRoundsPhase', (data) => {
-    if (isHost) {
-        showScreen('rounds');
-        document.getElementById('roundsCategoryName').innerText = data.category;
-        const roundsGrid = document.getElementById('roundsGrid'); roundsGrid.innerHTML = '';
-        for (let i = 0; i < data.totalRounds; i++) {
-            const isPlayed = data.playedRounds.includes(i);
-            const btn = document.createElement('button'); btn.className = `round-btn ${isPlayed ? 'played' : ''}`; btn.innerText = `جولة ${i + 1}`;
-            if (!isPlayed) { btn.onclick = () => { playSound('start'); socket.emit('startRound', { category: data.category, roundIndex: i }); }; }
-            roundsGrid.appendChild(btn);
-        }
-    } else {
-        showScreen('guestWaitingRounds'); document.getElementById('guestWaitingCategoryName').innerText = data.category;
-    }
 });
 
 socket.on('gameStarted', (data) => {
@@ -228,7 +165,7 @@ if(finalOkBtn) finalOkBtn.addEventListener('click', () => { finalResultModal.cla
 socket.on('gameRestarted', () => { playSound('start'); if(guessInterval) clearInterval(guessInterval); showScreen('waiting'); votingResultModal.classList.add('hidden'); finalResultModal.classList.add('hidden'); tieBreakerModal.classList.add('hidden'); if(startVotingPhaseBtn) startVotingPhaseBtn.classList.add('hidden'); if(confirmGuessBtn) confirmGuessBtn.classList.add('hidden'); if (isHost && restartGameBtn && hostSettingsModal) { restartGameBtn.disabled = true; hostSettingsModal.classList.add('hidden'); } if(guestWaitingHostModal) guestWaitingHostModal.classList.add('hidden'); });
 window.editPlayerName = function(targetId) { const newName = prompt('أدخل الاسم الجديد:'); if (newName && newName.trim() !== '') socket.emit('changePlayerName', { targetId: targetId, newName: newName.trim() }); }; window.kickPlayer = function(targetId) { if (confirm('طرد نهائي لهذا اللاعب؟')) socket.emit('kickPlayer', targetId); };
 function showScreen(screenName) { Object.values(screens).forEach(s => { if(s) { s.classList.remove('active'); s.classList.add('hidden'); } }); if(screens[screenName]) { screens[screenName].classList.remove('hidden'); screens[screenName].classList.add('active'); void screens[screenName].offsetWidth; } }
-if(pcViewBtn) pcViewBtn.addEventListener('click', () => { isPcMode = true; document.body.className = 'pc-mode'; if(customCursor) customCursor.classList.remove('hidden'); if(follow1) follow1.classList.remove('hidden'); if(follow2) follow2.classList.remove('hidden'); pcViewBtn.classList.add('active-view'); if(mobileViewBtn) mobileViewBtn.classList.remove('active-view'); }); if(mobileViewBtn) mobileViewBtn.addEventListener('click', () => { isPcMode = false; document.body.className = 'mobile-mode'; if(customCursor) customCursor.classList.add('hidden'); if(follow1) follow1.classList.add('hidden'); if(follow2) follow2.classList.add('hidden'); mobileViewBtn.classList.add('active-view'); if(pcViewBtn) pcViewBtn.classList.remove('active-view'); });
+if(pcViewBtn) pcViewBtn.addEventListener('click', () => { document.body.className = 'pc-mode'; pcViewBtn.classList.add('active-view'); if(mobileViewBtn) mobileViewBtn.classList.remove('active-view'); }); if(mobileViewBtn) mobileViewBtn.addEventListener('click', () => { document.body.className = 'mobile-mode'; mobileViewBtn.classList.add('active-view'); if(pcViewBtn) pcViewBtn.classList.remove('active-view'); });
 if(hostSettingsBtn) hostSettingsBtn.addEventListener('click', () => { if(hostSettingsModal) hostSettingsModal.classList.remove('hidden'); }); if(closeModalBtn) closeModalBtn.addEventListener('click', () => { if(hostSettingsModal) hostSettingsModal.classList.add('hidden'); });
 if(restartGameBtn) restartGameBtn.addEventListener('click', (e) => { e.target.disabled = true; if(confirm('إعادة اللعب وإرجاع الجميع لغرفة الانتظار؟')) socket.emit('restartGame'); setTimeout(() => e.target.disabled = false, 2000); });
 if(copyInviteBtn) copyInviteBtn.addEventListener('click', () => { const roomId = sessionStorage.getItem('hostRoomId'); const inviteLink = window.location.origin + window.location.pathname + '?room=' + roomId; navigator.clipboard.writeText(inviteLink).then(() => { if(notificationToast) { notificationToast.classList.remove('hidden'); setTimeout(() => notificationToast.classList.add('hidden'), 2500); } }); });

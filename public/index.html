@@ -16,9 +16,13 @@
             color: #fff;
         }
 
-        /* 🔥 ماوس القناص للكمبيوتر: خفيف جداً (Zero Lag) ولايق على الجاسوس */
-        body.pc-mode { cursor: crosshair !important; }
-        body.pc-mode button, body.pc-mode .category-card, body.pc-mode .vote-card, body.pc-mode .word-card, body.pc-mode input, body.pc-mode .general-settings-icon, body.pc-mode .host-settings-icon { cursor: pointer !important; }
+        /* 🔥 ماوس الجيمنج الجديد الشيك جداً والخفيف (زيرو لاج) للكمبيوتر */
+        body.pc-mode { 
+            cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 24 24' fill='%2300f3ff' stroke='%23ffffff' stroke-width='1.5'%3E%3Cpath d='M4 2L20 10L13 13L10 20L4 2Z'/%3E%3C/svg%3E") 4 2, auto !important; 
+        }
+        body.pc-mode button, body.pc-mode .category-card, body.pc-mode .vote-card, body.pc-mode .word-card, body.pc-mode input, body.pc-mode .general-settings-icon, body.pc-mode .host-settings-icon { 
+            cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 24 24' fill='%23ff0055' stroke='%23ffffff' stroke-width='1.5'%3E%3Cpath d='M4 2L20 10L13 13L10 20L4 2Z'/%3E%3C/svg%3E") 4 2, pointer !important; 
+        }
 
         body.mobile-mode #mainContainer { max-width: 450px !important; margin: 0 auto; width: 100%; position: relative; z-index: 10; }
         body.pc-mode #mainContainer { max-width: 1000px !important; margin: 0 auto; width: 100%; position: relative; z-index: 10; }
@@ -44,7 +48,6 @@
         
         .voting-grid, .words-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; margin-top: 20px; }
         
-        /* 🔥 هنا تم إصلاح كروت الكلمات (إضافة position: relative) عشان التاج يلزق فيها */
         .vote-card, .word-card { 
             background: rgba(15, 23, 42, 0.8); 
             border: 1px solid #334155; 
@@ -53,7 +56,7 @@
             text-align: center; 
             transition: 0.3s; 
             font-weight: bold; 
-            position: relative; /* السطر اللي كان مخلي التاج يطير */
+            position: relative;
             cursor: pointer;
         }
         .vote-card:hover, .word-card.spy-active { border-color: #00f3ff; box-shadow: 0 0 15px rgba(0, 243, 255, 0.3); }
@@ -63,7 +66,6 @@
         .live-log-container { background: rgba(0,0,0,0.5); border-radius: 10px; padding: 10px; height: 130px; overflow-y: auto; margin-top: 20px; border: 1px solid rgba(255,255,255,0.1); text-align: right; font-size: 0.9rem; }
         .log-entry { margin-bottom: 5px; color: #ccc; animation: fadeIn 0.3s ease-in; } .target-name { color: #ff0055; font-weight: bold; }
         
-        /* 🔥 تظبيط شكل التاج عشان يكون على زاوية الكارت بشكل شيك */
         .spy-tag { 
             position: absolute; 
             top: -12px; 

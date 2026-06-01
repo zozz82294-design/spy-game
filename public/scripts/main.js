@@ -12,16 +12,9 @@ function createStars() {
 }
 createStars(); 
 
-// 🔥 رجعنا دالة تقسيم الحروف عشان تنور كذا لون (Wave)
+// 🔥 دي الدالة الجديدة، بتعرض الكلمة كاملة ومتصلة عشان متبوظش لغة عربية ولا تتقلب
 function applyRgbWaveToElement(element, text) {
-    if (!element) return;
-    element.innerHTML = '';
-    for (let i = 0; i < text.length; i++) {
-        const span = document.createElement('span');
-        if (text[i] === ' ') span.innerHTML = '&nbsp;'; 
-        else { span.textContent = text[i]; span.style.setProperty('--char-index', i); }
-        element.appendChild(span);
-    }
+    if (element) element.textContent = text;
 }
 
 const audioJoin = new Audio('audio/join.mp3'); const audioWaiting = new Audio('audio/waiting.mp3'); const audioStart = new Audio('audio/start.mp3');
@@ -42,7 +35,6 @@ if (roomFromUrlSync) {
     document.addEventListener('click', playJoinAudio); if(playerNameInput) playerNameInput.addEventListener('focus', playJoinAudio);
 }
 
-function initRgbTitles() { document.querySelectorAll('.rgb-title').forEach(el => { if (!el.querySelector('span')) applyRgbWaveToElement(el, el.textContent); }); } initRgbTitles();
 const AudioContext = window.AudioContext || window.webkitAudioContext; let audioCtx;
 function initAudio() { if (!audioCtx) audioCtx = new AudioContext(); if (audioCtx.state === 'suspended') audioCtx.resume(); } document.addEventListener('click', initAudio, { once: true });
 function playSound(type) {

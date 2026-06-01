@@ -8,7 +8,6 @@
     <link rel="stylesheet" href="styles/style.css">
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        /* 🔥 ده الماوس الجديد الفخم والموفر للرامات (بدون أي جافاسكريبت) */
         body, html { 
             font-family: 'Cairo', sans-serif;
             overflow-x: hidden; min-height: 100vh; scroll-behavior: smooth; 
@@ -16,11 +15,18 @@
             background: #0a0a0f; 
             background-image: radial-gradient(ellipse at 20% 50%, #1a0a2e 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, #0a1a2e 0%, transparent 60%); 
             background-attachment: fixed; 
-            cursor: url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M4.5 3L20 12L11 14L8 21L4.5 3Z' fill='%2300f3ff' stroke='%23ffffff' stroke-width='1.5' stroke-linejoin='round'/%3E%3C/svg%3E"), auto;
         }
 
-        button, .category-card, .vote-card, .word-card, input, .general-settings-icon, .host-settings-icon {
-            cursor: url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M4.5 3L20 12L11 14L8 21L4.5 3Z' fill='%23ff0055' stroke='%23ffffff' stroke-width='1.5' stroke-linejoin='round'/%3E%3C/svg%3E"), pointer !important;
+        /* لا توجد أي تأثيرات للماوس على الموبايل نهائياً */
+        button, .category-card, .vote-card, .word-card { cursor: pointer; }
+
+        /* 🔥 تأثيرات الماوس الفخمة تشتغل فقط لما تختار وضع الكمبيوتر (PC Mode) */
+        body.pc-mode {
+            cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='2,2 20,8 10,12 6,20' fill='%2300f3ff' stroke='%23ffffff' stroke-width='1.5' stroke-linejoin='round'/%3E%3C/svg%3E") 2 2, default !important;
+        }
+
+        body.pc-mode button, body.pc-mode .category-card, body.pc-mode .vote-card, body.pc-mode .word-card, body.pc-mode input, body.pc-mode .general-settings-icon, body.pc-mode .host-settings-icon {
+            cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='2,2 20,8 10,12 6,20' fill='%23ff0055' stroke='%23ffffff' stroke-width='1.5' stroke-linejoin='round'/%3E%3C/svg%3E") 2 2, pointer !important;
         }
 
         body.mobile-mode #mainContainer { max-width: 450px !important; margin: 0 auto; width: 100%; position: relative; z-index: 10; }

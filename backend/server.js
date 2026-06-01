@@ -219,7 +219,6 @@ io.on('connection', (socket) => {
     socket.on('selectCategory', (cat) => { io.to(socket.roomId).emit('categorySelected', cat); });
     socket.on('spinWheel', (targetCat) => { io.to(socket.roomId).emit('wheelSpinning', targetCat); });
 
-    // 🔥 بداية اللعبة باختيار كلمة عشوائية مباشرة بدون جولات
     socket.on('startGameWithCategory', (categoryName) => {
         try {
             const roomId = socket.roomId;

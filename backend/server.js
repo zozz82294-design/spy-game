@@ -15,7 +15,6 @@ app.get('/health', (req, res) => res.status(200).send('OK'));
 
 let rooms = {};
 
-// 🔥 تم إضافة التصنيفات الجديدة وتعديل اسم التصنيف القديم
 const categorizedWords = {
     "حاجات جوا وبرا البيت": ["سرير", "مخدة", "بطانية", "دولاب", "شماعة", "مراية", "سجادة", "ستارة", "نجفة", "لمبة", "فيشة", "مفتاح", "باب", "شباك", "بلكونة", "ريموت", "تلفزيون", "كنبة", "كرسي", "طاولة", "مكتب", "ساعة حائط", "فازة", "وردة", "صورة", "مروحة", "تكييف", "دفاية", "غسالة", "ثلاجة", "بوتاجاز", "فرن", "ميكروويف", "خلاط", "كاتل", "حنفية", "حوض", "صابونة", "فوطة", "ليفة", "شامبو", "معجون أسنان", "فرشاة أسنان", "مشط", "مقص أظافر", "استشوار", "مكواة", "مكنسة", "ممسحة", "مقشة", "جاروف", "زبالة", "كيس", "علبة", "صندوق", "درج", "قفل", "شنطة", "محفظة", "نظارة", "شاحن", "سماعة", "لاب توب", "تابلت", "كيبورد", "ماوس", "سلك", "كرتونة", "مسمار", "شاكوش", "مفك", "بنسة", "غراء", "شريط لحام", "بطارية", "ولاعة", "شمعة", "كبريت", "مبخرة", "سبحة", "سجادة صلاة", "مصحف", "قلم", "ورقة", "دباسة", "استيكة", "براية", "مسطرة", "لون", "لوحة", "ملف", "تقويم", "نوتة", "منبه", "حصالة", "ميزان", "طفاية حريق", "عمود نور", "إشارة مرور", "رصيف", "يافطة", "صندوق زبالة", "كشك", "نافورة", "تمثال", "سور", "بوابة"],
     "أكل وشرب": ["أرز", "مكرونة", "عيش", "بيض", "جبنة", "لبن", "زبادي", "عسل", "حلاوة", "مربى", "زيت", "سمنة", "زبدة", "ملح", "سكر", "فلفل", "كمون", "شطة", "كاتشب", "مايونيز", "بطاطس", "طماطم", "خيار", "بصل", "ثوم", "جزر", "فلفل رومي", "بتنجان", "كوسة", "بسلة", "فاصوليا", "عدس", "فول", "طعمية", "كشري", "حواوشي", "بيتزا", "برجر", "شاورما", "كباب", "كفتة", "فراخ", "لحمة", "سمك", "تونة", "كبدة", "شوربة", "سلطة", "مخلل", "شيبسي", "لبان", "بونبوني", "شوكولاتة", "بسكويت", "كيكة", "ايس كريم", "كنافة", "بسبوسة", "فاكهة", "تفاح", "موز", "برتقال", "عنب", "بطيخ", "مانجو", "فراولة", "خوخ", "رمان", "كمثرى", "جوافة", "تمر", "تين", "مشمش", "أناناس", "كيوي", "كانز", "مياه", "شاي", "قهوة", "عصير", "بيبسي", "كوكاكولا", "سفن اب", "ميرندا", "عصير قصب", "تمر هندي", "سوبيا", "لبن رايب", "ينسون", "نعناع", "قرفة", "كاكاو", "نسكافيه", "كابتشينو", "شاي بلبن", "سحلب", "خروب"],
@@ -154,7 +153,14 @@ io.on('connection', (socket) => {
             const roomId = data.roomId; const playerId = data.playerId; 
             socket.join(roomId); socket.roomId = roomId; socket.playerId = playerId;
             
-            if (!rooms[roomId]) rooms[roomId] = { players: {}, gameState: 'waiting', word: '', category: '', spyId: null, votes: {}, guessingWords: [], guessTimer: null, tieTimer: null, guessEndTime: 0, featureVotes: { hints: [], questions: [] } };
+            if (!rooms[roomId]) {
+                rooms[roomId] = { players: {}, gameState: 'waiting', word: '', category: '', spyId: null, votes: {}, guessingWords: [], guessTimer: null, tieTimer: null, guessEndTime: 0, featureVotes: { hints: [], questions: [] }, wordMapping: {}, playedRounds: {} };
+                // 🔥 تجهيز الجولات بربط كل كلمة برقم جولة بدون تكرار
+                for (let cat in categorizedWords) {
+                    rooms[roomId].wordMapping[cat] = shuffleArray([...categorizedWords[cat]]);
+                    rooms[roomId].playedRounds[cat] = [];
+                }
+            }
             
             if (rooms[roomId].players[playerId] && rooms[roomId].players[playerId].disconnectTimeout) { clearTimeout(rooms[roomId].players[playerId].disconnectTimeout); rooms[roomId].players[playerId].disconnectTimeout = null; }
             const existingName = rooms[roomId].players[playerId] ? rooms[roomId].players[playerId].name : '𝐒𝐀𝐒𝐔𝐊𝐄';
@@ -221,46 +227,48 @@ io.on('connection', (socket) => {
 
     socket.on('goToModeSelection', () => { try { if(socket.roomId && rooms[socket.roomId]) { rooms[socket.roomId].featureVotes = { hints: [], questions: [] }; io.to(socket.roomId).emit('showModeSelection'); } } catch(e){} });
 
-    socket.on('voteFeature', (feature) => {
+    socket.on('spinWheel', (targetCat) => { io.to(socket.roomId).emit('wheelSpinning', targetCat); });
+
+    // 🔥 طلب الجولات بعد اختيار التصنيف
+    socket.on('requestRounds', (categoryName) => {
         try {
-            const roomId = socket.roomId; const playerId = socket.playerId;
+            const roomId = socket.roomId;
             if(roomId && rooms[roomId]) {
-                rooms[roomId].featureVotes = rooms[roomId].featureVotes || { hints: [], questions: [] };
-                let hints = rooms[roomId].featureVotes.hints; let questions = rooms[roomId].featureVotes.questions;
-                if (feature === 'hint') { if (hints.includes(playerId)) hints = hints.filter(id => id !== playerId); else { hints.push(playerId); questions = questions.filter(id => id !== playerId); } } 
-                else if (feature === 'question') { if (questions.includes(playerId)) questions = questions.filter(id => id !== playerId); else { questions.push(playerId); hints = hints.filter(id => id !== playerId); } }
-                rooms[roomId].featureVotes.hints = hints; rooms[roomId].featureVotes.questions = questions;
-                io.to(roomId).emit('updateFeatureVotes', { hints: hints.length, questions: questions.length });
+                const totalRounds = rooms[roomId].wordMapping[categoryName].length;
+                const playedRounds = rooms[roomId].playedRounds[categoryName] || [];
+                io.to(roomId).emit('showRoundsPhase', { category: categoryName, totalRounds: totalRounds, playedRounds: playedRounds });
             }
         } catch(e){}
     });
 
-    socket.on('selectCategory', (cat) => { io.to(socket.roomId).emit('categorySelected', cat); });
-    socket.on('spinWheel', (targetCat) => { io.to(socket.roomId).emit('wheelSpinning', targetCat); });
-
-    socket.on('startGameWithCategory', (categoryName) => {
+    // 🔥 بدء اللعبة من جولة معينة اختارها الهوست
+    socket.on('startRound', (data) => {
         try {
             const roomId = socket.roomId;
+            const categoryName = data.category;
+            const roundIndex = data.roundIndex;
+            
             if(roomId && rooms[roomId]) {
                 rooms[roomId].gameState = 'playing'; rooms[roomId].votes = {}; 
                 if(rooms[roomId].guessTimer) clearTimeout(rooms[roomId].guessTimer);
                 if(rooms[roomId].tieTimer) clearTimeout(rooms[roomId].tieTimer);
                 
-                const categories = Object.keys(categorizedWords);
-                const finalCategory = categories.includes(categoryName) ? categoryName : categories[Math.floor(Math.random() * categories.length)];
-                
-                const wordsList = categorizedWords[finalCategory];
-                const randomWord = wordsList[Math.floor(Math.random() * wordsList.length)];
+                // تسجيل الجولة إنها اتلعبت
+                if (!rooms[roomId].playedRounds[categoryName].includes(roundIndex)) {
+                    rooms[roomId].playedRounds[categoryName].push(roundIndex);
+                }
 
-                rooms[roomId].word = randomWord; rooms[roomId].category = finalCategory; 
+                const selectedWord = rooms[roomId].wordMapping[categoryName][roundIndex];
+                rooms[roomId].word = selectedWord; rooms[roomId].category = categoryName; 
 
                 const playersArray = Object.values(rooms[roomId].players);
                 const guests = playersArray.filter(p => !p.isHost);
+                // الهوست مستحيل يكون جاسوس لو في ضيوف
                 let spyId = guests.length > 0 ? guests[Math.floor(Math.random() * guests.length)].id : playersArray[0].id;
                 rooms[roomId].spyId = spyId;
 
                 playersArray.forEach(player => {
-                    io.to(player.socketId).emit('gameStarted', { word: randomWord, isSpy: player.id === spyId, category: finalCategory });
+                    io.to(player.socketId).emit('gameStarted', { word: selectedWord, isSpy: player.id === spyId, category: categoryName });
                 });
             }
         } catch(e){}

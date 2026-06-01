@@ -102,8 +102,8 @@ function animateCursor() {
 requestAnimationFrame(animateCursor);
 document.addEventListener('mouseover', (e) => { if (isPcMode && e.target.closest('button') && customCursor) customCursor.classList.add('hovering'); }); document.addEventListener('mouseout', (e) => { if (isPcMode && e.target.closest('button') && customCursor) customCursor.classList.remove('hovering'); });
 
-// 🔥 متغيرات التصنيفات وعجلة الحظ الجديدة
-const availableCategories = ["حاجات في البيت", "أكل وشرب", "أدوات وأشياء", "أماكن ومواصلات", "حيوانات ونباتات"];
+// 🔥 تم تحديث مصفوفة التصنيفات بالاسم الجديد والتصنيفات الجديدة
+const availableCategories = ["حاجات جوا وبرا البيت", "أكل وشرب", "أدوات وأشياء", "أماكن ومواصلات", "حيوانات ونباتات", "مهن ووظائف", "رياضة وهوايات", "أجهزة وتكنولوجيا"];
 let chosenCategory = null;
 let isWheelSpinning = false;
 
@@ -153,13 +153,13 @@ socket.on('wheelSpinning', (targetCat) => {
     let spins = 0; const maxSpins = 30; 
     const spinInterval = setInterval(() => {
         wheelText.innerText = availableCategories[Math.floor(Math.random() * availableCategories.length)];
-        playSound('click'); // تكتكة العجلة
+        playSound('click'); 
         spins++;
         if(spins >= maxSpins) {
             clearInterval(spinInterval);
             wheelText.innerText = targetCat;
             wheelText.style.color = "var(--neon-green)"; wheelText.style.textShadow = "0 0 15px var(--neon-green)";
-            playSound('vote'); // صوت الوقوف
+            playSound('vote'); 
             isWheelSpinning = false; chosenCategory = targetCat;
             document.getElementById('cat-random').classList.remove('selected');
             document.getElementById(`cat-${targetCat.replace(/\s/g, '-')}`).classList.add('selected');
@@ -197,7 +197,6 @@ socket.on('showModeSelection', () => {
     if(questionsBadge) { questionsBadge.classList.add('hidden'); questionsBadge.style.display = 'none'; questionsBadge.innerText = '0'; }
     showScreen('modeSelection');
     
-    // تصفير الواجهة الجديدة
     chosenCategory = null;
     isWheelSpinning = false;
     document.getElementById('wheelContainer').classList.add('hidden');

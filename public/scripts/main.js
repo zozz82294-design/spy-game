@@ -1,6 +1,5 @@
 const socket = io();
 
-// 🔥 رجعنا النجوم لـ 75 نجمة
 function createStars() {
     const container = document.getElementById('starsContainer'); container.innerHTML = '';
     for (let i = 0; i < 75; i++) {
@@ -12,10 +11,7 @@ function createStars() {
 }
 createStars(); 
 
-// 🔥 دي الدالة الجديدة، بتعرض الكلمة كاملة ومتصلة عشان متبوظش لغة عربية ولا تتقلب
-function applyRgbWaveToElement(element, text) {
-    if (element) element.textContent = text;
-}
+function applyRgbWaveToElement(element, text) { if (element) element.textContent = text; }
 
 const audioJoin = new Audio('audio/join.mp3'); const audioWaiting = new Audio('audio/waiting.mp3'); const audioStart = new Audio('audio/start.mp3');
 const urlParamsSync = new URLSearchParams(window.location.search); const roomFromUrlSync = urlParamsSync.get('room'); const playerNameInput = document.getElementById('playerNameInput');
@@ -142,21 +138,44 @@ socket.on('gameStarted', (data) => {
     if (isHost && restartGameBtn) restartGameBtn.disabled = false; if (isHost && startVotingPhaseBtn) startVotingPhaseBtn.classList.remove('hidden');
 });
 
-if(startVotingPhaseBtn) startVotingPhaseBtn.addEventListener('click', (e) => { e.target.disabled = true; playSound('start'); socket.emit('startVotingPhase'); setTimeout(() => e.target.disabled = false, 2000); });
-socket.on('votingStarted', (playersArray) => { playSound('start'); showScreen('voting'); liveVoteLog.innerHTML = ''; voteCounter.innerText = `0/${playersArray.length}`; voteCounter.style.textShadow = "none"; let gridHTML = ''; playersArray.forEach(p => { if (p.id !== myPlayerId) gridHTML += `<div class="vote-card" onclick="castVote('${p.id}', this)" data-player-id="${p.id}"><div style="font-size: 2rem; margin-bottom:10px;">${p.isHost ? '👑' : '👤'}</div><div style="font-weight:bold; color:#fff;">${p.name}</div></div>`; }); votingGrid.innerHTML = gridHTML; });
+// 🔥 إصلاح إرسال الأمر للسيرفر برقم الغرفة لتجنب أي جلتش
+if(startVotingPhaseBtn) startVotingPhaseBtn.addEventListener('click', (e) => { 
+    e.target.disabled = true; playSound('start'); 
+    socket.emit('startVotingPhase', sessionStorage.getItem('hostRoomId')); 
+    setTimeout(() => e.target.disabled = false, 2000); 
+});
+
+// 🔥 إصلاح جلتش الألوان للعداد وتأكيد فتح الشاشة بشكل سليم
+socket.on('votingStarted', (playersArray) => { 
+    playSound('start'); showScreen('voting'); liveVoteLog.innerHTML = ''; 
+    voteCounter.innerText = `0/${playersArray.length}`; voteCounter.style.color = "#00f3ff"; voteCounter.style.textShadow = "none"; 
+    let gridHTML = ''; 
+    playersArray.forEach(p => { 
+        if (p.id !== myPlayerId) gridHTML += `<div class="vote-card" onclick="castVote('${p.id}', this)" data-player-id="${p.id}"><div style="font-size: 2rem; margin-bottom:10px;">${p.isHost ? '👑' : '👤'}</div><div style="font-weight:bold; color:#fff;">${p.name}</div></div>`; 
+    }); 
+    votingGrid.innerHTML = gridHTML; 
+});
+
 socket.on('votingTied', (data) => { playSound('lose'); tiedPlayersNames.innerText = data.tiedNames; tieBreakerModal.classList.remove('hidden'); let timeLeft = 12; tieTimerEl.innerText = timeLeft; if(tieInterval) clearInterval(tieInterval); tieInterval = setInterval(() => { timeLeft--; tieTimerEl.innerText = timeLeft; if(timeLeft <= 0) { clearInterval(tieInterval); tieBreakerModal.classList.add('hidden'); } }, 1000); });
 socket.on('youAlreadyVoted', (targetId) => { const allCards = document.querySelectorAll('.vote-card'); allCards.forEach(c => c.classList.add('disabled')); const myCard = document.querySelector(`.vote-card[data-player-id="${targetId}"]`); if(myCard) { myCard.classList.remove('disabled'); myCard.classList.add('voted'); } });
 socket.on('playerRemovedFromVoting', (playerId) => { const card = document.querySelector(`.vote-card[data-player-id="${playerId}"]`); if (card) card.remove(); });
 window.castVote = function(targetId, cardElement) { socket.emit('submitVote', targetId); const allCards = document.querySelectorAll('.vote-card'); allCards.forEach(c => c.classList.add('disabled')); cardElement.classList.remove('disabled'); cardElement.classList.add('voted'); };
-socket.on('voteRegistered', (data) => { if(data.voterName !== "النظام") playSound('vote'); voteCounter.innerText = `${data.currentVotes}/${data.totalRequired}`; if(data.currentVotes === data.totalRequired) { voteCounter.style.color = "var(--neon-green)"; voteCounter.style.textShadow = "0 0 10px var(--neon-green)"; } if (data.voterName !== "النظام") { const logP = document.createElement('div'); logP.className = 'log-entry'; logP.innerHTML = `${data.voterName} صوت على <span class="target-name">${data.targetName}</span>`; liveVoteLog.prepend(logP); } });
+
+socket.on('voteRegistered', (data) => { 
+    if(data.voterName !== "النظام") playSound('vote'); 
+    voteCounter.innerText = `${data.currentVotes}/${data.totalRequired}`; 
+    if(data.currentVotes >= data.totalRequired) { voteCounter.style.color = "#00ff88"; voteCounter.style.textShadow = "0 0 10px #00ff88"; } 
+    if (data.voterName !== "النظام") { const logP = document.createElement('div'); logP.className = 'log-entry'; logP.innerHTML = `${data.voterName} صوت على <span class="target-name">${data.targetName}</span>`; liveVoteLog.prepend(logP); } 
+});
+
 socket.on('votingEnded', (data) => { const vTitle = document.getElementById('votingResultTitle'); const vDesc1 = document.getElementById('votingResultDesc1'); const vDesc2 = document.getElementById('votingResultDesc2'); if (!myRoleData.isSpy) { spyProceedBtn.classList.add('hidden'); if (data.isSpyCaught) { playSound('win'); vTitle.innerText = "عمل جيد! 👏"; vTitle.style.color = "var(--neon-green)"; vDesc1.innerText = `لقد كان ${data.votedPlayerName} الجاسوس فعلاً، أحسنتم.`; vDesc2.innerText = "في انتظار تخمينه للكلمة..."; } else { playSound('lose'); vTitle.innerText = "اختيار خاطئ! ❌"; vTitle.style.color = "var(--neon-red)"; vDesc1.innerText = `لم يكن ${data.votedPlayerName} الجاسوس. لقد كان ${data.spyName}.`; vDesc2.innerText = "في انتظار تخمينه للكلمة..."; } } else { spyProceedBtn.classList.remove('hidden'); if (data.isSpyCaught) { playSound('lose'); vTitle.innerText = "تم كشفك! 🚨"; vTitle.style.color = "var(--neon-red)"; vDesc1.innerText = `لقد تم كشفك يا ${data.spyName}.`; vDesc2.innerText = "ابذل قصارى جهدك المرة القادمة!"; spyProceedBtn.innerText = "خمن الكلمة"; } else { playSound('win'); vTitle.innerText = "نجاح باهر! 🕵️‍♂️"; vTitle.style.color = "var(--neon-green)"; vDesc1.innerText = `لقد اختاروا شخصاً خاطئاً، نجحت في التخفي يا ${data.spyName}.`; vDesc2.innerText = ""; spyProceedBtn.innerText = "تخمين الكلمة"; } } votingResultModal.classList.remove('hidden'); });
 if(spyProceedBtn) spyProceedBtn.addEventListener('click', () => { votingResultModal.classList.add('hidden'); socket.emit('startGuessingPhase'); });
-socket.on('guessingPhaseStarted', (data) => { playSound('start'); votingResultModal.classList.add('hidden'); showScreen('guessing'); if(!myRoleData.isSpy) { document.getElementById('guessingSubtitle').innerText = "الجاسوس يختار الكلمة الآن..."; } else { document.getElementById('guessingSubtitle').innerText = "اختر الكلمة التي تعتقد أنها صحيحة!"; } let wordsHTML = ''; data.words.forEach(w => { const onClickAttr = myRoleData.isSpy ? `onclick="selectSpyWord('${w}')"` : ''; wordsHTML += `<div class="word-card" id="word-${w}" ${onClickAttr}>${w}</div>`; }); wordsGrid.innerHTML = wordsHTML; let timeLeft = data.duration; const spyTimerEl = document.getElementById('spyTimer'); if(spyTimerEl) { spyTimerEl.innerText = timeLeft; spyTimerEl.style.color = "var(--neon-green)"; spyTimerEl.style.textShadow = "0 0 10px var(--neon-green)"; } if(guessInterval) clearInterval(guessInterval); guessInterval = setInterval(() => { timeLeft--; if(spyTimerEl) { spyTimerEl.innerText = timeLeft; if(timeLeft <= 10) { spyTimerEl.style.color = "var(--neon-red)"; spyTimerEl.style.textShadow = "0 0 10px var(--neon-red)"; } } if(timeLeft <= 0) clearInterval(guessInterval); }, 1000); });
-socket.on('spyTimeOut', () => { playSound('lose'); if(guessInterval) clearInterval(guessInterval); const t1 = document.getElementById('finalResultText1'); const t2 = document.getElementById('finalResultText2'); const t3 = document.getElementById('finalResultText3'); const t4 = document.getElementById('finalResultText4'); t1.innerText = "نفد الوقت! ⏳"; t2.innerText = "لقد انتهت اللعبه لعدم اختيار الجاسوس الإجابة"; t2.style.color = "var(--neon-red)"; t3.innerText = "لقد خسر الجاسوس!"; t3.style.color = "var(--neon-red)"; t4.innerText = ""; finalResultModal.classList.remove('hidden'); });
+socket.on('guessingPhaseStarted', (data) => { playSound('start'); votingResultModal.classList.add('hidden'); showScreen('guessing'); if(!myRoleData.isSpy) { document.getElementById('guessingSubtitle').innerText = "الجاسوس يختار الكلمة الآن..."; } else { document.getElementById('guessingSubtitle').innerText = "اختر الكلمة التي تعتقد أنها صحيحة!"; } let wordsHTML = ''; data.words.forEach(w => { const onClickAttr = myRoleData.isSpy ? `onclick="selectSpyWord('${w}')"` : ''; wordsHTML += `<div class="word-card" id="word-${w}" ${onClickAttr}>${w}</div>`; }); wordsGrid.innerHTML = wordsHTML; let timeLeft = data.duration; const spyTimerEl = document.getElementById('spyTimer'); if(spyTimerEl) { spyTimerEl.innerText = timeLeft; spyTimerEl.style.color = "#00ff88"; spyTimerEl.style.textShadow = "0 0 10px #00ff88"; } if(guessInterval) clearInterval(guessInterval); guessInterval = setInterval(() => { timeLeft--; if(spyTimerEl) { spyTimerEl.innerText = timeLeft; if(timeLeft <= 10) { spyTimerEl.style.color = "#ff0055"; spyTimerEl.style.textShadow = "0 0 10px #ff0055"; } } if(timeLeft <= 0) clearInterval(guessInterval); }, 1000); });
+socket.on('spyTimeOut', () => { playSound('lose'); if(guessInterval) clearInterval(guessInterval); const t1 = document.getElementById('finalResultText1'); const t2 = document.getElementById('finalResultText2'); const t3 = document.getElementById('finalResultText3'); const t4 = document.getElementById('finalResultText4'); t1.innerText = "نفد الوقت! ⏳"; t2.innerText = "لقد انتهت اللعبه لعدم اختيار الجاسوس الإجابة"; t2.style.color = "#ff0055"; t3.innerText = "لقد خسر الجاسوس!"; t3.style.color = "#ff0055"; t4.innerText = ""; finalResultModal.classList.remove('hidden'); });
 window.selectSpyWord = function(word) { if (!myRoleData.isSpy) return; selectedSpyWord = word; confirmGuessBtn.classList.remove('hidden'); socket.emit('spyHoverWord', word); };
 socket.on('spySelectedWord', (data) => { playSound('vote'); document.querySelectorAll('.word-card').forEach(c => { c.classList.remove('spy-active'); const tag = c.querySelector('.spy-tag'); if(tag) tag.remove(); }); const activeCard = document.getElementById(`word-${data.word}`); if (activeCard) { activeCard.classList.add('spy-active'); activeCard.innerHTML += `<div class="spy-tag">اختارها ${data.spyName}</div>`; } });
 if(confirmGuessBtn) confirmGuessBtn.addEventListener('click', (e) => { e.target.disabled = true; if(selectedSpyWord) socket.emit('spyConfirmWord', selectedSpyWord); setTimeout(() => e.target.disabled = false, 2000); });
-socket.on('gameFinalResult', (data) => { if(guessInterval) clearInterval(guessInterval); if(data.isCorrect) playSound('win'); else playSound('lose'); const t1 = document.getElementById('finalResultText1'); const t2 = document.getElementById('finalResultText2'); const t3 = document.getElementById('finalResultText3'); const t4 = document.getElementById('finalResultText4'); t1.innerText = `لقد خمن الجاسوس ${data.spyName} الكلمة`; t2.innerText = data.chosenWord; if (data.isCorrect) { t3.innerText = "وكانت الإجابة صحيحة! ✅"; t3.style.color = "var(--neon-green)"; t4.innerText = ""; } else { t3.innerText = "وكانت الإجابة خاطئة! ❌"; t3.style.color = "var(--neon-red)"; t4.innerText = `والكلمة الصحيحة كانت: ${data.correctWord}`; } finalResultModal.classList.remove('hidden'); });
+socket.on('gameFinalResult', (data) => { if(guessInterval) clearInterval(guessInterval); if(data.isCorrect) playSound('win'); else playSound('lose'); const t1 = document.getElementById('finalResultText1'); const t2 = document.getElementById('finalResultText2'); const t3 = document.getElementById('finalResultText3'); const t4 = document.getElementById('finalResultText4'); t1.innerText = `لقد خمن الجاسوس ${data.spyName} الكلمة`; t2.innerText = data.chosenWord; if (data.isCorrect) { t3.innerText = "وكانت الإجابة صحيحة! ✅"; t3.style.color = "#00ff88"; t4.innerText = ""; } else { t3.innerText = "وكانت الإجابة خاطئة! ❌"; t3.style.color = "#ff0055"; t4.innerText = `والكلمة الصحيحة كانت: ${data.correctWord}`; } finalResultModal.classList.remove('hidden'); });
 if(finalOkBtn) finalOkBtn.addEventListener('click', () => { finalResultModal.classList.add('hidden'); if (isHost) { if(hostSettingsModal) hostSettingsModal.classList.remove('hidden'); } else { if(guestWaitingHostModal) guestWaitingHostModal.classList.remove('hidden'); } });
 socket.on('gameRestarted', () => { playSound('start'); if(guessInterval) clearInterval(guessInterval); showScreen('waiting'); votingResultModal.classList.add('hidden'); finalResultModal.classList.add('hidden'); tieBreakerModal.classList.add('hidden'); if(startVotingPhaseBtn) startVotingPhaseBtn.classList.add('hidden'); if(confirmGuessBtn) confirmGuessBtn.classList.add('hidden'); if (isHost && restartGameBtn && hostSettingsModal) { restartGameBtn.disabled = true; hostSettingsModal.classList.add('hidden'); } if(guestWaitingHostModal) guestWaitingHostModal.classList.add('hidden'); });
 window.editPlayerName = function(targetId) { const newName = prompt('أدخل الاسم الجديد:'); if (newName && newName.trim() !== '') socket.emit('changePlayerName', { targetId: targetId, newName: newName.trim() }); }; window.kickPlayer = function(targetId) { if (confirm('طرد نهائي لهذا اللاعب؟')) socket.emit('kickPlayer', targetId); };

@@ -14,7 +14,6 @@ app.get('/health', (req, res) => res.status(200).send('OK'));
 
 let rooms = {};
 
-// 🔥 بنك الكلمات الضخم (مئات الكلمات لكل تصنيف شاملة الكلمتين لتشتيت الجاسوس)
 const categorizedWords = {
     "حاجات جوا وبرا البيت": ["سرير", "مخدة", "بطانية", "دولاب", "شماعة", "مراية", "سجادة", "ستارة", "نجفة", "لمبة", "فيشة", "مفتاح كهرباء", "باب", "شباك", "بلكونة", "ريموت", "تلفزيون", "كنبة", "كرسي", "طاولة", "مكتب", "ساعة حائط", "فازة", "وردة", "صورة", "مروحة", "تكييف", "دفاية", "غسالة", "ثلاجة", "بوتاجاز", "فرن", "ميكروويف", "خلاط", "كاتل", "حنفية", "حوض", "صابونة", "فوطة", "ليفة", "شامبو", "معجون أسنان", "فرشاة أسنان", "مشط", "مقص أظافر", "استشوار", "مكواة", "مكنسة", "ممسحة", "مقشة", "جاروف", "زبالة", "كيس", "علبة", "صندوق", "درج", "قفل", "شنطة", "محفظة", "نظارة", "شاحن", "سماعة", "لاب توب", "تابلت", "كيبورد", "ماوس", "سلك", "كرتونة", "مسمار", "شاكوش", "مفك", "بنسة", "غراء", "شريط لحام", "بطارية", "ولاعة", "شمعة", "كبريت", "مبخرة", "سبحة", "سجادة صلاة", "مصحف", "قلم", "ورقة", "دباسة", "استيكة", "براية", "مسطرة", "لون", "لوحة", "ملف", "تقويم", "نوتة", "منبه", "حصالة", "ميزان", "طفاية حريق", "عمود نور", "إشارة مرور", "رصيف", "يافطة", "صندوق زبالة", "كشك", "نافورة", "تمثال", "سور", "بوابة", "عتبة", "بلاط", "أسفلت", "طوبة", "زلطة", "يافطة محل", "كابينة تليفون", "مطب", "كوبري مشاة", "نفق", "جراج", "بدروم", "روف", "خزان مياه", "دش", "بانيو", "بيديه", "سخان", "شفاط", "انبوبة", "ولاعة غاز", "فنجان", "طبق", "معلقة", "شوكة", "سكينة", "كوباية", "دورق", "براد", "صينية", "مطبقية", "قطاعة", "مصفاة", "طشت", "جردل", "خرطوم", "بوابة عمارة", "يافطة دكتور", "يافطة صيدلية", "شجرة في الشارع", "عربية راكنة", "موتوسيكل راكن", "توكتوك", "ميكروباص", "كشك سجاير", "فرشة فاكهة", "عربية فول", "عربية كبدة", "فرن عيش", "محل بقالة", "سوبر ماركت", "حلاق", "مكوجي", "مغسلة"],
     "أكل وشرب": ["أرز", "مكرونة", "عيش", "بيض", "جبنة", "لبن", "زبادي", "عسل", "حلاوة", "مربى", "زيت", "سمنة", "زبدة", "ملح", "سكر", "فلفل", "كمون", "شطة", "كاتشب", "مايونيز", "بطاطس", "طماطم", "خيار", "بصل", "ثوم", "جزر", "فلفل رومي", "بتنجان", "كوسة", "بسلة", "فاصوليا", "عدس", "فول", "طعمية", "كشري", "حواوشي", "بيتزا", "برجر", "شاورما", "كباب", "كفتة", "فراخ", "لحمة", "سمك", "تونة", "كبدة", "شوربة", "سلطة", "مخلل", "شيبسي", "لبان", "بونبوني", "شوكولاتة", "بسكويت", "كيكة", "ايس كريم", "كنافة", "بسبوسة", "فاكهة", "تفاح", "موز", "برتقال", "عنب", "بطيخ", "مانجو", "فراولة", "خوخ", "رمان", "كمثرى", "جوافة", "تمر", "تين", "مشمش", "أناناس", "كيوي", "كانز", "مياه", "شاي", "قهوة", "عصير", "بيبسي", "كوكاكولا", "سفن اب", "ميرندا", "عصير قصب", "تمر هندي", "سوبيا", "لبن رايب", "ينسون", "نعناع", "قرفة", "كاكاو", "نسكافيه", "كابتشينو", "شاي بلبن", "سحلب", "خروب", "كريب", "فطير", "بان كيك", "وافل", "دوناتس", "جيلي", "مارشميلو", "غزل البنات", "لب", "سوداني", "فستق", "لوز", "بندق", "كاجو", "عين جمل", "بقسماط", "شابورة", "كرواسون", "باتيه", "سميط", "فايش", "ملوخية", "سبانخ", "قلقاس", "محشي", "ورق عنب", "كرنب", "ممبار", "بامية", "قرنبيط", "بروكلي", "مشروم", "ليمون", "اسبريسو", "موكا", "لاتيه", "شاي أخضر", "قهوة تركي", "قهوة عربي", "عصير مانجو", "عصير فراولة", "عصير تفاح", "سردين", "جمبري", "كابوريا", "استاكوزا", "سبيط", "سمك بلطي", "سمك بوري", "لحمة مفرومة", "سجق", "سوسيس", "بسطرمة", "لانشون", "رومي مدخن", "جبنة رومي", "جبنة بيضا", "جبنة نستو", "جبنة قديمة", "مية معدنية", "مية غازية", "شويبس", "فيروز", "عصير قمر الدين", "عصير برتقال", "عصير ليمون", "زبادو", "ميلك شيك", "فرابيتشينو", "سموزي"],
@@ -114,10 +113,13 @@ function handlePlayerLeave(roomId, playerId) {
     if (rooms[roomId]) {
         io.to(roomId).emit('updatePlayers', Object.values(rooms[roomId].players));
         if (Object.keys(rooms[roomId].players).length === 0) { cleanupRoom(roomId); return; }
+        
+        // 🔥 ده الإصلاح العظيم: لو حد خرج وقت التصويت، النتيجة هتتحسب من غيره فوراً
         if (wasVoting && !gameAborted) {
             if (rooms[roomId].votes[playerId]) delete rooms[roomId].votes[playerId];
             const totalVotes = Object.keys(rooms[roomId].votes).length; const remainingPlayersCount = Object.keys(rooms[roomId].players).length;
-            io.to(roomId).emit('playerRemovedFromVoting', playerId); io.to(roomId).emit('voteRegistered', { voterName: "النظام", targetName: "", currentVotes: totalVotes, totalRequired: remainingPlayersCount });
+            io.to(roomId).emit('playerRemovedFromVoting', playerId); 
+            io.to(roomId).emit('voteRegistered', { voterName: "النظام", targetName: "", currentVotes: totalVotes, totalRequired: remainingPlayersCount });
             if (totalVotes >= remainingPlayersCount && remainingPlayersCount > 0) checkVotingResult(roomId);
         }
     }
@@ -244,10 +246,25 @@ io.on('connection', (socket) => {
         } catch(e){}
     });
 
-    socket.on('startVotingPhase', () => { try { const roomId = socket.roomId; if(roomId && rooms[roomId]) { rooms[roomId].gameState = 'voting'; io.to(roomId).emit('votingStarted', Object.values(rooms[roomId].players)); } } catch(e){} });
+    // 🔥 إصلاح جلتش زرار التصويت: بياخد رقم الأوضة كاحتياطي عشان لو النت رمش
+    socket.on('startVotingPhase', (fallbackRoomId) => { 
+        try { 
+            let roomId = socket.roomId || fallbackRoomId;
+            if (!roomId) { for (const r in rooms) { if (rooms[r].players[socket.playerId]) { roomId = r; socket.roomId = r; break; } } }
+            if(roomId && rooms[roomId]) { 
+                rooms[roomId].gameState = 'voting'; 
+                rooms[roomId].votes = {}; // تصفير الأصوات القديمة إجبارياً
+                if(rooms[roomId].tieTimer) clearTimeout(rooms[roomId].tieTimer);
+                io.to(roomId).emit('votingStarted', Object.values(rooms[roomId].players)); 
+            } 
+        } catch(e){} 
+    });
+
     socket.on('submitVote', (targetId) => {
         try {
-            const roomId = socket.roomId; const playerId = socket.playerId;
+            let roomId = socket.roomId;
+            if (!roomId) { for (const r in rooms) { if (rooms[r].players[socket.playerId]) { roomId = r; break; } } }
+            const playerId = socket.playerId;
             if(roomId && rooms[roomId] && rooms[roomId].gameState === 'voting') {
                 rooms[roomId].votes[playerId] = targetId; const totalVotes = Object.keys(rooms[roomId].votes).length; const totalPlayers = Object.keys(rooms[roomId].players).length;
                 io.to(roomId).emit('voteRegistered', { voterName: rooms[roomId].players[playerId].name, targetName: rooms[roomId].players[targetId] ? rooms[roomId].players[targetId].name : "لاعب غادر", currentVotes: totalVotes, totalRequired: totalPlayers });
@@ -270,8 +287,28 @@ io.on('connection', (socket) => {
 
     socket.on('spyHoverWord', (word) => { try { const roomId = socket.roomId; const playerId = socket.playerId; if(roomId && rooms[roomId]) io.to(roomId).emit('spySelectedWord', { word: word, spyName: rooms[roomId].players[playerId].name }); } catch(e){} });
     socket.on('spyConfirmWord', (chosenWord) => { try { const roomId = socket.roomId; const playerId = socket.playerId; if(roomId && rooms[roomId]) { if(rooms[roomId].guessTimer) clearTimeout(rooms[roomId].guessTimer); io.to(roomId).emit('gameFinalResult', { spyName: rooms[roomId].players[playerId].name, chosenWord: chosenWord, correctWord: rooms[roomId].word, isCorrect: (chosenWord === rooms[roomId].word) }); } } catch(e){} });
-    socket.on('restartGame', () => { try { if(socket.roomId && rooms[socket.roomId]) { if(rooms[socket.roomId].guessTimer) clearTimeout(rooms[socket.roomId].guessTimer); if(rooms[socket.roomId].tieTimer) clearTimeout(rooms[socket.roomId].tieTimer); rooms[socket.roomId].gameState = 'waiting'; rooms[socket.roomId].votes = {}; io.to(socket.roomId).emit('gameRestarted'); } } catch(e){} });
-    socket.on('disconnect', () => { try { const roomId = socket.roomId; const playerId = socket.playerId; if (roomId && rooms[roomId] && rooms[roomId].players[playerId]) { rooms[roomId].players[playerId].disconnectTimeout = setTimeout(() => { handlePlayerLeave(roomId, playerId); }, 60000); } } catch(e){} });
+    
+    socket.on('restartGame', () => { 
+        try { 
+            let roomId = socket.roomId;
+            if (!roomId) { for (const r in rooms) { if (rooms[r].players[socket.playerId]) { roomId = r; break; } } }
+            if(roomId && rooms[roomId]) { 
+                if(rooms[roomId].guessTimer) clearTimeout(rooms[roomId].guessTimer); if(rooms[roomId].tieTimer) clearTimeout(rooms[roomId].tieTimer); 
+                rooms[roomId].gameState = 'waiting'; rooms[roomId].votes = {}; 
+                io.to(roomId).emit('gameRestarted'); 
+            } 
+        } catch(e){} 
+    });
+
+    socket.on('disconnect', () => { 
+        try { 
+            const roomId = socket.roomId; const playerId = socket.playerId; 
+            if (roomId && rooms[roomId] && rooms[roomId].players[playerId]) { 
+                // 🔥 لو حد قفل اللعبة، هيتشال من الحسبة بعد 7 ثواني بالظبط عشان التصويت ميعلقش
+                rooms[roomId].players[playerId].disconnectTimeout = setTimeout(() => { handlePlayerLeave(roomId, playerId); }, 7000); 
+            } 
+        } catch(e){} 
+    });
 });
 
 server.listen(PORT, () => { console.log(`🚀 Server running on port ${PORT}`); });

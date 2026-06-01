@@ -1,8 +1,9 @@
 const socket = io();
 
+// 🔥 تقليل النجوم لـ 20 نجمة بس عشان الأداء ميتأثرش
 function createStars() {
     const container = document.getElementById('starsContainer'); container.innerHTML = '';
-    for (let i = 0; i < 75; i++) {
+    for (let i = 0; i < 20; i++) {
         let star = document.createElement('div'); star.className = 'falling-star';
         let size = Math.random() * 3 + 1.5; star.style.width = size + 'px'; star.style.height = size + 'px';
         star.style.left = Math.random() * 100 + 'vw'; star.style.animationDuration = Math.random() * 3 + 3 + 's'; star.style.animationDelay = '-' + (Math.random() * 6) + 's'; 
@@ -11,14 +12,8 @@ function createStars() {
 }
 createStars(); 
 
-function applyRgbWaveToElement(element, text) {
-    if (!element) return; element.innerHTML = '';
-    for (let i = 0; i < text.length; i++) {
-        const span = document.createElement('span');
-        if (text[i] === ' ') span.innerHTML = '&nbsp;'; else { span.textContent = text[i]; span.style.setProperty('--char-index', i); }
-        element.appendChild(span);
-    }
-}
+// دالة مبسطة جداً للنصوص بدل التعقيد القديم
+function applyRgbWaveToElement(element, text) { if (element) element.textContent = text; }
 
 const audioJoin = new Audio('audio/join.mp3'); const audioWaiting = new Audio('audio/waiting.mp3'); const audioStart = new Audio('audio/start.mp3');
 const urlParamsSync = new URLSearchParams(window.location.search); const roomFromUrlSync = urlParamsSync.get('room'); const playerNameInput = document.getElementById('playerNameInput');
@@ -38,7 +33,6 @@ if (roomFromUrlSync) {
     document.addEventListener('click', playJoinAudio); if(playerNameInput) playerNameInput.addEventListener('focus', playJoinAudio);
 }
 
-function initRgbTitles() { document.querySelectorAll('.rgb-title').forEach(el => { if (!el.querySelector('span')) applyRgbWaveToElement(el, el.textContent); }); } initRgbTitles();
 const AudioContext = window.AudioContext || window.webkitAudioContext; let audioCtx;
 function initAudio() { if (!audioCtx) audioCtx = new AudioContext(); if (audioCtx.state === 'suspended') audioCtx.resume(); } document.addEventListener('click', initAudio, { once: true });
 function playSound(type) {
@@ -104,7 +98,7 @@ function finishSpin(cat, idx, cards) {
     if(isHost) { setTimeout(() => { confirmStartGameBtn.classList.remove('hidden'); }, 1000); }
 }
 
-socket.on('connect', () => { const urlParams = newSearchParams(window.location.search); const roomFromUrl = urlParams.get('room'); const hostRoomId = sessionStorage.getItem('hostRoomId'); const guestName = sessionStorage.getItem('guestName'); if (hostRoomId) { isHost = true; if(hostSettingsBtn) hostSettingsBtn.classList.remove('hidden'); socket.emit('createRoom', { roomId: hostRoomId, playerId: myPlayerId }); updateLeaveBtnState(); } else if (roomFromUrl) { isHost = false; if (guestName) { if(playerNameInput) playerNameInput.value = guestName; socket.emit('joinRoom', { roomId: roomFromUrl, name: guestName, playerId: myPlayerId }); updateLeaveBtnState(); } } else { sessionStorage.removeItem('hostRoomId'); sessionStorage.removeItem('guestName'); showScreen('welcome'); updateLeaveBtnState(); } });
+socket.on('connect', () => { const urlParams = new URLSearchParams(window.location.search); const roomFromUrl = urlParams.get('room'); const hostRoomId = sessionStorage.getItem('hostRoomId'); const guestName = sessionStorage.getItem('guestName'); if (hostRoomId) { isHost = true; if(hostSettingsBtn) hostSettingsBtn.classList.remove('hidden'); socket.emit('createRoom', { roomId: hostRoomId, playerId: myPlayerId }); updateLeaveBtnState(); } else if (roomFromUrl) { isHost = false; if (guestName) { if(playerNameInput) playerNameInput.value = guestName; socket.emit('joinRoom', { roomId: roomFromUrl, name: guestName, playerId: myPlayerId }); updateLeaveBtnState(); } } else { sessionStorage.removeItem('hostRoomId'); sessionStorage.removeItem('guestName'); showScreen('welcome'); updateLeaveBtnState(); } });
 socket.on('syncState', (state) => { if (state === 'waiting') { showScreen('waiting'); } else if (state === 'modeSelection') { showScreen('modeSelection'); } });
 if(goToWaitingBtn) goToWaitingBtn.addEventListener('click', () => { isHost = true; if(hostSettingsBtn) hostSettingsBtn.classList.remove('hidden'); if(copyInviteBtn) copyInviteBtn.classList.remove('hidden'); const newRoomId = Math.random().toString(36).substring(2, 8); sessionStorage.setItem('hostRoomId', newRoomId); socket.emit('createRoom', { roomId: newRoomId, playerId: myPlayerId }); showScreen('waiting'); updateLeaveBtnState(); });
 

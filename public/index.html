@@ -8,76 +8,71 @@
     <link rel="stylesheet" href="styles/style.css">
     <script src="/socket.io/socket.io.js"></script>
     <style>
+        /* 🔥 خلفية أنيقة وثابتة وخفيفة جداً على الأجهزة */
         body, html { 
             font-family: 'Cairo', sans-serif;
             overflow-x: hidden; min-height: 100vh; scroll-behavior: smooth; 
             -webkit-overflow-scrolling: touch; touch-action: manipulation; 
-            background: #0a0a0f; 
-            background-image: radial-gradient(ellipse at 20% 50%, #1a0a2e 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, #0a1a2e 0%, transparent 60%); 
-            background-attachment: fixed; 
+            background: linear-gradient(135deg, #0a0a0f 0%, #1a0a2e 100%);
+            color: #fff;
         }
 
-        /* لا توجد أي تأثيرات للماوس على الموبايل نهائياً */
         button, .category-card, .vote-card, .word-card { cursor: pointer; }
 
-        /* 🔥 تأثيرات الماوس الفخمة تشتغل فقط لما تختار وضع الكمبيوتر (PC Mode) */
-        body.pc-mode {
-            cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='2,2 20,8 10,12 6,20' fill='%2300f3ff' stroke='%23ffffff' stroke-width='1.5' stroke-linejoin='round'/%3E%3C/svg%3E") 2 2, default !important;
-        }
-
-        body.pc-mode button, body.pc-mode .category-card, body.pc-mode .vote-card, body.pc-mode .word-card, body.pc-mode input, body.pc-mode .general-settings-icon, body.pc-mode .host-settings-icon {
-            cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='2,2 20,8 10,12 6,20' fill='%23ff0055' stroke='%23ffffff' stroke-width='1.5' stroke-linejoin='round'/%3E%3C/svg%3E") 2 2, pointer !important;
-        }
+        body.pc-mode { cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='2,2 20,8 10,12 6,20' fill='%2300f3ff' stroke='%23ffffff' stroke-width='1.5' stroke-linejoin='round'/%3E%3C/svg%3E") 2 2, default !important; }
+        body.pc-mode button, body.pc-mode .category-card, body.pc-mode .vote-card, body.pc-mode .word-card, body.pc-mode input, body.pc-mode .general-settings-icon, body.pc-mode .host-settings-icon { cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpolygon points='2,2 20,8 10,12 6,20' fill='%23ff0055' stroke='%23ffffff' stroke-width='1.5' stroke-linejoin='round'/%3E%3C/svg%3E") 2 2, pointer !important; }
 
         body.mobile-mode #mainContainer { max-width: 450px !important; margin: 0 auto; width: 100%; position: relative; z-index: 10; }
         body.pc-mode #mainContainer { max-width: 1000px !important; margin: 0 auto; width: 100%; position: relative; z-index: 10; }
 
-        .glass-container { max-height: none; overflow-y: visible; margin-bottom: 100px; padding: 25px; transition: max-width 0.3s ease; }
-        
-        @keyframes rgbGlow { 0% { box-shadow: 0 0 12px #ff0055, inset 0 0 8px #ff0055; border-color: #ff0055; } 25% { box-shadow: 0 0 12px #00f3ff, inset 0 0 8px #00f3ff; border-color: #00f3ff; } 50% { box-shadow: 0 0 12px #00ff88, inset 0 0 8px #00ff88; border-color: #00ff88; } 75% { box-shadow: 0 0 12px #ffe600, inset 0 0 8px #ffe600; border-color: #ffe600; } 100% { box-shadow: 0 0 12px #b000ff, inset 0 0 8px #b000ff; border-color: #b000ff; } }
-        @keyframes hueShift { 0% { filter: hue-rotate(0deg); } 100% { filter: hue-rotate(360deg); } }
+        .glass-container { margin-bottom: 100px; padding: 25px; transition: max-width 0.3s ease; }
 
-        .spy-icon, .avatar-glow { display: inline-block; background: transparent !important; box-shadow: none !important; animation: floatSpy 3s ease-in-out infinite, rgbDropShadow 6s infinite alternate !important; font-size: 5rem !important; margin-bottom: 10px; }
+        /* 🔥 إضاءة ثابتة للرموز بدل الفلاتر الثقيلة */
+        .spy-icon, .avatar-glow { display: inline-block; font-size: 5rem !important; margin-bottom: 10px; animation: floatSpy 3s ease-in-out infinite; text-shadow: 0 0 20px rgba(255, 0, 85, 0.8); }
         @keyframes floatSpy { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
-        @keyframes rgbDropShadow { 0% { filter: drop-shadow(0 0 20px #ff0055); } 25% { filter: drop-shadow(0 0 20px #00f3ff); } 50% { filter: drop-shadow(0 0 20px #00ff88); } 75% { filter: drop-shadow(0 0 20px #ffe600); } 100% { filter: drop-shadow(0 0 20px #b000ff); } }
 
         .logo-section { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; }
-        .rgb-title, #roleTitle { color: #ff0055; text-shadow: 0 0 15px #ff0055, 0 0 30px #ff0055; animation: hueShift 4s linear infinite !important; display: block; text-align: center !important; width: 100%; margin-left: auto; margin-right: auto; font-weight: 900; }
-        .rgb-title { font-size: 2.8rem !important; margin-bottom: 25px !important; }
+        
+        /* 🔥 نيون ثابت للعنوان بدل تغيير الألوان المزعج للجهاز */
+        .rgb-title, #roleTitle { color: #ff0055; text-shadow: 0 0 15px #ff0055, 0 0 30px #ff0055; display: block; text-align: center !important; width: 100%; font-weight: 900; margin-bottom: 25px; font-size: 2.8rem; }
 
-        button { animation: rgbGlow 6s infinite alternate !important; transition: transform 0.2s, box-shadow 0.2s !important; }
-        button:hover { transform: scale(1.05); }
+        /* 🔥 زراير نيون ثابتة وشيك بدون أنيميشن شادو */
+        button { border: 1px solid var(--neon-blue, #00f3ff); box-shadow: 0 0 10px rgba(0, 243, 255, 0.3); transition: transform 0.2s, box-shadow 0.2s, background 0.2s; background: rgba(0,0,0,0.4); color: #fff; }
+        button:hover { transform: scale(1.05); box-shadow: 0 0 20px rgba(0, 243, 255, 0.6); background: rgba(0, 243, 255, 0.1); }
+        button:disabled { opacity: 0.5; pointer-events: none; }
 
-        .view-options .btn-view { animation: none !important; box-shadow: none; opacity: 0.6; }
-        .view-options .btn-view.active-view { animation: rgbGlow 6s infinite alternate !important; opacity: 1; border-color: #00f3ff; }
-        .btn-leave-room { position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%) !important; width: 85%; max-width: 350px; background: rgba(255, 51, 102, 0.15); border: 1px solid var(--neon-red); color: #fff; padding: 15px; border-radius: 12px; font-size: 1.1rem; font-weight: bold; transition: background 0.3s, box-shadow 0.3s; z-index: 100; text-align: center; box-shadow: 0 0 15px rgba(255, 51, 102, 0.2); }
-        .btn-leave-room:hover { background: var(--neon-red); box-shadow: 0 0 25px var(--neon-red); transform: translateX(-50%) !important; }
+        .view-options .btn-view { box-shadow: none; opacity: 0.6; border-color: rgba(255,255,255,0.2); }
+        .view-options .btn-view.active-view { opacity: 1; border-color: #00f3ff; box-shadow: 0 0 10px rgba(0, 243, 255, 0.4); }
+        
+        .btn-leave-room { position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%) !important; width: 85%; max-width: 350px; background: rgba(255, 51, 102, 0.15); border: 1px solid #ff0055; color: #fff; padding: 15px; border-radius: 12px; font-size: 1.1rem; font-weight: bold; transition: 0.3s; z-index: 100; text-align: center; box-shadow: 0 0 15px rgba(255, 51, 102, 0.2); }
+        .btn-leave-room:hover { background: #ff0055; box-shadow: 0 0 25px #ff0055; transform: translateX(-50%) scale(1.02) !important; }
         
         .voting-grid, .words-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; margin-top: 20px; }
         .vote-card, .word-card { background: rgba(15, 23, 42, 0.8); border: 1px solid #334155; border-radius: 8px; padding: 15px 5px; text-align: center; transition: 0.3s; font-weight: bold; }
-        .vote-card:hover, .word-card.spy-active { border-color: var(--neon-blue); box-shadow: 0 0 15px rgba(0, 243, 255, 0.3); }
-        .vote-card.voted { border-color: var(--neon-green); box-shadow: 0 0 15px var(--neon-green); pointer-events: none; opacity: 0.8; }
+        .vote-card:hover, .word-card.spy-active { border-color: #00f3ff; box-shadow: 0 0 15px rgba(0, 243, 255, 0.3); }
+        .vote-card.voted { border-color: #00ff88; box-shadow: 0 0 15px #00ff88; pointer-events: none; opacity: 0.8; }
         .vote-card.disabled { pointer-events: none; opacity: 0.5; }
         
         .live-log-container { background: rgba(0,0,0,0.5); border-radius: 10px; padding: 10px; height: 130px; overflow-y: auto; margin-top: 20px; border: 1px solid rgba(255,255,255,0.1); text-align: right; font-size: 0.9rem; }
-        .log-entry { margin-bottom: 5px; color: #ccc; animation: fadeIn 0.3s ease-in; } .target-name { color: var(--neon-red); font-weight: bold; }
+        .log-entry { margin-bottom: 5px; color: #ccc; animation: fadeIn 0.3s ease-in; } .target-name { color: #ff0055; font-weight: bold; }
         
-        .spy-tag { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: var(--neon-blue); color: #000; font-size: 0.65rem; padding: 2px 8px; border-radius: 10px; white-space: nowrap; animation: pop 0.3s ease; }
+        .spy-tag { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: #00f3ff; color: #000; font-size: 0.65rem; padding: 2px 8px; border-radius: 10px; white-space: nowrap; animation: pop 0.3s ease; }
         
-        .general-settings-icon, .host-settings-icon { position: absolute; top: 20px; background: none; border: none; font-size: 1.9rem; z-index: 1000; transition: transform 0.3s, opacity 0.3s; animation: none !important; box-shadow: none !important; }
+        .general-settings-icon, .host-settings-icon { position: absolute; top: 20px; background: none; border: none; font-size: 1.9rem; z-index: 1000; transition: transform 0.3s, opacity 0.3s; box-shadow: none; border: none; }
         .general-settings-icon { left: 20px; } .host-settings-icon { right: 20px; }
+        .general-settings-icon:hover, .host-settings-icon:hover { transform: scale(1.1); box-shadow: none; background: transparent; }
         
         .toggle-switch-container { display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; margin-top: 20px; border: 1px solid rgba(255,255,255,0.1); }
-        .toggle-btn { padding: 9px 18px; border-radius: 8px; border: none; font-weight: bold; transition: 0.3s; animation: none !important; }
-        .toggle-btn.active { background: var(--neon-green); color: #000; box-shadow: 0 0 15px var(--neon-green); } .toggle-btn.inactive { background: var(--neon-red); color: #fff; box-shadow: 0 0 15px var(--neon-red); }
+        .toggle-btn { padding: 9px 18px; border-radius: 8px; border: none; font-weight: bold; transition: 0.3s; }
+        .toggle-btn.active { background: #00ff88; color: #000; box-shadow: 0 0 15px #00ff88; } .toggle-btn.inactive { background: #ff0055; color: #fff; box-shadow: 0 0 15px #ff0055; }
 
         .modal-player-item { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); padding: 12px 18px; border-radius: 10px; margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.05); }
         .modal-player-actions { display: flex; gap: 8px; margin-left: 0; } .player-name-wrapper { flex: 1; display: flex; align-items: center; gap: 8px; overflow: hidden; padding-right: 10px; } .player-name-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 130px; }
 
         .categories-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 15px; }
         .category-card { background: rgba(15, 23, 42, 0.8); border: 1px solid #334155; border-radius: 8px; padding: 15px 5px; text-align: center; transition: 0.3s; font-weight: bold; font-size: 1rem; color: #ccc; position: relative; }
-        .category-card:hover { border-color: var(--neon-blue); color: #fff; }
-        .category-card.selected { border-color: var(--neon-green); background: rgba(0, 255, 136, 0.1); color: var(--neon-green); box-shadow: 0 0 10px rgba(0, 255, 136, 0.3); transform: scale(1.05); }
+        .category-card:hover { border-color: #00f3ff; color: #fff; box-shadow: 0 0 10px rgba(0, 243, 255, 0.3); }
+        .category-card.selected { border-color: #00ff88; background: rgba(0, 255, 136, 0.1); color: #00ff88; box-shadow: 0 0 10px rgba(0, 255, 136, 0.3); transform: scale(1.05); }
         .category-card.random-card { border-color: rgba(176, 0, 255, 0.5); color: #e08cff; }
         .category-card.roulette-active { border-color: #fff; background: rgba(255, 255, 255, 0.2); color: #fff; box-shadow: 0 0 20px #fff; transform: scale(1.1); z-index: 5; }
 
@@ -85,7 +80,7 @@
         @keyframes pop { 0% { transform: translateX(-50%) scale(0); } 100% { transform: translateX(-50%) scale(1); } }
         
         #starsContainer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; overflow: hidden; background: transparent; }
-        .falling-star { position: absolute; background: #fff; border-radius: 50%; box-shadow: 0 0 8px rgba(255,255,255,0.8); animation: starFall linear infinite; }
+        .falling-star { position: absolute; background: #fff; border-radius: 50%; box-shadow: 0 0 5px rgba(255,255,255,0.5); animation: starFall linear infinite; }
         @keyframes starFall { 0% { transform: translateY(-10vh); opacity: 0; } 10% { opacity: 1; } 80% { opacity: 1; } 100% { transform: translateY(110vh); opacity: 0; } }
     </style>
 </head>
@@ -98,16 +93,16 @@
 
     <div id="notificationToast" class="toast hidden">تم النسخ! 📋</div>
 
-    <div id="generalSettingsModal" class="modal-overlay hidden" style="z-index: 10000;"><div class="modal-content glass-container"><h2 class="neon-text" style="margin-bottom: 25px;">الإعدادات ⚙️</h2><div class="toggle-switch-container"><span style="color: #fff; font-size: 1.1rem; font-weight: bold;">زر المغادرة (للضيوف)</span><button id="toggleLeaveBtn" class="toggle-btn active">مفعل ✔️</button></div><button id="closeGeneralSettingsBtn" class="btn-close-modal" style="margin-top: 30px; width: 100%;">إغلاق</button></div></div>
-    <div id="hostSettingsModal" class="modal-overlay hidden"><div class="modal-content glass-container"><h2 class="neon-text" style="margin-bottom: 25px;">إدارة اللاعبين 👥</h2><div id="modalPlayersList" class="modal-players-list"></div><button id="restartGameBtn" class="btn-restart-game" disabled style="width: 100%; margin-top: 15px;">إعادة اللعب 🔄</button><button id="closeModalBtn" class="btn-close-modal" style="margin-top: 15px; width: 100%;">إغلاق</button></div></div>
-    <div id="invalidRoomModal" class="modal-overlay hidden" style="z-index: 999999; background: #030712;"><div class="modal-content glass-container" style="text-align: center;"><div style="font-size: 4rem; margin-bottom: 15px;">❌</div><h2 class="neon-text" style="color: var(--neon-red);">عذراً!</h2><p id="errorMsgText" style="color: #ccc; font-size: 1.1rem;">الغرفة دي مش موجودة أو الهوست قفل اللعبة!</p></div></div>
-    <div id="kickedModal" class="modal-overlay hidden" style="z-index: 999999;"><div class="modal-content glass-container" style="text-align: center;"><div style="font-size: 4rem; margin-bottom: 15px;">🚫</div><h2 class="neon-text" style="color: var(--neon-red);">تم طردك!</h2><p style="color: #ccc; font-size: 1.1rem;">لقد طردك الهوست من الغرفة.</p></div></div>
-    <div id="leftRoomModal" class="modal-overlay hidden" style="z-index: 999999;"><div class="modal-content glass-container" style="text-align: center;"><div style="font-size: 4rem; margin-bottom: 15px;">👋</div><h2 class="neon-text" style="color: var(--neon-blue);">لقد غادرت!</h2><p style="color: #ccc; font-size: 1.1rem;">لقد غادرت الغرفة بنجاح.</p></div></div>
-    <div id="hostLeftModal" class="modal-overlay hidden" style="z-index: 999999;"><div class="modal-content glass-container" style="text-align: center;"><div style="font-size: 4rem; margin-bottom: 15px;">⚠️</div><h2 class="neon-text" style="color: var(--neon-red);">توقفت اللعبة!</h2><p id="hostLeftText" style="color: #ccc; font-size: 1.1rem; line-height: 1.6; margin-bottom: 20px;">لقد تم اغلاق الغرفه لان الهوست غادر الغرفه</p><button id="closeHostLeftBtn" class="btn-create-room" style="width: 100%;">حسناً</button></div></div>
-    <div id="guestWaitingHostModal" class="modal-overlay hidden" style="z-index: 999999;"><div class="modal-content glass-container" style="text-align: center;"><div style="font-size: 4rem; margin-bottom: 15px;">⏳</div><h2 class="neon-text" style="color: var(--neon-blue); margin-bottom: 20px;">الرجاء الانتظار!</h2><p style="color: #ccc; font-size: 1.1rem; line-height: 1.6;">في انتظار الهوستر لإعادة اللعب أو إنهاء اللعبة بالكامل.</p></div></div>
-    <div id="tieBreakerModal" class="modal-overlay hidden" style="backdrop-filter: blur(8px); z-index: 999;"><div class="modal-content glass-container" style="text-align: center;"><div style="font-size: 4rem; margin-bottom: 15px;">⚖️</div><h2 class="neon-text" style="margin-bottom: 20px; color: var(--neon-red);">تعادل في التصويت!</h2><p style="color: #ccc; font-size: 1.1rem; line-height: 1.6;">تعادل كل من: <span id="tiedPlayersNames" style="color: #fff; font-weight: bold;"></span></p><p style="color: var(--neon-blue); font-size: 1.2rem; margin-top: 15px;">سيتم إعادة التصويت مرة أخرى خلال</p><div id="tieTimer" style="font-size: 3rem; color: var(--neon-green); font-weight: bold; margin-top: 10px; text-shadow: 0 0 15px var(--neon-green);">12</div></div></div>
+    <div id="generalSettingsModal" class="modal-overlay hidden" style="z-index: 10000;"><div class="modal-content glass-container"><h2 class="neon-text" style="margin-bottom: 25px; color: #00f3ff; text-shadow: 0 0 15px #00f3ff;">الإعدادات ⚙️</h2><div class="toggle-switch-container"><span style="color: #fff; font-size: 1.1rem; font-weight: bold;">زر المغادرة (للضيوف)</span><button id="toggleLeaveBtn" class="toggle-btn active">مفعل ✔️</button></div><button id="closeGeneralSettingsBtn" class="btn-close-modal" style="margin-top: 30px; width: 100%;">إغلاق</button></div></div>
+    <div id="hostSettingsModal" class="modal-overlay hidden"><div class="modal-content glass-container"><h2 class="neon-text" style="margin-bottom: 25px; color: #00f3ff; text-shadow: 0 0 15px #00f3ff;">إدارة اللاعبين 👥</h2><div id="modalPlayersList" class="modal-players-list"></div><button id="restartGameBtn" class="btn-restart-game" disabled style="width: 100%; margin-top: 15px;">إعادة اللعب 🔄</button><button id="closeModalBtn" class="btn-close-modal" style="margin-top: 15px; width: 100%;">إغلاق</button></div></div>
+    <div id="invalidRoomModal" class="modal-overlay hidden" style="z-index: 999999; background: #030712;"><div class="modal-content glass-container" style="text-align: center;"><div style="font-size: 4rem; margin-bottom: 15px;">❌</div><h2 class="neon-text" style="color: #ff0055;">عذراً!</h2><p id="errorMsgText" style="color: #ccc; font-size: 1.1rem;">الغرفة دي مش موجودة أو الهوست قفل اللعبة!</p></div></div>
+    <div id="kickedModal" class="modal-overlay hidden" style="z-index: 999999;"><div class="modal-content glass-container" style="text-align: center;"><div style="font-size: 4rem; margin-bottom: 15px;">🚫</div><h2 class="neon-text" style="color: #ff0055;">تم طردك!</h2><p style="color: #ccc; font-size: 1.1rem;">لقد طردك الهوست من الغرفة.</p></div></div>
+    <div id="leftRoomModal" class="modal-overlay hidden" style="z-index: 999999;"><div class="modal-content glass-container" style="text-align: center;"><div style="font-size: 4rem; margin-bottom: 15px;">👋</div><h2 class="neon-text" style="color: #00f3ff;">لقد غادرت!</h2><p style="color: #ccc; font-size: 1.1rem;">لقد غادرت الغرفة بنجاح.</p></div></div>
+    <div id="hostLeftModal" class="modal-overlay hidden" style="z-index: 999999;"><div class="modal-content glass-container" style="text-align: center;"><div style="font-size: 4rem; margin-bottom: 15px;">⚠️</div><h2 class="neon-text" style="color: #ff0055;">توقفت اللعبة!</h2><p id="hostLeftText" style="color: #ccc; font-size: 1.1rem; line-height: 1.6; margin-bottom: 20px;">لقد تم اغلاق الغرفه لان الهوست غادر الغرفه</p><button id="closeHostLeftBtn" class="btn-create-room" style="width: 100%;">حسناً</button></div></div>
+    <div id="guestWaitingHostModal" class="modal-overlay hidden" style="z-index: 999999;"><div class="modal-content glass-container" style="text-align: center;"><div style="font-size: 4rem; margin-bottom: 15px;">⏳</div><h2 class="neon-text" style="color: #00f3ff; margin-bottom: 20px;">الرجاء الانتظار!</h2><p style="color: #ccc; font-size: 1.1rem; line-height: 1.6;">في انتظار الهوستر لإعادة اللعب أو إنهاء اللعبة بالكامل.</p></div></div>
+    <div id="tieBreakerModal" class="modal-overlay hidden" style="backdrop-filter: blur(8px); z-index: 999;"><div class="modal-content glass-container" style="text-align: center;"><div style="font-size: 4rem; margin-bottom: 15px;">⚖️</div><h2 class="neon-text" style="margin-bottom: 20px; color: #ff0055;">تعادل في التصويت!</h2><p style="color: #ccc; font-size: 1.1rem; line-height: 1.6;">تعادل كل من: <span id="tiedPlayersNames" style="color: #fff; font-weight: bold;"></span></p><p style="color: #00f3ff; font-size: 1.2rem; margin-top: 15px;">سيتم إعادة التصويت مرة أخرى خلال</p><div id="tieTimer" style="font-size: 3rem; color: #00ff88; font-weight: bold; margin-top: 10px; text-shadow: 0 0 15px #00ff88;">12</div></div></div>
     <div id="votingResultModal" class="modal-overlay hidden" style="backdrop-filter: blur(8px);"><div class="modal-content glass-container" style="text-align: center;"><div id="votingResultIcon" style="font-size: 4rem; margin-bottom: 15px;">🎭</div><h2 id="votingResultTitle" class="neon-text" style="margin-bottom: 25px;">النتيجة</h2><p id="votingResultDesc1" style="font-size: 1.1rem; color: #ccc; margin-bottom: 10px;"></p><p id="votingResultDesc2" style="font-size: 1.1rem; color: #ccc; margin-bottom: 25px;"></p><button id="spyProceedBtn" class="btn-start-game hidden" style="width: 100%;">تخمين الكلمة 🧠</button></div></div>
-    <div id="finalResultModal" class="modal-overlay hidden" style="backdrop-filter: blur(10px); z-index: 999;"><div class="modal-content glass-container" style="text-align: center;"><h2 class="neon-text" style="margin-bottom: 25px;">نتيجة الجولة 🏁</h2><p id="finalResultText1" style="font-size: 1.1rem; margin-bottom: 10px;"></p><p id="finalResultText2" style="font-size: 1.4rem; color: var(--neon-blue); font-weight: bold; margin-bottom: 12px;"></p><p id="finalResultText3" style="font-size: 1.1rem; margin-bottom: 10px;"></p><p id="finalResultText4" style="font-size: 1.3rem; color: var(--neon-green); font-weight: bold; margin-bottom: 25px;"></p><button id="finalOkBtn" class="btn-create-room" style="width: 100%;">حسناً 👍</button></div></div>
+    <div id="finalResultModal" class="modal-overlay hidden" style="backdrop-filter: blur(10px); z-index: 999;"><div class="modal-content glass-container" style="text-align: center;"><h2 class="neon-text" style="margin-bottom: 25px; color: #00f3ff;">نتيجة الجولة 🏁</h2><p id="finalResultText1" style="font-size: 1.1rem; margin-bottom: 10px;"></p><p id="finalResultText2" style="font-size: 1.4rem; color: #00f3ff; font-weight: bold; margin-bottom: 12px;"></p><p id="finalResultText3" style="font-size: 1.1rem; margin-bottom: 10px;"></p><p id="finalResultText4" style="font-size: 1.3rem; color: #00ff88; font-weight: bold; margin-bottom: 25px;"></p><button id="finalOkBtn" class="btn-create-room" style="width: 100%;">حسناً 👍</button></div></div>
 
     <div class="glass-container" id="mainContainer">
         
@@ -136,7 +131,7 @@
         <div id="gameScreen" class="screen hidden">
             <div class="avatar-glow" id="roleIcon">🎭</div>
             <h2 class="game-main-title rgb-title" id="roleTitle" style="margin-bottom: 20px;">...</h2>
-            <p id="categoryTitle" class="hidden" style="color: var(--neon-blue); font-size: 1.4rem; font-weight: bold; margin-top: -10px; margin-bottom: 20px; text-shadow: 0 0 10px rgba(0, 243, 255, 0.5);">التصنيف: ...</p>
+            <p id="categoryTitle" class="hidden" style="color: #00f3ff; font-size: 1.4rem; font-weight: bold; margin-top: -10px; margin-bottom: 20px; text-shadow: 0 0 10px rgba(0, 243, 255, 0.5);">التصنيف: ...</p>
             <div style="background: rgba(0,0,0,0.5); padding: 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 25px;">
                 <p style="color: #ccc; font-size: 1.1rem; margin-bottom: 12px;">ابحثوا عن الجاسوس!</p>
                 <p style="color: #64748b; font-size: 0.9rem; line-height: 1.5;">تناقشوا الآن عبر الصوت واكتشفوا من لا يعرف الكلمة.</p>
@@ -146,7 +141,7 @@
 
         <div id="votingScreen" class="screen hidden">
             <h2 class="game-main-title rgb-title" style="margin-bottom: 5px;">وقت التصويت!</h2>
-            <p style="color: var(--neon-blue); font-size: 1.3rem; font-weight: bold; margin-bottom: 20px;" id="voteCounter">0/0</p>
+            <p style="color: #00f3ff; font-size: 1.3rem; font-weight: bold; margin-bottom: 20px;" id="voteCounter">0/0</p>
             <div class="live-log-container" id="liveVoteLog"><div style="color: #64748b; text-align: center; margin-top: 45px;">سجل التصويت المباشر...</div></div>
             <div class="voting-grid" id="votingGrid"></div>
         </div>
@@ -154,7 +149,7 @@
         <div id="guessingScreen" class="screen hidden">
             <h2 class="game-main-title rgb-title" style="margin-bottom: 5px;">مرحلة التخمين</h2>
             <p style="color: #ccc; font-size: 0.95rem; margin-bottom: 10px;" id="guessingSubtitle">الجاسوس يبحث عن الكلمة الصحيحة...</p>
-            <div id="spyTimer" style="color: var(--neon-red); font-size: 2rem; font-weight: bold; text-align: center; margin-bottom: 15px; text-shadow: 0 0 10px var(--neon-red);">30</div>
+            <div id="spyTimer" style="color: #ff0055; font-size: 2rem; font-weight: bold; text-align: center; margin-bottom: 15px; text-shadow: 0 0 10px #ff0055;">30</div>
             <div class="words-grid" id="wordsGrid"></div>
             <button id="confirmGuessBtn" class="btn-start-game active-start hidden" style="margin-top: 25px; width: 100%;">تأكيد الاختيار ✔️</button>
         </div>

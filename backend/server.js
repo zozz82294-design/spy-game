@@ -113,8 +113,6 @@ function handlePlayerLeave(roomId, playerId) {
     if (rooms[roomId]) {
         io.to(roomId).emit('updatePlayers', Object.values(rooms[roomId].players));
         if (Object.keys(rooms[roomId].players).length === 0) { cleanupRoom(roomId); return; }
-        
-        // 🔥 ده الإصلاح العظيم: لو حد خرج وقت التصويت، النتيجة هتتحسب من غيره فوراً
         if (wasVoting && !gameAborted) {
             if (rooms[roomId].votes[playerId]) delete rooms[roomId].votes[playerId];
             const totalVotes = Object.keys(rooms[roomId].votes).length; const remainingPlayersCount = Object.keys(rooms[roomId].players).length;
@@ -129,12 +127,17 @@ io.on('connection', (socket) => {
     socket.on('createRoom', (data) => {
         try {
             const roomId = data.roomId; const playerId = data.playerId; 
+            // 🔥 هنا بنستقبل اسم الهوست المحفوظ أو بنحط "𝐒𝐀𝐒𝐔𝐊𝐄" كافتراضي
+            const hostName = data.name || '𝐒𝐀𝐒𝐔𝐊𝐄';
+            
             socket.join(roomId); socket.roomId = roomId; socket.playerId = playerId;
             
             if (!rooms[roomId]) { rooms[roomId] = { players: {}, gameState: 'waiting', word: '', category: '', spyId: null, votes: {}, guessingWords: [], guessTimer: null, tieTimer: null, guessEndTime: 0, featureVotes: { hints: [], questions: [] } }; }
             
             if (rooms[roomId].players[playerId] && rooms[roomId].players[playerId].disconnectTimeout) { clearTimeout(rooms[roomId].players[playerId].disconnectTimeout); rooms[roomId].players[playerId].disconnectTimeout = null; }
-            const existingName = rooms[roomId].players[playerId] ? rooms[roomId].players[playerId].name : '𝐒𝐀𝐒𝐔𝐊𝐄';
+            
+            // 🔥 تطبيق اسم الهوست الجديد
+            const existingName = rooms[roomId].players[playerId] ? rooms[roomId].players[playerId].name : hostName;
             rooms[roomId].players[playerId] = { id: playerId, socketId: socket.id, name: existingName, isHost: true };
             io.to(roomId).emit('updatePlayers', Object.values(rooms[roomId].players));
             
@@ -246,14 +249,13 @@ io.on('connection', (socket) => {
         } catch(e){}
     });
 
-    // 🔥 إصلاح جلتش زرار التصويت: بياخد رقم الأوضة كاحتياطي عشان لو النت رمش
     socket.on('startVotingPhase', (fallbackRoomId) => { 
         try { 
             let roomId = socket.roomId || fallbackRoomId;
             if (!roomId) { for (const r in rooms) { if (rooms[r].players[socket.playerId]) { roomId = r; socket.roomId = r; break; } } }
             if(roomId && rooms[roomId]) { 
                 rooms[roomId].gameState = 'voting'; 
-                rooms[roomId].votes = {}; // تصفير الأصوات القديمة إجبارياً
+                rooms[roomId].votes = {}; 
                 if(rooms[roomId].tieTimer) clearTimeout(rooms[roomId].tieTimer);
                 io.to(roomId).emit('votingStarted', Object.values(rooms[roomId].players)); 
             } 
@@ -304,7 +306,6 @@ io.on('connection', (socket) => {
         try { 
             const roomId = socket.roomId; const playerId = socket.playerId; 
             if (roomId && rooms[roomId] && rooms[roomId].players[playerId]) { 
-                // 🔥 لو حد قفل اللعبة، هيتشال من الحسبة بعد 7 ثواني بالظبط عشان التصويت ميعلقش
                 rooms[roomId].players[playerId].disconnectTimeout = setTimeout(() => { handlePlayerLeave(roomId, playerId); }, 7000); 
             } 
         } catch(e){} 

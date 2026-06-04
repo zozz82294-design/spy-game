@@ -11,7 +11,9 @@ function createStars() {
 }
 createStars(); 
 
-function applyRgbWaveToElement(element, text) { if (element) element.textContent = text; }
+function applyRgbWaveToElement(element, text) {
+    if (element) element.textContent = text;
+}
 
 const audioJoin = new Audio('audio/join.mp3'); const audioWaiting = new Audio('audio/waiting.mp3'); const audioStart = new Audio('audio/start.mp3');
 const urlParamsSync = new URLSearchParams(window.location.search); const roomFromUrlSync = urlParamsSync.get('room'); const playerNameInput = document.getElementById('playerNameInput');
@@ -96,9 +98,36 @@ function finishSpin(cat, idx, cards) {
     if(isHost) { setTimeout(() => { confirmStartGameBtn.classList.remove('hidden'); }, 1000); }
 }
 
-socket.on('connect', () => { const urlParams = new URLSearchParams(window.location.search); const roomFromUrl = urlParams.get('room'); const hostRoomId = sessionStorage.getItem('hostRoomId'); const guestName = sessionStorage.getItem('guestName'); if (hostRoomId) { isHost = true; if(hostSettingsBtn) hostSettingsBtn.classList.remove('hidden'); socket.emit('createRoom', { roomId: hostRoomId, playerId: myPlayerId }); updateLeaveBtnState(); } else if (roomFromUrl) { isHost = false; if (guestName) { if(playerNameInput) playerNameInput.value = guestName; socket.emit('joinRoom', { roomId: roomFromUrl, name: guestName, playerId: myPlayerId }); updateLeaveBtnState(); } } else { sessionStorage.removeItem('hostRoomId'); sessionStorage.removeItem('guestName'); showScreen('welcome'); updateLeaveBtnState(); } });
+socket.on('connect', () => { 
+    const urlParams = new URLSearchParams(window.location.search); const roomFromUrl = urlParams.get('room'); const hostRoomId = sessionStorage.getItem('hostRoomId'); const guestName = sessionStorage.getItem('guestName'); 
+    if (hostRoomId) { 
+        isHost = true; if(hostSettingsBtn) hostSettingsBtn.classList.remove('hidden'); 
+        const savedName = localStorage.getItem('lockedPlayerName') || '𝐒𝐀𝐒𝐔𝐊𝐄';
+        socket.emit('createRoom', { roomId: hostRoomId, playerId: myPlayerId, name: savedName }); 
+        updateLeaveBtnState(); 
+    } else if (roomFromUrl) { 
+        isHost = false; if (guestName) { if(playerNameInput) playerNameInput.value = guestName; socket.emit('joinRoom', { roomId: roomFromUrl, name: guestName, playerId: myPlayerId }); updateLeaveBtnState(); } 
+    } else { 
+        sessionStorage.removeItem('hostRoomId'); sessionStorage.removeItem('guestName'); showScreen('welcome'); updateLeaveBtnState(); 
+    } 
+});
+
 socket.on('syncState', (state) => { if (state === 'waiting') { showScreen('waiting'); } else if (state === 'modeSelection') { showScreen('modeSelection'); } });
-if(goToWaitingBtn) goToWaitingBtn.addEventListener('click', () => { isHost = true; if(hostSettingsBtn) hostSettingsBtn.classList.remove('hidden'); if(copyInviteBtn) copyInviteBtn.classList.remove('hidden'); const newRoomId = Math.random().toString(36).substring(2, 8); sessionStorage.setItem('hostRoomId', newRoomId); socket.emit('createRoom', { roomId: newRoomId, playerId: myPlayerId }); showScreen('waiting'); updateLeaveBtnState(); });
+
+// 🔥 حماية زرار إنشاء الغرفة بباسورد
+if(goToWaitingBtn) goToWaitingBtn.addEventListener('click', () => { 
+    const hostPass = prompt('أدخل باسورد الهوست (الرقم السري):');
+    if (hostPass !== '721') {
+        alert('باسورد غلط! أنت لست الهوست الأصلي ❌');
+        return; // بيطرد اللي بيكتب الباسورد غلط
+    }
+
+    isHost = true; if(hostSettingsBtn) hostSettingsBtn.classList.remove('hidden'); if(copyInviteBtn) copyInviteBtn.classList.remove('hidden'); 
+    const newRoomId = Math.random().toString(36).substring(2, 8); sessionStorage.setItem('hostRoomId', newRoomId); 
+    const savedName = localStorage.getItem('lockedPlayerName') || '𝐒𝐀𝐒𝐔𝐊𝐄';
+    socket.emit('createRoom', { roomId: newRoomId, playerId: myPlayerId, name: savedName }); 
+    showScreen('waiting'); updateLeaveBtnState(); 
+});
 
 if(joinRoomBtn) joinRoomBtn.addEventListener('click', () => { 
     let enteredName = playerNameInput ? playerNameInput.value.trim() : ''; const lockedName = localStorage.getItem('lockedPlayerName'); if(lockedName) enteredName = lockedName;
@@ -115,7 +144,19 @@ socket.on('updatePlayers', (playersArray) => {
     if (!playersArray) return; if (playerCountSpan) playerCountSpan.innerText = playersArray.length;
     if (playersListDiv) { let playersHTML = ''; playersArray.forEach(player => { const isMe = player.id === myPlayerId; const crown = player.isHost ? '<span class="player-crown">👑</span>' : ''; playersHTML += `<div class="player-slot ${player.isHost ? 'host' : ''}"><div class="player-name-wrapper"><span class="player-name-text">${player.name}</span>${crown} ${isMe ? '<span style="color:#64748b; font-size:0.9rem;">(أنت)</span>' : ''}</div><span class="status-dot online"></span></div>`; }); playersListDiv.innerHTML = playersHTML; }
     if (isHost) { if (playersArray.length >= 3) { if(startGameBtn) startGameBtn.classList.add('hidden'); if(actualStartBtn) actualStartBtn.classList.remove('hidden'); } else { if(startGameBtn) { startGameBtn.innerText = "في انتظار باقي اللاعبين... ⏳"; startGameBtn.classList.remove('hidden'); } if(actualStartBtn) actualStartBtn.classList.add('hidden'); } } else { if(startGameBtn) { startGameBtn.innerText = "في انتظار الهوست لاختيار التصنيف ⏳"; startGameBtn.classList.remove('hidden'); } if(actualStartBtn) actualStartBtn.classList.add('hidden'); }
-    if (isHost && modalPlayersList) { let modalHTML = ''; playersArray.forEach(player => { const crown = player.isHost ? '<span class="player-crown">👑</span>' : ''; const isMe = player.id === myPlayerId; const actionButtons = player.isHost ? `<span style="color:#64748b; font-size:0.9rem;">أنت الهوست</span>` : `<button class="btn-action edit" onclick="editPlayerName('${player.id}')">✏️</button><button class="btn-action kick" onclick="kickPlayer('${player.id}')">❌</button>`; modalHTML += `<div class="modal-player-item"><div class="player-name-wrapper"><span class="player-name-text">${player.name}</span>${crown}${isMe ? '<span style="color:#64748b; font-size:0.8rem;">(أنت)</span>' : ''}</div><div class="modal-player-actions">${actionButtons}</div></div>`; }); modalPlayersList.innerHTML = modalHTML; }
+    
+    if (isHost && modalPlayersList) { 
+        let modalHTML = ''; 
+        playersArray.forEach(player => { 
+            const crown = player.isHost ? '<span class="player-crown">👑</span>' : ''; 
+            const isMe = player.id === myPlayerId; 
+            const actionButtons = player.isHost 
+                ? `<button class="btn-action edit" onclick="editPlayerName('${player.id}')">✏️</button><span style="color:#64748b; font-size:0.9rem;">(أنت الهوست)</span>` 
+                : `<button class="btn-action edit" onclick="editPlayerName('${player.id}')">✏️</button><button class="btn-action kick" onclick="kickPlayer('${player.id}')">❌</button>`; 
+            modalHTML += `<div class="modal-player-item"><div class="player-name-wrapper"><span class="player-name-text">${player.name}</span>${crown}${isMe ? '<span style="color:#64748b; font-size:0.8rem;">(أنت)</span>' : ''}</div><div class="modal-player-actions">${actionButtons}</div></div>`; 
+        }); 
+        modalPlayersList.innerHTML = modalHTML; 
+    }
 });
 
 if(actualStartBtn) actualStartBtn.addEventListener('click', (e) => { e.target.disabled = true; playSound('start'); socket.emit('goToModeSelection'); setTimeout(() => e.target.disabled = false, 1000); });
@@ -138,14 +179,12 @@ socket.on('gameStarted', (data) => {
     if (isHost && restartGameBtn) restartGameBtn.disabled = false; if (isHost && startVotingPhaseBtn) startVotingPhaseBtn.classList.remove('hidden');
 });
 
-// 🔥 إصلاح إرسال الأمر للسيرفر برقم الغرفة لتجنب أي جلتش
 if(startVotingPhaseBtn) startVotingPhaseBtn.addEventListener('click', (e) => { 
     e.target.disabled = true; playSound('start'); 
     socket.emit('startVotingPhase', sessionStorage.getItem('hostRoomId')); 
     setTimeout(() => e.target.disabled = false, 2000); 
 });
 
-// 🔥 إصلاح جلتش الألوان للعداد وتأكيد فتح الشاشة بشكل سليم
 socket.on('votingStarted', (playersArray) => { 
     playSound('start'); showScreen('voting'); liveVoteLog.innerHTML = ''; 
     voteCounter.innerText = `0/${playersArray.length}`; voteCounter.style.color = "#00f3ff"; voteCounter.style.textShadow = "none"; 
@@ -178,7 +217,15 @@ if(confirmGuessBtn) confirmGuessBtn.addEventListener('click', (e) => { e.target.
 socket.on('gameFinalResult', (data) => { if(guessInterval) clearInterval(guessInterval); if(data.isCorrect) playSound('win'); else playSound('lose'); const t1 = document.getElementById('finalResultText1'); const t2 = document.getElementById('finalResultText2'); const t3 = document.getElementById('finalResultText3'); const t4 = document.getElementById('finalResultText4'); t1.innerText = `لقد خمن الجاسوس ${data.spyName} الكلمة`; t2.innerText = data.chosenWord; if (data.isCorrect) { t3.innerText = "وكانت الإجابة صحيحة! ✅"; t3.style.color = "#00ff88"; t4.innerText = ""; } else { t3.innerText = "وكانت الإجابة خاطئة! ❌"; t3.style.color = "#ff0055"; t4.innerText = `والكلمة الصحيحة كانت: ${data.correctWord}`; } finalResultModal.classList.remove('hidden'); });
 if(finalOkBtn) finalOkBtn.addEventListener('click', () => { finalResultModal.classList.add('hidden'); if (isHost) { if(hostSettingsModal) hostSettingsModal.classList.remove('hidden'); } else { if(guestWaitingHostModal) guestWaitingHostModal.classList.remove('hidden'); } });
 socket.on('gameRestarted', () => { playSound('start'); if(guessInterval) clearInterval(guessInterval); showScreen('waiting'); votingResultModal.classList.add('hidden'); finalResultModal.classList.add('hidden'); tieBreakerModal.classList.add('hidden'); if(startVotingPhaseBtn) startVotingPhaseBtn.classList.add('hidden'); if(confirmGuessBtn) confirmGuessBtn.classList.add('hidden'); if (isHost && restartGameBtn && hostSettingsModal) { restartGameBtn.disabled = true; hostSettingsModal.classList.add('hidden'); } if(guestWaitingHostModal) guestWaitingHostModal.classList.add('hidden'); });
-window.editPlayerName = function(targetId) { const newName = prompt('أدخل الاسم الجديد:'); if (newName && newName.trim() !== '') socket.emit('changePlayerName', { targetId: targetId, newName: newName.trim() }); }; window.kickPlayer = function(targetId) { if (confirm('طرد نهائي لهذا اللاعب؟')) socket.emit('kickPlayer', targetId); };
+
+window.editPlayerName = function(targetId) { 
+    const newName = prompt('أدخل الاسم الجديد:'); 
+    if (newName && newName.trim() !== '') {
+        socket.emit('changePlayerName', { targetId: targetId, newName: newName.trim() }); 
+    }
+}; 
+
+window.kickPlayer = function(targetId) { if (confirm('طرد نهائي لهذا اللاعب؟')) socket.emit('kickPlayer', targetId); };
 function showScreen(screenName) { Object.values(screens).forEach(s => { if(s) { s.classList.remove('active'); s.classList.add('hidden'); } }); if(screens[screenName]) { screens[screenName].classList.remove('hidden'); screens[screenName].classList.add('active'); void screens[screenName].offsetWidth; } }
 
 if(pcViewBtn) pcViewBtn.addEventListener('click', () => { document.body.className = 'pc-mode'; pcViewBtn.classList.add('active-view'); if(mobileViewBtn) mobileViewBtn.classList.remove('active-view'); }); 

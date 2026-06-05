@@ -9,6 +9,40 @@ if (navEntries.length > 0 && navEntries[0].type !== "reload") {
 
 const socket = io();
 
+// 🔥 بنك الأسئلة الذكية (أسئلة عميقة تلخبط الجاسوس وتكشفه)
+const cleverQuestions = [
+    "متى كانت آخر مرة استخدمت فيها الحاجة دي؟", "هل الحجم بيفرق في جودته أو سعره؟", 
+    "موجود في كل بيت ولا بيوت معينة؟", "سعره غالي ولا في متناول الجميع؟", 
+    "هل الأطفال بيحبوه ولا للكبار بس؟", "لونه بيأثر على اختيارك ليه؟", 
+    "بتفضل تستخدمه لوحدك ولا مع حد؟", "هل ممكن نستغنى عنه بسهولة في حياتنا؟", 
+    "بيتأثر بالحرارة أو الجو؟", "بيفضل معاك فترة طويلة ولا بيستهلك/بيبوظ بسرعة؟", 
+    "ممكن تلاقيه في الشارع عادي؟", "هل ليه ريحة أو صوت مميز؟", 
+    "ينفع نهديه لحد في مناسبة؟", "طريقة استخدامه محتاجة مجهود بدني؟", 
+    "مصنوع من مواد طبيعية ولا صناعية؟", "هل هو حاجة أساسية ولا رفاهية؟", 
+    "حجمه أكبر من كف الإيد؟", "ينفع تحطه في جيبك؟", 
+    "هل بيحتاج كهربا أو طاقة عشان يشتغل؟", "لو ضاع منك هتزعل عليه أو تدور عليه كتير؟", 
+    "بتشوفه كل يوم بعينك؟", "ممكن تشتريه من السوبر ماركت؟", 
+    "هل بيعتبر اختراع قديم ولا حديث؟", "بيستخدم في الشتاء أكتر ولا الصيف؟", 
+    "تقدر تعمله بنفسك في البيت؟"
+];
+
+// 🔥 بنك الهينتات العميقة (تلميحات غامضة من غير ما تقول الكلمة)
+const cleverHints = [
+    "حاجة مألوفة جداً وبنشوفها كتير.", "استخدامه معروف للكل ومفيش حد ميعرفوش.", 
+    "ممكن ييجي بألوان وأشكال مختلفة.", "مش كل الناس بتهتم بيه بنفس الدرجة.", 
+    "موجود من زمان جداً وتطور مع الوقت.", "ليه أكتر من نوع وماركة.", 
+    "صعب تتلخبط فيه أو تديه اسم تاني.", "وزنه غالباً مش بيكون مشكلة.", 
+    "بيعبر عن حاجة في الروتين اليومي.", "ممكن يخلص أو يتغير مع الاستخدام المستمر.", 
+    "مفيش غنى عنه في أوقات معينة.", "بيدي طابع خاص أو بيسهل خطوة مهمة.", 
+    "الناس بتختلف في تفضيلها ليه.", "ممكن يكون غالي وممكن يكون رخيص جداً.", 
+    "موجود حوالينا أكتر مما بنتخيل.", "بيحتاج مكان معين عشان نحتفظ بيه.", 
+    "طريقة تصنيعه بقت أسهل من زمان.", "بيكون مفيد جداً وقت الزنقة.", 
+    "ممكن تلاقيه في شنطتك أو درج مكتبك.", "بيعتبر من الأساسيات عند بعض الناس.", 
+    "لو مش موجود بنحس بنقص بسيط.", "ممكن تتشاركه مع حد وممكن لأ.", 
+    "مش بيحتاج مهارة خاصة عشان تستخدمه.", "في منه أحجام تناسب كل الاحتياجات.", 
+    "بنشتريه وإحنا متأكدين إحنا عايزينه ليه."
+];
+
 function createStars() {
     const container = document.getElementById('starsContainer'); container.innerHTML = '';
     for (let i = 0; i < 75; i++) {
@@ -59,12 +93,16 @@ const hostLeftModal = document.getElementById('hostLeftModal'); const kickedModa
 const welcomeScreen = document.getElementById('welcomeScreen'); const gameLayout = document.getElementById('gameLayout');
 const pcViewBtn = document.getElementById('pcViewBtn'); const mobileViewBtn = document.getElementById('mobileViewBtn'); const goToWaitingBtn = document.getElementById('goToWaitingBtn'); const joinRoomBtn = document.getElementById('joinRoomBtn'); const copyInviteBtn = document.getElementById('copyInviteBtn'); const playerCountSpan = document.getElementById('playerCount'); const playersListDiv = document.getElementById('playersList'); const startGameBtn = document.getElementById('startGameBtn'); const actualStartBtn = document.getElementById('actualStartBtn'); const hostSettingsBtn = document.getElementById('hostSettingsBtn'); const leaveRoomBtn = document.getElementById('leaveRoomBtn'); const destroyRoomBtn = document.getElementById('destroyRoomBtn'); const confirmStartGameBtn = document.getElementById('confirmStartGameBtn'); const startVotingPhaseBtn = document.getElementById('startVotingPhaseBtn'); const voteCounter = document.getElementById('voteCounter'); const liveVoteLog = document.getElementById('liveVoteLog'); const votingGrid = document.getElementById('votingGrid'); const spyProceedBtn = document.getElementById('spyProceedBtn'); const wordsGrid = document.getElementById('wordsGrid'); const confirmGuessBtn = document.getElementById('confirmGuessBtn'); const finalOkBtn = document.getElementById('finalOkBtn');
 
-const hostPasswordModal = document.getElementById('hostPasswordModal');
-const hostPasswordInput = document.getElementById('hostPasswordInput');
-const confirmHostPasswordBtn = document.getElementById('confirmHostPasswordBtn');
-const cancelHostPasswordBtn = document.getElementById('cancelHostPasswordBtn');
-const wrongPasswordModal = document.getElementById('wrongPasswordModal');
-const closeWrongPasswordBtn = document.getElementById('closeWrongPasswordBtn');
+const hostPasswordModal = document.getElementById('hostPasswordModal'); const hostPasswordInput = document.getElementById('hostPasswordInput'); const confirmHostPasswordBtn = document.getElementById('confirmHostPasswordBtn'); const cancelHostPasswordBtn = document.getElementById('cancelHostPasswordBtn'); const wrongPasswordModal = document.getElementById('wrongPasswordModal'); const closeWrongPasswordBtn = document.getElementById('closeWrongPasswordBtn');
+
+// 🔥 المتغيرات الخاصة بشاشة الاقتراحات
+const helperButtons = document.getElementById('helperButtons');
+const btnSuggestHints = document.getElementById('btnSuggestHints');
+const btnSuggestQuestions = document.getElementById('btnSuggestQuestions');
+const suggestionsModal = document.getElementById('suggestionsModal');
+const suggestionsList = document.getElementById('suggestionsList');
+const suggestionsTitle = document.getElementById('suggestionsTitle');
+const closeSuggestionsBtn = document.getElementById('closeSuggestionsBtn');
 
 let tieInterval; let isHost = false; let myRoleData = null; let selectedSpyWord = null; let guessInterval;
 
@@ -86,6 +124,38 @@ function showScreen(screenName) {
         if(target) { target.classList.remove('hidden'); }
     }
 }
+
+// 🔥 دالة سحب وعرض الاقتراحات الـ 10 العشوائية
+function showSuggestions(type) {
+    suggestionsList.innerHTML = '';
+    let sourceArray = type === 'hints' ? cleverHints : cleverQuestions;
+    suggestionsTitle.innerText = type === 'hints' ? "💡 هينتات عميقة" : "❓ أسئلة ذكية";
+    suggestionsTitle.style.color = type === 'hints' ? "#00f3ff" : "#00ff88";
+    suggestionsTitle.style.textShadow = type === 'hints' ? "0 0 15px #00f3ff" : "0 0 15px #00ff88";
+    
+    // سحب 10 عناصر عشوائية من المصفوفة
+    let shuffled = sourceArray.sort(() => 0.5 - Math.random());
+    let selected = shuffled.slice(0, 10);
+    
+    selected.forEach(item => {
+        const li = document.createElement('li');
+        li.style.marginBottom = "10px";
+        li.style.padding = "12px";
+        li.style.background = "rgba(255,255,255,0.05)";
+        li.style.border = "1px solid rgba(255,255,255,0.1)";
+        li.style.borderRadius = "8px";
+        li.className = "suggestion-item"; // ستايل الهوفر
+        li.innerText = item;
+        suggestionsList.appendChild(li);
+    });
+    
+    suggestionsModal.classList.remove('hidden');
+    playSound('click');
+}
+
+if(btnSuggestHints) btnSuggestHints.addEventListener('click', () => showSuggestions('hints'));
+if(btnSuggestQuestions) btnSuggestQuestions.addEventListener('click', () => showSuggestions('questions'));
+if(closeSuggestionsBtn) closeSuggestionsBtn.addEventListener('click', () => suggestionsModal.classList.add('hidden'));
 
 function renderCategories() {
     const catGrid = document.getElementById('categoriesGrid'); if(!catGrid) return; catGrid.innerHTML = '';
@@ -236,7 +306,17 @@ socket.on('gameStarted', (data) => {
     if(data) { 
         audioStart.play().catch(e => console.log(e));
         myRoleData = data; const roleIcon = document.getElementById('roleIcon'); const roleTitle = document.getElementById('roleTitle'); const categoryTitle = document.getElementById('categoryTitle'); 
-        if(data.isSpy) { roleIcon.innerText = "🕵️‍♂️"; roleTitle.innerHTML = "<span>أنت الجاسوس!</span>"; } else { roleIcon.innerText = "🎯"; roleTitle.innerHTML = `<span>${data.word}</span>`; }
+        
+        // 🔥 حماية الجاسوس من إنه يشوف أزرار المساعدة
+        if(data.isSpy) { 
+            roleIcon.innerText = "🕵️‍♂️"; 
+            roleTitle.innerHTML = "<span>أنت الجاسوس!</span>"; 
+            if(helperButtons) helperButtons.classList.add('hidden');
+        } else { 
+            roleIcon.innerText = "🎯"; 
+            roleTitle.innerHTML = `<span>${data.word}</span>`; 
+            if(helperButtons) helperButtons.classList.remove('hidden');
+        }
         if(categoryTitle) { categoryTitle.innerText = `التصنيف: ${data.category}`; categoryTitle.classList.remove('hidden'); }
     }
     showScreen('game');
@@ -275,7 +355,6 @@ socket.on('votingEnded', (data) => { const vTitle = document.getElementById('vot
 
 if(spyProceedBtn) spyProceedBtn.addEventListener('click', () => { votingResultModal.classList.add('hidden'); socket.emit('startGuessingPhase'); });
 
-// 🔥 فك تجميد لوحة الكلمات لما جولة التخمين تبدأ
 socket.on('guessingPhaseStarted', (data) => { 
     playSound('start'); votingResultModal.classList.add('hidden'); showScreen('guessing'); 
     document.getElementById('wordsGrid').style.pointerEvents = 'auto'; 
@@ -283,7 +362,6 @@ socket.on('guessingPhaseStarted', (data) => {
     let wordsHTML = ''; data.words.forEach(w => { const onClickAttr = myRoleData.isSpy ? `onclick="selectSpyWord('${w}')"` : ''; wordsHTML += `<div class="word-card" id="word-${w}" ${onClickAttr}>${w}</div>`; }); wordsGrid.innerHTML = wordsHTML; let timeLeft = data.duration; const spyTimerEl = document.getElementById('spyTimer'); if(spyTimerEl) { spyTimerEl.innerText = timeLeft; spyTimerEl.style.color = "#00ff88"; spyTimerEl.style.textShadow = "0 0 10px #00ff88"; } if(guessInterval) clearInterval(guessInterval); guessInterval = setInterval(() => { timeLeft--; if(spyTimerEl) { spyTimerEl.innerText = timeLeft; if(timeLeft <= 10) { spyTimerEl.style.color = "#ff0055"; spyTimerEl.style.textShadow = "0 0 10px #ff0055"; } } if(timeLeft <= 0) clearInterval(guessInterval); }, 1000); 
 });
 
-// 🔥 تجميد الكلمات لو الوقت خلص
 socket.on('spyTimeOut', () => { 
     playSound('lose'); if(guessInterval) clearInterval(guessInterval); 
     document.getElementById('wordsGrid').style.pointerEvents = 'none'; 
@@ -294,7 +372,6 @@ window.selectSpyWord = function(word) { if (!myRoleData.isSpy) return; selectedS
 socket.on('spySelectedWord', (data) => { playSound('vote'); document.querySelectorAll('.word-card').forEach(c => { c.classList.remove('spy-active'); const tag = c.querySelector('.spy-tag'); if(tag) tag.remove(); }); const activeCard = document.getElementById(`word-${data.word}`); if (activeCard) { activeCard.classList.add('spy-active'); activeCard.innerHTML += `<div class="spy-tag">اختارها ${data.spyName}</div>`; } });
 if(confirmGuessBtn) confirmGuessBtn.addEventListener('click', (e) => { e.target.disabled = true; if(selectedSpyWord) socket.emit('spyConfirmWord', selectedSpyWord); setTimeout(() => e.target.disabled = false, 2000); });
 
-// 🔥 تجميد الكلمات فور إعلان النتيجة عشان ميخترش تاني
 socket.on('gameFinalResult', (data) => { 
     if(guessInterval) clearInterval(guessInterval); 
     document.getElementById('wordsGrid').style.pointerEvents = 'none'; 
@@ -302,7 +379,6 @@ socket.on('gameFinalResult', (data) => {
     const t1 = document.getElementById('finalResultText1'); const t2 = document.getElementById('finalResultText2'); const t3 = document.getElementById('finalResultText3'); const t4 = document.getElementById('finalResultText4'); t1.innerText = `لقد خمن الجاسوس ${data.spyName} الكلمة`; t2.innerText = data.chosenWord; if (data.isCorrect) { t3.innerText = "وكانت الإجابة صحيحة! ✅"; t3.style.color = "#00ff88"; t4.innerText = ""; } else { t3.innerText = "وكانت الإجابة خاطئة! ❌"; t3.style.color = "#ff0055"; t4.innerText = `والكلمة الصحيحة كانت: ${data.correctWord}`; } finalResultModal.classList.remove('hidden'); 
 });
 
-// 🔥 عرض شاشة انتظار الهوست بعد ما الضيوف يدوسوا "حسناً" 
 if(finalOkBtn) finalOkBtn.addEventListener('click', () => { 
     finalResultModal.classList.add('hidden'); 
     if (isHost) { 

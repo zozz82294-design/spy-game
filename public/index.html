@@ -95,6 +95,9 @@
         
         .password-input { width: 80%; padding: 15px; font-size: 1.5rem; text-align: center; letter-spacing: 5px; border-radius: 10px; border: 2px solid #00f3ff; background: rgba(0,0,0,0.5); color: #fff; margin-bottom: 20px; outline: none; }
         .password-input:focus { box-shadow: 0 0 15px rgba(0, 243, 255, 0.5); }
+        
+        /* 🔥 أنيميشن بسيط للقائمة المقترحة */
+        .suggestion-item:hover { background: rgba(0, 243, 255, 0.1) !important; border-color: #00f3ff !important; box-shadow: 0 0 10px rgba(0, 243, 255, 0.2); }
     </style>
 </head>
 <body class="mobile-mode">
@@ -121,7 +124,17 @@
         </div>
     </div>
 
-    <!-- 🔥 الشاشات المنبثقة واخدة أعلى Z-Index عشان تغطي اللوحة وتمنع الضغط من تحتها -->
+    <!-- 🔥 شاشة الاقتراحات (الهينتات والأسئلة) -->
+    <div id="suggestionsModal" class="modal-overlay hidden" style="z-index: 9999999;">
+        <div class="modal-content glass-container" style="max-height: 85vh; display: flex; flex-direction: column;">
+            <h2 id="suggestionsTitle" class="neon-text" style="margin-bottom: 15px; text-align: center;">💡 اقتراحات</h2>
+            <div style="flex: 1; overflow-y: auto; padding-right: 5px; text-align: right;">
+                <ul id="suggestionsList" style="list-style: none; padding: 0; margin: 0; color: #ccc; font-size: 1.1rem;"></ul>
+            </div>
+            <button id="closeSuggestionsBtn" style="width: 100%; margin-top: 15px; background: rgba(255, 0, 85, 0.2); border-color: #ff0055;">إغلاق ❌</button>
+        </div>
+    </div>
+
     <div id="hostSettingsModal" class="modal-overlay hidden" style="z-index: 999999;"><div class="modal-content glass-container"><h2 class="neon-text" style="margin-bottom: 25px; color: #00f3ff; text-shadow: 0 0 15px #00f3ff;">إدارة اللاعبين 👥</h2><div id="modalPlayersList" style="max-height:300px; overflow-y:auto;"></div><button id="restartGameBtn" disabled style="width: 100%; margin-top: 15px;">إعادة اللعب 🔄</button><button id="closeModalBtn" style="margin-top: 15px; width: 100%; background: #333; border:none;">إغلاق</button></div></div>
     <div id="invalidRoomModal" class="modal-overlay hidden" style="z-index: 999999;"><div class="modal-content glass-container" style="text-align: center;"><div style="font-size: 4rem; margin-bottom: 15px;">❌</div><h2 class="neon-text" style="color: #ff0055;">عذراً!</h2><p id="errorMsgText" style="color: #ccc; font-size: 1.1rem;">الغرفة دي مش موجودة!</p></div></div>
     <div id="kickedModal" class="modal-overlay hidden" style="z-index: 999999;"><div class="modal-content glass-container" style="text-align: center;"><div style="font-size: 4rem; margin-bottom: 15px;">🚫</div><h2 class="neon-text" style="color: #ff0055;">تم طردك!</h2></div></div>
@@ -130,7 +143,6 @@
     <div id="votingResultModal" class="modal-overlay hidden" style="z-index: 999999;"><div class="modal-content glass-container" style="text-align: center;"><div id="votingResultIcon" style="font-size: 4rem;">🎭</div><h2 id="votingResultTitle" class="neon-text">النتيجة</h2><p id="votingResultDesc1" style="color: #ccc;"></p><p id="votingResultDesc2" style="color: #ccc; margin-bottom: 25px;"></p><button id="spyProceedBtn" class="hidden" style="width: 100%;">تخمين الكلمة 🧠</button></div></div>
     <div id="finalResultModal" class="modal-overlay hidden" style="z-index: 999999;"><div class="modal-content glass-container" style="text-align: center;"><h2 class="neon-text" style="color: #00f3ff;">نتيجة الجولة 🏁</h2><p id="finalResultText1"></p><p id="finalResultText2" style="font-size: 1.4rem; color: #00f3ff; font-weight: bold;"></p><p id="finalResultText3"></p><p id="finalResultText4" style="font-size: 1.3rem; font-weight: bold;"></p><button id="finalOkBtn" style="width: 100%;">حسناً 👍</button></div></div>
     
-    <!-- 🔥 شاشة انتظار الهوست للضيوف (واخدة Z-Index عالي جداً لمنع أي لعب) -->
     <div id="guestWaitingHostModal" class="modal-overlay hidden" style="z-index: 999999;"><div class="modal-content glass-container" style="text-align: center;"><div style="font-size: 4rem; margin-bottom: 15px;">⏳</div><h2 class="neon-text" style="color: #00f3ff; margin-bottom: 20px;">الرجاء الانتظار!</h2><p style="color: #ccc; font-size: 1.1rem; line-height: 1.6;">في انتظار الهوستر لإعادة اللعب أو إنهاء اللعبة بالكامل.</p></div></div>
 
     <div id="welcomeScreen" class="glass-container active">
@@ -174,6 +186,13 @@
                 <h2 class="rgb-title" id="roleTitle" style="margin-bottom: 20px; font-size: 3.5rem;">...</h2>
                 <p id="categoryTitle" class="hidden" style="color: #00f3ff; font-size: 1.5rem; font-weight: bold; margin-bottom: 30px; text-shadow: 0 0 10px rgba(0, 243, 255, 0.5);">التصنيف: ...</p>
                 <p style="color: #ccc; font-size: 1.2rem; margin-bottom: 30px;">تناقشوا عبر الصوت واكتشفوا الجاسوس!</p>
+                
+                <!-- 🔥 أزرار الاقتراحات الجديدة المخفية مبدئياً -->
+                <div id="helperButtons" class="hidden" style="display: flex; gap: 15px; justify-content: center; margin-bottom: 30px; flex-wrap: wrap;">
+                    <button id="btnSuggestHints" style="background: rgba(0, 243, 255, 0.1); border-color: #00f3ff; color: #00f3ff; padding: 12px 25px; font-size: 1.1rem; flex: 1; max-width: 250px;">اقتراح هينتات 💡</button>
+                    <button id="btnSuggestQuestions" style="background: rgba(0, 255, 136, 0.1); border-color: #00ff88; color: #00ff88; padding: 12px 25px; font-size: 1.1rem; flex: 1; max-width: 250px;">اقتراح أسئلة ❓</button>
+                </div>
+
                 <button id="startVotingPhaseBtn" class="hidden" style="width: 80%; font-size: 1.2rem;">بدء التصويت 🗳️</button>
             </div>
 

@@ -127,7 +127,6 @@ io.on('connection', (socket) => {
     socket.on('createRoom', (data) => {
         try {
             const roomId = data.roomId; const playerId = data.playerId; 
-            // 🔥 هنا بنستقبل اسم الهوست المحفوظ أو بنحط "𝐒𝐀𝐒𝐔𝐊𝐄" كافتراضي
             const hostName = data.name || '𝐒𝐀𝐒𝐔𝐊𝐄';
             
             socket.join(roomId); socket.roomId = roomId; socket.playerId = playerId;
@@ -136,7 +135,6 @@ io.on('connection', (socket) => {
             
             if (rooms[roomId].players[playerId] && rooms[roomId].players[playerId].disconnectTimeout) { clearTimeout(rooms[roomId].players[playerId].disconnectTimeout); rooms[roomId].players[playerId].disconnectTimeout = null; }
             
-            // 🔥 تطبيق اسم الهوست الجديد
             const existingName = rooms[roomId].players[playerId] ? rooms[roomId].players[playerId].name : hostName;
             rooms[roomId].players[playerId] = { id: playerId, socketId: socket.id, name: existingName, isHost: true };
             io.to(roomId).emit('updatePlayers', Object.values(rooms[roomId].players));
@@ -306,7 +304,8 @@ io.on('connection', (socket) => {
         try { 
             const roomId = socket.roomId; const playerId = socket.playerId; 
             if (roomId && rooms[roomId] && rooms[roomId].players[playerId]) { 
-                rooms[roomId].players[playerId].disconnectTimeout = setTimeout(() => { handlePlayerLeave(roomId, playerId); }, 7000); 
+                // 🔥 رجعناها 60 ثانية عشان الاستقرار ومحدش يطرد لو النت رمش
+                rooms[roomId].players[playerId].disconnectTimeout = setTimeout(() => { handlePlayerLeave(roomId, playerId); }, 60000); 
             } 
         } catch(e){} 
     });

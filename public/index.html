@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="styles/style.css">
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        * { box-sizing: border-box; } /* عشان المسافات متبوظش الشاشة */
+        * { box-sizing: border-box; }
 
         body, html { 
             font-family: 'Cairo', sans-serif;
@@ -20,80 +20,25 @@
             margin: 0; padding: 0;
         }
 
-        /* 🔥 الماوس الخاص بوضع البي سي فقط */
         body.pc-mode { cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 24 24' fill='%2300f3ff' stroke='%23ffffff' stroke-width='1.5'%3E%3Cpath d='M4 2L20 10L13 13L10 20L4 2Z'/%3E%3C/svg%3E") 4 2, auto !important; }
         body.pc-mode button, body.pc-mode .category-card, body.pc-mode .vote-card, body.pc-mode .word-card, body.pc-mode input, body.pc-mode .general-settings-icon, body.pc-mode .host-settings-icon { cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 24 24' fill='%23ff0055' stroke='%23ffffff' stroke-width='1.5'%3E%3Cpath d='M4 2L20 10L13 13L10 20L4 2Z'/%3E%3C/svg%3E") 4 2, pointer !important; }
 
-        /* الشاشات المنفصلة */
         .glass-container { margin: 20px auto; padding: 25px; max-width: 450px; background: rgba(15, 23, 42, 0.8); border-radius: 15px; border: 1px solid #334155; }
         body.pc-mode .glass-container { max-width: 600px; }
 
-        /* 🔥 تصميم Gartic.io الشامل (السبورة واللاعبين) */
-        .game-wrapper {
-            display: flex;
-            margin: 20px auto;
-            width: 95%;
-        }
+        .game-wrapper { display: flex; margin: 20px auto; width: 95%; }
+        .sidebar { background: rgba(15, 23, 42, 0.9); border: 2px solid #00f3ff; border-radius: 15px; display: flex; flex-direction: column; box-shadow: 0 0 15px rgba(0, 243, 255, 0.1); }
+        .main-board { background: rgba(10, 10, 15, 0.95); border: 3px solid #fff; border-radius: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow-y: auto; box-shadow: inset 0 0 30px rgba(255,255,255,0.05), 0 0 20px rgba(0,0,0,0.5); }
 
-        .sidebar {
-            background: rgba(15, 23, 42, 0.9);
-            border: 2px solid #00f3ff;
-            border-radius: 15px;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 0 0 15px rgba(0, 243, 255, 0.1);
-        }
+        body.pc-mode .game-wrapper { flex-direction: row; max-width: 1200px; height: 85vh; gap: 20px; }
+        body.pc-mode .sidebar { width: 300px; max-height: none; padding: 15px; }
+        body.pc-mode .main-board { flex: 1; padding: 30px; }
 
-        .main-board {
-            background: rgba(10, 10, 15, 0.95);
-            border: 3px solid #fff;
-            border-radius: 15px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            overflow-y: auto;
-            box-shadow: inset 0 0 30px rgba(255,255,255,0.05), 0 0 20px rgba(0,0,0,0.5);
-        }
-
-        /* 💻 وضع الكمبيوتر (PC Mode) */
-        body.pc-mode .game-wrapper {
-            flex-direction: row;
-            max-width: 1200px;
-            height: 85vh;
-            gap: 20px;
-        }
-        body.pc-mode .sidebar {
-            width: 300px;
-            max-height: none;
-            padding: 15px;
-        }
-        body.pc-mode .main-board {
-            flex: 1;
-            padding: 30px;
-        }
-
-        /* 📱 وضع الموبايل (Mobile Mode) */
-        body.mobile-mode .game-wrapper {
-            flex-direction: column;
-            max-width: 450px !important;
-            height: auto;
-            gap: 15px;
-        }
-        body.mobile-mode .sidebar {
-            width: 100%;
-            max-height: 250px; /* القايمة متصغرة فوق */
-            padding: 10px;
-        }
-        body.mobile-mode .main-board {
-            width: 100%;
-            min-height: 500px;
-            padding: 15px;
-        }
+        body.mobile-mode .game-wrapper { flex-direction: column; max-width: 450px !important; height: auto; gap: 15px; }
+        body.mobile-mode .sidebar { width: 100%; max-height: 250px; padding: 10px; }
+        body.mobile-mode .main-board { width: 100%; min-height: 500px; padding: 15px; }
 
         .players-list-gartic { flex: 1; overflow-y: auto; padding-right: 5px; margin-bottom: 15px; }
-
         .player-item { display: flex; align-items: center; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 10px; margin-bottom: 10px; }
         .player-avatar { width: 45px; height: 45px; background: #00f3ff; color: #000; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 1.5rem; margin-left: 12px; border: 2px solid #fff; }
         .player-info { flex: 1; display: flex; flex-direction: column; }
@@ -156,7 +101,6 @@
     <div id="starsContainer"></div>
     <div id="notificationToast" class="toast hidden">تم النسخ! 📋</div>
 
-    <!-- شاشة طلب الرقم السري الاحترافية في النص -->
     <div id="hostPasswordModal" class="modal-overlay hidden" style="z-index: 999999;">
         <div class="modal-content glass-container" style="text-align: center;">
             <div style="font-size: 4rem; margin-bottom: 15px; animation: floatSpy 3s ease-in-out infinite;">🔒</div>
@@ -168,7 +112,6 @@
         </div>
     </div>
 
-    <!-- شاشة الرفض المرعبة (لو الباسورد غلط) -->
     <div id="wrongPasswordModal" class="modal-overlay hidden" style="z-index: 999999;">
         <div class="modal-content glass-container" style="text-align: center;">
             <div style="font-size: 4rem; margin-bottom: 15px; text-shadow: 0 0 20px #ff0055;">⛔</div>
@@ -178,14 +121,17 @@
         </div>
     </div>
 
-    <!-- باقي الموديلات -->
-    <div id="hostSettingsModal" class="modal-overlay hidden"><div class="modal-content glass-container"><h2 class="neon-text" style="margin-bottom: 25px; color: #00f3ff; text-shadow: 0 0 15px #00f3ff;">إدارة اللاعبين 👥</h2><div id="modalPlayersList" style="max-height:300px; overflow-y:auto;"></div><button id="restartGameBtn" disabled style="width: 100%; margin-top: 15px;">إعادة اللعب 🔄</button><button id="closeModalBtn" style="margin-top: 15px; width: 100%; background: #333; border:none;">إغلاق</button></div></div>
-    <div id="invalidRoomModal" class="modal-overlay hidden"><div class="modal-content glass-container" style="text-align: center;"><div style="font-size: 4rem; margin-bottom: 15px;">❌</div><h2 class="neon-text" style="color: #ff0055;">عذراً!</h2><p id="errorMsgText" style="color: #ccc; font-size: 1.1rem;">الغرفة دي مش موجودة!</p></div></div>
-    <div id="kickedModal" class="modal-overlay hidden"><div class="modal-content glass-container" style="text-align: center;"><div style="font-size: 4rem; margin-bottom: 15px;">🚫</div><h2 class="neon-text" style="color: #ff0055;">تم طردك!</h2></div></div>
-    <div id="hostLeftModal" class="modal-overlay hidden"><div class="modal-content glass-container" style="text-align: center;"><div style="font-size: 4rem; margin-bottom: 15px;">⚠️</div><h2 class="neon-text" style="color: #ff0055;">توقفت اللعبة!</h2><p id="hostLeftText" style="color: #ccc; margin-bottom: 20px;">الهوست غادر الغرفة</p><button id="closeHostLeftBtn" style="width: 100%;">حسناً</button></div></div>
-    <div id="tieBreakerModal" class="modal-overlay hidden"><div class="modal-content glass-container" style="text-align: center;"><div style="font-size: 4rem; margin-bottom: 15px;">⚖️</div><h2 class="neon-text" style="color: #ff0055;">تعادل!</h2><p style="color: #ccc;">تعادل: <span id="tiedPlayersNames" style="color: #fff; font-weight: bold;"></span></p><div id="tieTimer" style="font-size: 3rem; color: #00ff88; font-weight: bold;">12</div></div></div>
-    <div id="votingResultModal" class="modal-overlay hidden"><div class="modal-content glass-container" style="text-align: center;"><div id="votingResultIcon" style="font-size: 4rem;">🎭</div><h2 id="votingResultTitle" class="neon-text">النتيجة</h2><p id="votingResultDesc1" style="color: #ccc;"></p><p id="votingResultDesc2" style="color: #ccc; margin-bottom: 25px;"></p><button id="spyProceedBtn" class="hidden" style="width: 100%;">تخمين الكلمة 🧠</button></div></div>
-    <div id="finalResultModal" class="modal-overlay hidden"><div class="modal-content glass-container" style="text-align: center;"><h2 class="neon-text" style="color: #00f3ff;">نتيجة الجولة 🏁</h2><p id="finalResultText1"></p><p id="finalResultText2" style="font-size: 1.4rem; color: #00f3ff; font-weight: bold;"></p><p id="finalResultText3"></p><p id="finalResultText4" style="font-size: 1.3rem; font-weight: bold;"></p><button id="finalOkBtn" style="width: 100%;">حسناً 👍</button></div></div>
+    <!-- 🔥 الشاشات المنبثقة واخدة أعلى Z-Index عشان تغطي اللوحة وتمنع الضغط من تحتها -->
+    <div id="hostSettingsModal" class="modal-overlay hidden" style="z-index: 999999;"><div class="modal-content glass-container"><h2 class="neon-text" style="margin-bottom: 25px; color: #00f3ff; text-shadow: 0 0 15px #00f3ff;">إدارة اللاعبين 👥</h2><div id="modalPlayersList" style="max-height:300px; overflow-y:auto;"></div><button id="restartGameBtn" disabled style="width: 100%; margin-top: 15px;">إعادة اللعب 🔄</button><button id="closeModalBtn" style="margin-top: 15px; width: 100%; background: #333; border:none;">إغلاق</button></div></div>
+    <div id="invalidRoomModal" class="modal-overlay hidden" style="z-index: 999999;"><div class="modal-content glass-container" style="text-align: center;"><div style="font-size: 4rem; margin-bottom: 15px;">❌</div><h2 class="neon-text" style="color: #ff0055;">عذراً!</h2><p id="errorMsgText" style="color: #ccc; font-size: 1.1rem;">الغرفة دي مش موجودة!</p></div></div>
+    <div id="kickedModal" class="modal-overlay hidden" style="z-index: 999999;"><div class="modal-content glass-container" style="text-align: center;"><div style="font-size: 4rem; margin-bottom: 15px;">🚫</div><h2 class="neon-text" style="color: #ff0055;">تم طردك!</h2></div></div>
+    <div id="hostLeftModal" class="modal-overlay hidden" style="z-index: 999999;"><div class="modal-content glass-container" style="text-align: center;"><div style="font-size: 4rem; margin-bottom: 15px;">⚠️</div><h2 class="neon-text" style="color: #ff0055;">توقفت اللعبة!</h2><p id="hostLeftText" style="color: #ccc; margin-bottom: 20px;">الهوست غادر الغرفة</p><button id="closeHostLeftBtn" style="width: 100%;">حسناً</button></div></div>
+    <div id="tieBreakerModal" class="modal-overlay hidden" style="z-index: 999999;"><div class="modal-content glass-container" style="text-align: center;"><div style="font-size: 4rem; margin-bottom: 15px;">⚖️</div><h2 class="neon-text" style="color: #ff0055;">تعادل!</h2><p style="color: #ccc;">تعادل: <span id="tiedPlayersNames" style="color: #fff; font-weight: bold;"></span></p><div id="tieTimer" style="font-size: 3rem; color: #00ff88; font-weight: bold;">12</div></div></div>
+    <div id="votingResultModal" class="modal-overlay hidden" style="z-index: 999999;"><div class="modal-content glass-container" style="text-align: center;"><div id="votingResultIcon" style="font-size: 4rem;">🎭</div><h2 id="votingResultTitle" class="neon-text">النتيجة</h2><p id="votingResultDesc1" style="color: #ccc;"></p><p id="votingResultDesc2" style="color: #ccc; margin-bottom: 25px;"></p><button id="spyProceedBtn" class="hidden" style="width: 100%;">تخمين الكلمة 🧠</button></div></div>
+    <div id="finalResultModal" class="modal-overlay hidden" style="z-index: 999999;"><div class="modal-content glass-container" style="text-align: center;"><h2 class="neon-text" style="color: #00f3ff;">نتيجة الجولة 🏁</h2><p id="finalResultText1"></p><p id="finalResultText2" style="font-size: 1.4rem; color: #00f3ff; font-weight: bold;"></p><p id="finalResultText3"></p><p id="finalResultText4" style="font-size: 1.3rem; font-weight: bold;"></p><button id="finalOkBtn" style="width: 100%;">حسناً 👍</button></div></div>
+    
+    <!-- 🔥 شاشة انتظار الهوست للضيوف (واخدة Z-Index عالي جداً لمنع أي لعب) -->
+    <div id="guestWaitingHostModal" class="modal-overlay hidden" style="z-index: 999999;"><div class="modal-content glass-container" style="text-align: center;"><div style="font-size: 4rem; margin-bottom: 15px;">⏳</div><h2 class="neon-text" style="color: #00f3ff; margin-bottom: 20px;">الرجاء الانتظار!</h2><p style="color: #ccc; font-size: 1.1rem; line-height: 1.6;">في انتظار الهوستر لإعادة اللعب أو إنهاء اللعبة بالكامل.</p></div></div>
 
     <div id="welcomeScreen" class="glass-container active">
         <div class="logo-section"><div class="spy-icon">🕵️‍♂️</div><h1 class="sasuke-title rgb-title">SASUKE</h1></div>
@@ -195,7 +141,6 @@
         <button id="joinRoomBtn" class="hidden" style="width: 100%;">انـــضـــمـــام 🚀</button>
     </div>
 
-    <!-- 🔥 الواجهة تتغير فوراً لما تختار الموبايل أو البي سي -->
     <div id="gameLayout" class="game-wrapper hidden">
         <aside class="sidebar">
             <h3 style="text-align: center; color: #00f3ff; margin-bottom: 15px; font-weight: bold; text-shadow: 0 0 10px #00f3ff;">اللاعبين (<span id="playerCount">0</span>)</h3>

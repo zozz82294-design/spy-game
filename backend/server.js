@@ -5,7 +5,12 @@ const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server);
+
+// 🔥 تحديث الـ Ping عشان السيرفر ميفصلش اللاعبين لو النت رمش
+const io = socketIo(server, {
+    pingTimeout: 120000, 
+    pingInterval: 25000
+});
 
 const PORT = process.env.PORT || 3000;
 
@@ -128,7 +133,6 @@ io.on('connection', (socket) => {
         try {
             const roomId = data.roomId; const playerId = data.playerId; 
             const hostName = data.name || '𝐒𝐀𝐒𝐔𝐊𝐄';
-            
             socket.join(roomId); socket.roomId = roomId; socket.playerId = playerId;
             
             if (!rooms[roomId]) { rooms[roomId] = { players: {}, gameState: 'waiting', word: '', category: '', spyId: null, votes: {}, guessingWords: [], guessTimer: null, tieTimer: null, guessEndTime: 0, featureVotes: { hints: [], questions: [] } }; }
@@ -304,8 +308,8 @@ io.on('connection', (socket) => {
         try { 
             const roomId = socket.roomId; const playerId = socket.playerId; 
             if (roomId && rooms[roomId] && rooms[roomId].players[playerId]) { 
-                // 🔥 رجعناها 60 ثانية عشان الاستقرار ومحدش يطرد لو النت رمش
-                rooms[roomId].players[playerId].disconnectTimeout = setTimeout(() => { handlePlayerLeave(roomId, playerId); }, 60000); 
+                // 🔥 تم زيادة وقت السماح لـ 3 دقايق (180000 ملي ثانية) عشان لو النت فصل ورجع ميتطردش
+                rooms[roomId].players[playerId].disconnectTimeout = setTimeout(() => { handlePlayerLeave(roomId, playerId); }, 180000); 
             } 
         } catch(e){} 
     });

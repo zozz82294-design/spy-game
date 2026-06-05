@@ -1,3 +1,13 @@
+// 🔥 الحل السحري اللي بيعرف إنك دخلت الموقع من جديد وبيعمل "ضبط مصنع" عشان متتعلقش
+const navEntries = performance.getEntriesByType("navigation");
+const urlParamsSync = new URLSearchParams(window.location.search);
+if (navEntries.length > 0 && navEntries[0].type !== "reload") {
+    if (!urlParamsSync.get('room')) {
+        sessionStorage.removeItem('hostRoomId');
+        sessionStorage.removeItem('guestName');
+    }
+}
+
 const socket = io();
 
 function createStars() {
@@ -11,12 +21,10 @@ function createStars() {
 }
 createStars(); 
 
-function applyRgbWaveToElement(element, text) {
-    if (element) element.textContent = text;
-}
+function applyRgbWaveToElement(element, text) { if (element) element.textContent = text; }
 
 const audioJoin = new Audio('audio/join.mp3'); const audioWaiting = new Audio('audio/waiting.mp3'); const audioStart = new Audio('audio/start.mp3');
-const urlParamsSync = new URLSearchParams(window.location.search); const roomFromUrlSync = urlParamsSync.get('room'); const playerNameInput = document.getElementById('playerNameInput');
+const roomFromUrlSync = urlParamsSync.get('room'); const playerNameInput = document.getElementById('playerNameInput');
 
 socket.on('forceNameLock', (newName) => {
     localStorage.setItem('lockedPlayerName', newName); sessionStorage.setItem('guestName', newName);
@@ -53,6 +61,18 @@ if(generalSettingsBtn) generalSettingsBtn.addEventListener('click', () => genera
 
 const screens = { welcome: document.getElementById('welcomeScreen'), waiting: document.getElementById('waitingScreen'), modeSelection: document.getElementById('modeSelectionScreen'), game: document.getElementById('gameScreen'), voting: document.getElementById('votingScreen'), guessing: document.getElementById('guessingScreen') };
 const mainContainer = document.getElementById('mainContainer'); const pcViewBtn = document.getElementById('pcViewBtn'); const mobileViewBtn = document.getElementById('mobileViewBtn'); const goToWaitingBtn = document.getElementById('goToWaitingBtn'); const joinRoomBtn = document.getElementById('joinRoomBtn'); const copyInviteBtn = document.getElementById('copyInviteBtn'); const playerCountSpan = document.getElementById('playerCount'); const playersListDiv = document.getElementById('playersList'); const startGameBtn = document.getElementById('startGameBtn'); const actualStartBtn = document.getElementById('actualStartBtn'); const hostSettingsBtn = document.getElementById('hostSettingsBtn'); const hostSettingsModal = document.getElementById('hostSettingsModal'); const closeModalBtn = document.getElementById('closeModalBtn'); const modalPlayersList = document.getElementById('modalPlayersList'); const restartGameBtn = document.getElementById('restartGameBtn'); const hostLeftModal = document.getElementById('hostLeftModal'); const kickedModal = document.getElementById('kickedModal'); const leftRoomModal = document.getElementById('leftRoomModal'); const invalidRoomModal = document.getElementById('invalidRoomModal'); const errorMsgText = document.getElementById('errorMsgText'); const tieBreakerModal = document.getElementById('tieBreakerModal'); const tiedPlayersNames = document.getElementById('tiedPlayersNames'); const tieTimerEl = document.getElementById('tieTimer'); const guestWaitingHostModal = document.getElementById('guestWaitingHostModal'); const confirmStartGameBtn = document.getElementById('confirmStartGameBtn'); const startVotingPhaseBtn = document.getElementById('startVotingPhaseBtn'); const voteCounter = document.getElementById('voteCounter'); const liveVoteLog = document.getElementById('liveVoteLog'); const votingGrid = document.getElementById('votingGrid'); const votingResultModal = document.getElementById('votingResultModal'); const spyProceedBtn = document.getElementById('spyProceedBtn'); const wordsGrid = document.getElementById('wordsGrid'); const confirmGuessBtn = document.getElementById('confirmGuessBtn'); const finalResultModal = document.getElementById('finalResultModal'); const finalOkBtn = document.getElementById('finalOkBtn');
+
+// 🔥 برمجة زرار إغلاق الغرفة نهائياً للهوست
+const destroyRoomBtn = document.getElementById('destroyRoomBtn');
+if (destroyRoomBtn) {
+    destroyRoomBtn.addEventListener('click', () => {
+        if (confirm('هل أنت متأكد من إغلاق الغرفة وطرد جميع اللاعبين للعودة للقائمة الرئيسية؟')) {
+            socket.emit('leaveRoom');
+            sessionStorage.clear();
+            window.location.href = window.location.pathname; // بيعمل ريفريش كامل وبينضف اللينك
+        }
+    });
+}
 
 let tieInterval; let isHost = false; let myRoleData = null; let selectedSpyWord = null; let guessInterval;
 
@@ -114,14 +134,9 @@ socket.on('connect', () => {
 
 socket.on('syncState', (state) => { if (state === 'waiting') { showScreen('waiting'); } else if (state === 'modeSelection') { showScreen('modeSelection'); } });
 
-// 🔥 حماية زرار إنشاء الغرفة بباسورد
 if(goToWaitingBtn) goToWaitingBtn.addEventListener('click', () => { 
     const hostPass = prompt('أدخل باسورد الهوست (الرقم السري):');
-    if (hostPass !== '721') {
-        alert('باسورد غلط! أنت لست الهوست الأصلي ❌');
-        return; // بيطرد اللي بيكتب الباسورد غلط
-    }
-
+    if (hostPass !== '721') { alert('باسورد غلط! أنت لست الهوست الأصلي ❌'); return; }
     isHost = true; if(hostSettingsBtn) hostSettingsBtn.classList.remove('hidden'); if(copyInviteBtn) copyInviteBtn.classList.remove('hidden'); 
     const newRoomId = Math.random().toString(36).substring(2, 8); sessionStorage.setItem('hostRoomId', newRoomId); 
     const savedName = localStorage.getItem('lockedPlayerName') || '𝐒𝐀𝐒𝐔𝐊𝐄';

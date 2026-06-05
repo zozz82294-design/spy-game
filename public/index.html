@@ -8,6 +8,8 @@
     <link rel="stylesheet" href="styles/style.css">
     <script src="/socket.io/socket.io.js"></script>
     <style>
+        * { box-sizing: border-box; } /* عشان المسافات متبوظش الشاشة */
+
         body, html { 
             font-family: 'Cairo', sans-serif;
             overflow-x: hidden; min-height: 100vh; scroll-behavior: smooth; 
@@ -18,14 +20,78 @@
             margin: 0; padding: 0;
         }
 
+        /* 🔥 الماوس الخاص بوضع البي سي فقط */
         body.pc-mode { cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 24 24' fill='%2300f3ff' stroke='%23ffffff' stroke-width='1.5'%3E%3Cpath d='M4 2L20 10L13 13L10 20L4 2Z'/%3E%3C/svg%3E") 4 2, auto !important; }
         body.pc-mode button, body.pc-mode .category-card, body.pc-mode .vote-card, body.pc-mode .word-card, body.pc-mode input, body.pc-mode .general-settings-icon, body.pc-mode .host-settings-icon { cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 24 24' fill='%23ff0055' stroke='%23ffffff' stroke-width='1.5'%3E%3Cpath d='M4 2L20 10L13 13L10 20L4 2Z'/%3E%3C/svg%3E") 4 2, pointer !important; }
 
+        /* الشاشات المنفصلة */
         .glass-container { margin: 20px auto; padding: 25px; max-width: 450px; background: rgba(15, 23, 42, 0.8); border-radius: 15px; border: 1px solid #334155; }
-        @media(min-width: 768px) { .glass-container { max-width: 600px; } }
+        body.pc-mode .glass-container { max-width: 600px; }
 
-        .game-wrapper { display: flex; flex-direction: row; gap: 20px; width: 95%; max-width: 1200px; margin: 20px auto; height: 85vh; }
-        .sidebar { width: 300px; background: rgba(15, 23, 42, 0.9); border: 2px solid #00f3ff; border-radius: 15px; display: flex; flex-direction: column; padding: 15px; box-shadow: 0 0 15px rgba(0, 243, 255, 0.1); }
+        /* 🔥 تصميم Gartic.io الشامل (السبورة واللاعبين) */
+        .game-wrapper {
+            display: flex;
+            margin: 20px auto;
+            width: 95%;
+        }
+
+        .sidebar {
+            background: rgba(15, 23, 42, 0.9);
+            border: 2px solid #00f3ff;
+            border-radius: 15px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.1);
+        }
+
+        .main-board {
+            background: rgba(10, 10, 15, 0.95);
+            border: 3px solid #fff;
+            border-radius: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow-y: auto;
+            box-shadow: inset 0 0 30px rgba(255,255,255,0.05), 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        /* 💻 وضع الكمبيوتر (PC Mode) */
+        body.pc-mode .game-wrapper {
+            flex-direction: row;
+            max-width: 1200px;
+            height: 85vh;
+            gap: 20px;
+        }
+        body.pc-mode .sidebar {
+            width: 300px;
+            max-height: none;
+            padding: 15px;
+        }
+        body.pc-mode .main-board {
+            flex: 1;
+            padding: 30px;
+        }
+
+        /* 📱 وضع الموبايل (Mobile Mode) */
+        body.mobile-mode .game-wrapper {
+            flex-direction: column;
+            max-width: 450px !important;
+            height: auto;
+            gap: 15px;
+        }
+        body.mobile-mode .sidebar {
+            width: 100%;
+            max-height: 250px; /* القايمة متصغرة فوق */
+            padding: 10px;
+        }
+        body.mobile-mode .main-board {
+            width: 100%;
+            min-height: 500px;
+            padding: 15px;
+        }
+
         .players-list-gartic { flex: 1; overflow-y: auto; padding-right: 5px; margin-bottom: 15px; }
 
         .player-item { display: flex; align-items: center; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 10px; margin-bottom: 10px; }
@@ -33,10 +99,6 @@
         .player-info { flex: 1; display: flex; flex-direction: column; }
         .player-name { font-weight: bold; font-size: 1.1rem; color: #fff; }
         .player-status { font-size: 0.8rem; color: #00ff88; }
-
-        .main-board { flex: 1; background: rgba(10, 10, 15, 0.95); border: 3px solid #fff; border-radius: 15px; padding: 30px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow-y: auto; box-shadow: inset 0 0 30px rgba(255,255,255,0.05), 0 0 20px rgba(0,0,0,0.5); }
-
-        @media(max-width: 768px) { .game-wrapper { flex-direction: column; height: auto; } .sidebar { width: 100%; max-height: 250px; } .main-board { min-height: 500px; padding: 15px; } }
 
         .btn-sidebar { width: 100%; margin-bottom: 10px; padding: 10px; font-size: 0.95rem; }
         .btn-danger { background: rgba(255, 0, 85, 0.2); border-color: #ff0055; color: #fff; }
@@ -86,7 +148,6 @@
 
         .hidden { display: none !important; }
         
-        /* 🔥 ستايلات خاصة بشاشات الباسورد المخصصة */
         .password-input { width: 80%; padding: 15px; font-size: 1.5rem; text-align: center; letter-spacing: 5px; border-radius: 10px; border: 2px solid #00f3ff; background: rgba(0,0,0,0.5); color: #fff; margin-bottom: 20px; outline: none; }
         .password-input:focus { box-shadow: 0 0 15px rgba(0, 243, 255, 0.5); }
     </style>
@@ -95,7 +156,7 @@
     <div id="starsContainer"></div>
     <div id="notificationToast" class="toast hidden">تم النسخ! 📋</div>
 
-    <!-- 🔥 شاشة طلب الرقم السري الاحترافية في النص -->
+    <!-- شاشة طلب الرقم السري الاحترافية في النص -->
     <div id="hostPasswordModal" class="modal-overlay hidden" style="z-index: 999999;">
         <div class="modal-content glass-container" style="text-align: center;">
             <div style="font-size: 4rem; margin-bottom: 15px; animation: floatSpy 3s ease-in-out infinite;">🔒</div>
@@ -107,7 +168,7 @@
         </div>
     </div>
 
-    <!-- 🔥 شاشة الرفض المرعبة (لو الباسورد غلط) -->
+    <!-- شاشة الرفض المرعبة (لو الباسورد غلط) -->
     <div id="wrongPasswordModal" class="modal-overlay hidden" style="z-index: 999999;">
         <div class="modal-content glass-container" style="text-align: center;">
             <div style="font-size: 4rem; margin-bottom: 15px; text-shadow: 0 0 20px #ff0055;">⛔</div>
@@ -134,6 +195,7 @@
         <button id="joinRoomBtn" class="hidden" style="width: 100%;">انـــضـــمـــام 🚀</button>
     </div>
 
+    <!-- 🔥 الواجهة تتغير فوراً لما تختار الموبايل أو البي سي -->
     <div id="gameLayout" class="game-wrapper hidden">
         <aside class="sidebar">
             <h3 style="text-align: center; color: #00f3ff; margin-bottom: 15px; font-weight: bold; text-shadow: 0 0 10px #00f3ff;">اللاعبين (<span id="playerCount">0</span>)</h3>

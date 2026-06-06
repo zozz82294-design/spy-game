@@ -172,7 +172,14 @@ function renderCategories() {
         catGrid.appendChild(card);
     });
     const randomCard = document.createElement('div'); randomCard.className = 'category-card random-card'; randomCard.id = 'cat-random'; randomCard.innerText = 'اختيار عشوائي 🎡';
-    randomCard.addEventListener('click', () => { if(!isHost || isWheelSpinning) return; playSound('start'); const targetCat = availableCategories[Math.floor(Math.random() * availableCategories.length)]; socket.emit('spinWheel', targetCat); });
+    
+    // 🔥 لما ندوس اختيار عشوائي هنشغل عجلة الحظ الواقعية
+    randomCard.addEventListener('click', () => { 
+        if(!isHost || isWheelSpinning) return; 
+        playSound('start'); 
+        const targetCat = availableCategories[Math.floor(Math.random() * availableCategories.length)]; 
+        socket.emit('spinWheel', targetCat); 
+    });
     catGrid.appendChild(randomCard);
 }
 
@@ -181,26 +188,56 @@ socket.on('categorySelected', (cat) => {
     const card = document.getElementById(`cat-idx-${targetIdx}`); if(card) card.classList.add('selected'); chosenCategory = cat; if(isHost) confirmStartGameBtn.classList.remove('hidden');
 });
 
+// 🔥 استبدال نظام الوميض القديم بعجلة الحظ الواقعية الجبارة 🎡
 socket.on('wheelSpinning', (targetCat) => {
-    isWheelSpinning = true; if(isHost) confirmStartGameBtn.classList.add('hidden');
-    document.querySelectorAll('.category-card').forEach(c => c.classList.remove('selected', 'roulette-active')); document.getElementById('cat-random').classList.add('selected');
-    const targetIdx = availableCategories.indexOf(targetCat); const cards = availableCategories.map((_, i) => document.getElementById(`cat-idx-${i}`));
-    let currentStep = 0; let steps = (3 * cards.length) + targetIdx; let delays = [];
-    for(let i = 0; i <= steps; i++) { let progress = i / steps; delays.push(40 + (progress * progress * 300)); }
-    let totalTime = delays.reduce((a, b) => a + b, 0);
-    let forceStop = setTimeout(() => { if(isWheelSpinning) finishSpin(targetCat, targetIdx, cards); }, totalTime + 1000);
-    function tick() {
-        if(!isWheelSpinning) return;
-        if (currentStep <= steps) { cards.forEach(c => c.classList.remove('roulette-active')); cards[currentStep % cards.length].classList.add('roulette-active'); playSound('vote'); setTimeout(tick, delays[currentStep]); currentStep++; } 
-        else { clearTimeout(forceStop); finishSpin(targetCat, targetIdx, cards); }
+    isWheelSpinning = true; 
+    if(isHost) confirmStartGameBtn.classList.add('hidden');
+    
+    // إظهار شاشة العجلة
+    document.getElementById('realWheelModal').classList.remove('hidden');
+    
+    const spinner = document.getElementById('wheelSpinnerElement');
+    const targetIdx = availableCategories.indexOf(targetCat);
+    
+    // إعادة تصفير العجلة عشان تبدأ الدوران من الصفر كل مرة
+    spinner.style.transition = 'none';
+    spinner.style.transform = 'rotate(0deg)';
+    void spinner.offsetWidth; // إعادة بناء الستايل (Reflow)
+    
+    // حساب الزاوية المطلوبة (كل جزء 45 درجة) + 8 لفات كاملة عشان شكل الاحترافية + رقم عشوائي بسيط للمتعة
+    const randomOffset = Math.floor(Math.random() * 30) - 15;
+    const targetRotation = (360 * 8) - (targetIdx * 45) + randomOffset;
+    
+    // تشغيل الدوران (5 ثواني وتباطؤ حقيقي)
+    spinner.style.transition = 'transform 5s cubic-bezier(0.1, 0.7, 0.1, 1)';
+    spinner.style.transform = `rotate(${targetRotation}deg)`;
+    
+    // صوت الطقطقة بتاعت العجلة (Ticking)
+    let ticks = 0; let tickDelay = 50;
+    function playTick() {
+        if(ticks > 45 || !isWheelSpinning) return;
+        playSound('vote'); ticks++; tickDelay += 6; 
+        setTimeout(playTick, tickDelay);
     }
-    tick();
-});
+    playTick();
 
-function finishSpin(cat, idx, cards) {
-    isWheelSpinning = false; cards.forEach(c => c.classList.remove('roulette-active')); cards[idx].classList.add('selected'); document.getElementById('cat-random').classList.remove('selected'); playSound('win'); chosenCategory = cat;
-    if(isHost) { setTimeout(() => { confirmStartGameBtn.classList.remove('hidden'); }, 1000); }
-}
+    // بعد ما تخلص لف، اختار الكارت وشغل احتفال النصر
+    setTimeout(() => {
+        isWheelSpinning = false;
+        playSound('win');
+        
+        document.querySelectorAll('.category-card').forEach(c => c.classList.remove('selected', 'roulette-active'));
+        document.getElementById(`cat-idx-${targetIdx}`).classList.add('selected');
+        chosenCategory = targetCat;
+        
+        // تقفل الشاشة بعد ثانية ونص من الإعلان
+        setTimeout(() => {
+            document.getElementById('realWheelModal').classList.add('hidden');
+            if(isHost) confirmStartGameBtn.classList.remove('hidden');
+        }, 1500);
+        
+    }, 5000); // 5 ثواني دوران
+});
 
 socket.on('connect', () => { 
     const urlParams = new URLSearchParams(window.location.search); const roomFromUrl = urlParams.get('room'); const hostRoomId = sessionStorage.getItem('hostRoomId'); const guestName = sessionStorage.getItem('guestName'); 

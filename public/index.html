@@ -82,7 +82,6 @@
         .category-card:hover { border-color: #00f3ff; color: #fff; box-shadow: 0 0 10px rgba(0, 243, 255, 0.3); }
         .category-card.selected { border-color: #00ff88; background: rgba(0, 255, 136, 0.1); color: #00ff88; box-shadow: 0 0 10px rgba(0, 255, 136, 0.3); transform: scale(1.05); }
         .category-card.random-card { border-color: rgba(176, 0, 255, 0.5); color: #e08cff; }
-        .category-card.roulette-active { border-color: #fff; background: rgba(255, 255, 255, 0.2); color: #fff; box-shadow: 0 0 20px #fff; transform: scale(1.1); z-index: 5; }
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes pop { 0% { transform: translateX(-50%) scale(0); } 100% { transform: translateX(-50%) scale(1); } }
@@ -96,8 +95,19 @@
         .password-input { width: 80%; padding: 15px; font-size: 1.5rem; text-align: center; letter-spacing: 5px; border-radius: 10px; border: 2px solid #00f3ff; background: rgba(0,0,0,0.5); color: #fff; margin-bottom: 20px; outline: none; }
         .password-input:focus { box-shadow: 0 0 15px rgba(0, 243, 255, 0.5); }
         
-        /* 🔥 أنيميشن بسيط للقائمة المقترحة */
-        .suggestion-item:hover { background: rgba(0, 243, 255, 0.1) !important; border-color: #00f3ff !important; box-shadow: 0 0 10px rgba(0, 243, 255, 0.2); }
+        .custom-scroll::-webkit-scrollbar { width: 8px; }
+        .custom-scroll::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 10px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #00f3ff; border-radius: 10px; }
+
+        /* 🔥 ستايلات عجلة الحظ الواقعية الخرافية */
+        .real-wheel-container { position: relative; width: 280px; height: 280px; border-radius: 50%; border: 4px solid #fff; box-shadow: 0 0 25px #00f3ff, inset 0 0 15px rgba(0,0,0,0.8); margin: 30px auto; overflow: hidden; }
+        .wheel-spinner { 
+            width: 100%; height: 100%; border-radius: 50%; position: relative;
+            background: conic-gradient(from -22.5deg, #ff0055 0 45deg, #00f3ff 45deg 90deg, #00ff88 90deg 135deg, #ffe600 135deg 180deg, #b000ff 180deg 225deg, #ff8c00 225deg 270deg, #0055ff 270deg 315deg, #ff00aa 315deg 360deg);
+        }
+        .wheel-pointer { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 35px solid #fff; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.5)); z-index: 10; }
+        .wheel-center-dot { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 20px; height: 20px; background: #fff; border-radius: 50%; z-index: 5; box-shadow: 0 0 10px #000; }
+        .wheel-label { position: absolute; top: 50%; left: 50%; width: 50%; margin-top: -12px; transform-origin: 0% 50%; text-align: right; padding-right: 15px; font-weight: 900; font-size: 0.85rem; color: #fff; text-shadow: 1px 1px 3px #000, -1px -1px 3px #000; white-space: nowrap; direction: rtl; line-height: 24px;}
     </style>
 </head>
 <body class="mobile-mode">
@@ -124,7 +134,6 @@
         </div>
     </div>
 
-    <!-- 🔥 شاشة الاقتراحات (الهينتات والأسئلة) -->
     <div id="suggestionsModal" class="modal-overlay hidden" style="z-index: 9999999;">
         <div class="modal-content glass-container" style="max-height: 85vh; display: flex; flex-direction: column;">
             <h2 id="suggestionsTitle" class="neon-text" style="margin-bottom: 15px; text-align: center;">💡 اقتراحات</h2>
@@ -132,6 +141,27 @@
                 <ul id="suggestionsList" style="list-style: none; padding: 0; margin: 0; color: #ccc; font-size: 1.1rem;"></ul>
             </div>
             <button id="closeSuggestionsBtn" style="width: 100%; margin-top: 15px; background: rgba(255, 0, 85, 0.2); border-color: #ff0055;">إغلاق ❌</button>
+        </div>
+    </div>
+
+    <div id="realWheelModal" class="modal-overlay hidden" style="z-index: 9999999;">
+        <div class="modal-content glass-container" style="text-align: center; max-width: 350px;">
+            <h2 class="neon-text" style="color: #ffe600; text-shadow: 0 0 15px #ffe600; margin-bottom: 10px;">عجلة الحظ 🎡</h2>
+            <p style="color: #ccc; font-size: 1.1rem; margin-bottom: 0;">يتم الآن اختيار التصنيف...</p>
+            <div class="real-wheel-container">
+                <div class="wheel-pointer"></div>
+                <div class="wheel-center-dot"></div>
+                <div class="wheel-spinner" id="wheelSpinnerElement">
+                    <div class="wheel-label" style="transform: rotate(-90deg);">حاجات البيت</div>
+                    <div class="wheel-label" style="transform: rotate(-45deg);">أكل وشرب</div>
+                    <div class="wheel-label" style="transform: rotate(0deg);">أدوات وأشياء</div>
+                    <div class="wheel-label" style="transform: rotate(45deg);">أماكن ومواصلات</div>
+                    <div class="wheel-label" style="transform: rotate(90deg);">حيوانات ونباتات</div>
+                    <div class="wheel-label" style="transform: rotate(135deg);">مهن ووظائف</div>
+                    <div class="wheel-label" style="transform: rotate(180deg);">رياضة وهوايات</div>
+                    <div class="wheel-label" style="transform: rotate(225deg);">تكنولوجيا</div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -185,12 +215,15 @@
                 <div class="avatar-glow" id="roleIcon" style="font-size: 6rem !important;">🎭</div>
                 <h2 class="rgb-title" id="roleTitle" style="margin-bottom: 20px; font-size: 3.5rem;">...</h2>
                 <p id="categoryTitle" class="hidden" style="color: #00f3ff; font-size: 1.5rem; font-weight: bold; margin-bottom: 30px; text-shadow: 0 0 10px rgba(0, 243, 255, 0.5);">التصنيف: ...</p>
-                <p style="color: #ccc; font-size: 1.2rem; margin-bottom: 30px;">تناقشوا عبر الصوت واكتشفوا الجاسوس!</p>
                 
-                <!-- 🔥 أزرار الاقتراحات الجديدة المخفية مبدئياً -->
-                <div id="helperButtons" class="hidden" style="display: flex; gap: 15px; justify-content: center; margin-bottom: 30px; flex-wrap: wrap;">
-                    <button id="btnSuggestHints" style="background: rgba(0, 243, 255, 0.1); border-color: #00f3ff; color: #00f3ff; padding: 12px 25px; font-size: 1.1rem; flex: 1; max-width: 250px;">اقتراح هينتات 💡</button>
-                    <button id="btnSuggestQuestions" style="background: rgba(0, 255, 136, 0.1); border-color: #00ff88; color: #00ff88; padding: 12px 25px; font-size: 1.1rem; flex: 1; max-width: 250px;">اقتراح أسئلة ❓</button>
+                <div style="background: rgba(0,0,0,0.5); padding: 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 25px;">
+                    <p style="color: #ccc; font-size: 1.1rem; margin-bottom: 12px;">ابحثوا عن الجاسوس!</p>
+                    <p style="color: #64748b; font-size: 0.9rem; line-height: 1.5;">تناقشوا الآن عبر الصوت واكتشفوا من لا يعرف الكلمة.</p>
+                    
+                    <div id="helperButtons" class="hidden" style="margin-top: 20px; display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+                        <button id="btnSuggestHints" style="background: rgba(0, 243, 255, 0.1); border-color: #00f3ff; color: #00f3ff; padding: 12px 25px; font-size: 1.1rem; flex: 1; max-width: 250px;">اقتراح هينتات 💡</button>
+                        <button id="btnSuggestQuestions" style="background: rgba(0, 255, 136, 0.1); border-color: #00ff88; color: #00ff88; padding: 12px 25px; font-size: 1.1rem; flex: 1; max-width: 250px;">اقتراح أسئلة ❓</button>
+                    </div>
                 </div>
 
                 <button id="startVotingPhaseBtn" class="hidden" style="width: 80%; font-size: 1.2rem;">بدء التصويت 🗳️</button>

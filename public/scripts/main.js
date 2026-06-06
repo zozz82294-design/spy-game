@@ -9,7 +9,7 @@ if (navEntries.length > 0 && navEntries[0].type !== "reload") {
 
 const socket = io();
 
-// 🔥 بنك الأسئلة الذكية العملاق (50 سؤال خبيث يلخبط الجاسوس)
+// 🔥 بنك الأسئلة الذكية العملاق
 const cleverQuestions = [
     "متى كانت آخر مرة استخدمت فيها الحاجة دي؟", "هل الحجم بيفرق في جودته أو سعره؟", 
     "موجود في كل بيت ولا بيوت معينة؟", "سعره غالي ولا في متناول الجميع؟", 
@@ -38,7 +38,7 @@ const cleverQuestions = [
     "هل بتأثر على حاسة الشم أو التذوق؟", "هل ليها ماركات عالمية مشهورة بتتنافس فيها؟"
 ];
 
-// 🔥 بنك الهينتات العميقة العملاق (50 تلميح غامض ومحير)
+// 🔥 بنك الهينتات العميقة العملاق
 const cleverHints = [
     "حاجة مألوفة جداً وبنشوفها كتير.", "استخدامه معروف للكل ومفيش حد ميعرفوش.", 
     "ممكن ييجي بألوان وأشكال مختلفة.", "مش كل الناس بتهتم بيه بنفس الدرجة.", 
@@ -173,7 +173,6 @@ function renderCategories() {
     });
     const randomCard = document.createElement('div'); randomCard.className = 'category-card random-card'; randomCard.id = 'cat-random'; randomCard.innerText = 'اختيار عشوائي 🎡';
     
-    // 🔥 لما ندوس اختيار عشوائي هنشغل عجلة الحظ الواقعية
     randomCard.addEventListener('click', () => { 
         if(!isHost || isWheelSpinning) return; 
         playSound('start'); 
@@ -188,55 +187,59 @@ socket.on('categorySelected', (cat) => {
     const card = document.getElementById(`cat-idx-${targetIdx}`); if(card) card.classList.add('selected'); chosenCategory = cat; if(isHost) confirmStartGameBtn.classList.remove('hidden');
 });
 
-// 🔥 استبدال نظام الوميض القديم بعجلة الحظ الواقعية الجبارة 🎡
+// 🔥 التعديل العظيم في تزامن عجلة الحظ مع الصوت
 socket.on('wheelSpinning', (targetCat) => {
     isWheelSpinning = true; 
     if(isHost) confirmStartGameBtn.classList.add('hidden');
     
-    // إظهار شاشة العجلة
     document.getElementById('realWheelModal').classList.remove('hidden');
     
     const spinner = document.getElementById('wheelSpinnerElement');
     const targetIdx = availableCategories.indexOf(targetCat);
     
-    // إعادة تصفير العجلة عشان تبدأ الدوران من الصفر كل مرة
     spinner.style.transition = 'none';
     spinner.style.transform = 'rotate(0deg)';
-    void spinner.offsetWidth; // إعادة بناء الستايل (Reflow)
+    void spinner.offsetWidth; 
     
-    // حساب الزاوية المطلوبة (كل جزء 45 درجة) + 8 لفات كاملة عشان شكل الاحترافية + رقم عشوائي بسيط للمتعة
     const randomOffset = Math.floor(Math.random() * 30) - 15;
     const targetRotation = (360 * 8) - (targetIdx * 45) + randomOffset;
     
-    // تشغيل الدوران (5 ثواني وتباطؤ حقيقي)
     spinner.style.transition = 'transform 5s cubic-bezier(0.1, 0.7, 0.1, 1)';
     spinner.style.transform = `rotate(${targetRotation}deg)`;
     
-    // صوت الطقطقة بتاعت العجلة (Ticking)
-    let ticks = 0; let tickDelay = 50;
+    // 🔥 تزامن الصوت العبقري اللي بيطابق دوران العجلة بالظبط
+    let startTime = Date.now();
     function playTick() {
-        if(ticks > 45 || !isWheelSpinning) return;
-        playSound('vote'); ticks++; tickDelay += 6; 
-        setTimeout(playTick, tickDelay);
+        if (!isWheelSpinning) return;
+        let elapsed = Date.now() - startTime;
+        
+        // وقف التكتكة قبل النهاية بلحظات بسيطة عشان تبان طبيعية ومفيش صوت يضرب بعد ما تقف
+        if (elapsed > 4900) return; 
+        
+        playSound('vote');
+        
+        // حساب معادلة التباطؤ (كل ما الوقت يعدي، التكتكة بتبقى أبطأ وأبطأ)
+        let progress = elapsed / 5000; 
+        let nextDelay = 30 + (Math.pow(progress, 3) * 500); 
+        
+        setTimeout(playTick, nextDelay);
     }
     playTick();
 
-    // بعد ما تخلص لف، اختار الكارت وشغل احتفال النصر
     setTimeout(() => {
         isWheelSpinning = false;
-        playSound('win');
+        playSound('win'); // صوت الفوز بيضرب فوراً مع الوقوف
         
         document.querySelectorAll('.category-card').forEach(c => c.classList.remove('selected', 'roulette-active'));
         document.getElementById(`cat-idx-${targetIdx}`).classList.add('selected');
         chosenCategory = targetCat;
         
-        // تقفل الشاشة بعد ثانية ونص من الإعلان
         setTimeout(() => {
             document.getElementById('realWheelModal').classList.add('hidden');
             if(isHost) confirmStartGameBtn.classList.remove('hidden');
         }, 1500);
         
-    }, 5000); // 5 ثواني دوران
+    }, 5000); 
 });
 
 socket.on('connect', () => { 

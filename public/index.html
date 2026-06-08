@@ -34,8 +34,9 @@
         body.pc-mode .sidebar { width: 300px; max-height: none; padding: 15px; }
         body.pc-mode .main-board { flex: 1; padding: 30px; }
 
+        /* 🔥 تعديلات الموبايل عشان الأسماء متختفيش */
         body.mobile-mode .game-wrapper { flex-direction: column; max-width: 450px !important; height: auto; gap: 15px; }
-        body.mobile-mode .sidebar { width: 100%; max-height: 250px; padding: 10px; }
+        body.mobile-mode .sidebar { width: 100%; max-height: none; padding: 15px; } /* لغيت الـ max-height عشان تاخد راحتها */
         body.mobile-mode .main-board { width: 100%; min-height: 500px; padding: 15px; }
 
         .players-list-gartic { flex: 1; overflow-y: auto; padding-right: 5px; margin-bottom: 15px; }
@@ -44,6 +45,20 @@
         .player-info { flex: 1; display: flex; flex-direction: column; }
         .player-name { font-weight: bold; font-size: 1.1rem; color: #fff; }
         .player-status { font-size: 0.8rem; color: #00ff88; }
+
+        /* 🔥 الابتكار العظيم: السكرول الأفقي للأسماء في الموبايل */
+        body.mobile-mode .players-list-gartic { 
+            display: flex; flex-direction: row; overflow-x: auto; overflow-y: hidden; 
+            padding-bottom: 15px; gap: 12px; margin-bottom: 15px; scrollbar-width: thin; scrollbar-color: #00f3ff rgba(0,0,0,0.2);
+        }
+        body.mobile-mode .players-list-gartic::-webkit-scrollbar { height: 6px; }
+        body.mobile-mode .players-list-gartic::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 10px; }
+        body.mobile-mode .players-list-gartic::-webkit-scrollbar-thumb { background: #00f3ff; border-radius: 10px; }
+        body.mobile-mode .player-item { 
+            flex: 0 0 auto; width: 140px; flex-direction: column; justify-content: center; 
+            text-align: center; margin-bottom: 0; padding: 15px 5px;
+        }
+        body.mobile-mode .player-avatar { margin-left: 0; margin-bottom: 10px; width: 55px; height: 55px; font-size: 2rem; }
 
         .btn-sidebar { width: 100%; margin-bottom: 10px; padding: 10px; font-size: 0.95rem; }
         .btn-danger { background: rgba(255, 0, 85, 0.2); border-color: #ff0055; color: #fff; }
@@ -82,6 +97,7 @@
         .category-card:hover { border-color: #00f3ff; color: #fff; box-shadow: 0 0 10px rgba(0, 243, 255, 0.3); }
         .category-card.selected { border-color: #00ff88; background: rgba(0, 255, 136, 0.1); color: #00ff88; box-shadow: 0 0 10px rgba(0, 255, 136, 0.3); transform: scale(1.05); }
         .category-card.random-card { border-color: rgba(176, 0, 255, 0.5); color: #e08cff; }
+        .category-card.roulette-active { border-color: #fff; background: rgba(255, 255, 255, 0.2); color: #fff; box-shadow: 0 0 20px #fff; transform: scale(1.1); z-index: 5; }
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes pop { 0% { transform: translateX(-50%) scale(0); } 100% { transform: translateX(-50%) scale(1); } }
@@ -99,12 +115,8 @@
         .custom-scroll::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 10px; }
         .custom-scroll::-webkit-scrollbar-thumb { background: #00f3ff; border-radius: 10px; }
 
-        /* 🔥 ستايلات عجلة الحظ الواقعية الخرافية */
         .real-wheel-container { position: relative; width: 280px; height: 280px; border-radius: 50%; border: 4px solid #fff; box-shadow: 0 0 25px #00f3ff, inset 0 0 15px rgba(0,0,0,0.8); margin: 30px auto; overflow: hidden; }
-        .wheel-spinner { 
-            width: 100%; height: 100%; border-radius: 50%; position: relative;
-            background: conic-gradient(from -22.5deg, #ff0055 0 45deg, #00f3ff 45deg 90deg, #00ff88 90deg 135deg, #ffe600 135deg 180deg, #b000ff 180deg 225deg, #ff8c00 225deg 270deg, #0055ff 270deg 315deg, #ff00aa 315deg 360deg);
-        }
+        .wheel-spinner { width: 100%; height: 100%; border-radius: 50%; position: relative; background: conic-gradient(from -22.5deg, #ff0055 0 45deg, #00f3ff 45deg 90deg, #00ff88 90deg 135deg, #ffe600 135deg 180deg, #b000ff 180deg 225deg, #ff8c00 225deg 270deg, #0055ff 270deg 315deg, #ff00aa 315deg 360deg); }
         .wheel-pointer { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 35px solid #fff; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.5)); z-index: 10; }
         .wheel-center-dot { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 20px; height: 20px; background: #fff; border-radius: 50%; z-index: 5; box-shadow: 0 0 10px #000; }
         .wheel-label { position: absolute; top: 50%; left: 50%; width: 50%; margin-top: -12px; transform-origin: 0% 50%; text-align: right; padding-right: 15px; font-weight: 900; font-size: 0.85rem; color: #fff; text-shadow: 1px 1px 3px #000, -1px -1px 3px #000; white-space: nowrap; direction: rtl; line-height: 24px;}
@@ -176,7 +188,10 @@
     <div id="guestWaitingHostModal" class="modal-overlay hidden" style="z-index: 999999;"><div class="modal-content glass-container" style="text-align: center;"><div style="font-size: 4rem; margin-bottom: 15px;">⏳</div><h2 class="neon-text" style="color: #00f3ff; margin-bottom: 20px;">الرجاء الانتظار!</h2><p style="color: #ccc; font-size: 1.1rem; line-height: 1.6;">في انتظار الهوستر لإعادة اللعب أو إنهاء اللعبة بالكامل.</p></div></div>
 
     <div id="welcomeScreen" class="glass-container active">
-        <div class="logo-section"><div class="spy-icon">🕵️‍♂️</div><h1 class="sasuke-title rgb-title">SASUKE</h1></div>
+        <div class="logo-section">
+            <div class="avatar-glow" style="font-size: 6rem !important;">🎭</div>
+            <h1 class="sasuke-title rgb-title" style="margin-bottom: 30px;">لعبة الجاسوس</h1>
+        </div>
         <input type="text" id="playerNameInput" class="name-input hidden" placeholder="اكتب اسمك هنا يا بطل..." autocomplete="off">
         <div class="view-options" style="margin-bottom: 20px;"><button id="pcViewBtn" class="btn-view">كمبيوتر 💻</button><button id="mobileViewBtn" class="btn-view active-view">موبايل 📱</button></div>
         <button id="goToWaitingBtn" style="width: 100%; margin-bottom: 15px;">إنشاء غرفة لعبة الجاسوس 🏠</button>

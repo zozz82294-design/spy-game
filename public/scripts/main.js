@@ -1,6 +1,7 @@
+const urlParamsSync = new URLSearchParams(window.location.search);
 const socket = io();
 
-// 🔥 بنك الأسئلة الذكية العملاق
+// بنك الأسئلة الذكية العملاق
 const cleverQuestions = [
     "متى كانت آخر مرة استخدمت فيها الحاجة دي؟", "هل الحجم بيفرق في جودته أو سعره؟", 
     "موجود في كل بيت ولا بيوت معينة؟", "سعره غالي ولا في متناول الجميع؟", 
@@ -29,7 +30,7 @@ const cleverQuestions = [
     "هل بتأثر على حاسة الشم أو التذوق؟", "هل ليها ماركات عالمية مشهورة بتتنافس فيها؟"
 ];
 
-// 🔥 بنك الهينتات العميقة العملاق
+// بنك الهينتات العميقة العملاق
 const cleverHints = [
     "حاجة مألوفة جداً وبنشوفها كتير.", "استخدامه معروف للكل ومفيش حد ميعرفوش.", 
     "ممكن ييجي بألوان وأشكال مختلفة.", "مش كل الناس بتهتم بيه بنفس الدرجة.", 
@@ -72,7 +73,7 @@ createStars();
 function applyRgbWaveToElement(element, text) { if (element) element.textContent = text; }
 
 const audioJoin = new Audio('audio/join.mp3'); const audioWaiting = new Audio('audio/waiting.mp3'); const audioStart = new Audio('audio/start.mp3');
-const urlParamsSync = new URLSearchParams(window.location.search); const roomFromUrlSync = urlParamsSync.get('room'); const playerNameInput = document.getElementById('playerNameInput');
+const roomFromUrlSync = urlParamsSync.get('room'); const playerNameInput = document.getElementById('playerNameInput');
 
 socket.on('forceNameLock', (newName) => {
     localStorage.setItem('lockedPlayerName', newName); sessionStorage.setItem('guestName', newName);
@@ -130,6 +131,7 @@ function showScreen(screenName) {
     }
 }
 
+// 🔥 دالة الهينتات بعد التطوير العظيم لربط الجملة بالتصنيف
 function showSuggestions(type) {
     if(!myRoleData || myRoleData.isSpy) return; 
     
@@ -139,12 +141,29 @@ function showSuggestions(type) {
     suggestionsTitle.style.color = type === 'hints' ? "#00f3ff" : "#00ff88";
     suggestionsTitle.style.textShadow = type === 'hints' ? "0 0 15px #00f3ff" : "0 0 15px #00ff88";
     
+    // 🔥 إضافة البادئة الذكية حسب التصنيف
+    const categoryPrefixes = {
+        "حاجات جوا وبرا البيت": "بخصوص (الحاجة دي اللي في البيت أو براه) 👈",
+        "أكل وشرب": "بخصوص (الأكلة أو المشروب ده) 👈",
+        "أدوات وأشياء": "بخصوص (الأداة أو الشيء ده) 👈",
+        "أماكن ومواصلات": "بخصوص (المكان أو المواصلة دي) 👈",
+        "حيوانات ونباتات": "بخصوص (الحيوان أو النبات ده) 👈",
+        "مهن ووظائف": "بخصوص (المهنة أو الوظيفة دي) 👈",
+        "رياضة وهوايات": "بخصوص (الرياضة أو الهواية دي) 👈",
+        "أجهزة وتكنولوجيا": "بخصوص (الجهاز أو الاختراع ده) 👈"
+    };
+    const prefix = categoryPrefixes[myRoleData.category] || "بخصوص (الشيء ده) 👈";
+    
     let shuffled = sourceArray.sort(() => 0.5 - Math.random());
     let selected = shuffled.slice(0, 10);
     
     selected.forEach(item => {
         const li = document.createElement('li');
-        li.style.marginBottom = "10px"; li.style.padding = "12px"; li.style.background = "rgba(255,255,255,0.05)"; li.style.border = "1px solid rgba(255,255,255,0.1)"; li.style.borderRadius = "8px"; li.className = "suggestion-item"; li.innerText = item;
+        li.style.marginBottom = "10px"; li.style.padding = "12px"; li.style.background = "rgba(255,255,255,0.05)"; li.style.border = "1px solid rgba(255,255,255,0.1)"; li.style.borderRadius = "8px"; li.className = "suggestion-item"; 
+        
+        // دمج البادئة مع السؤال/الهينت
+        li.innerHTML = `<span style="color: ${type === 'hints' ? '#00f3ff' : '#00ff88'}; font-weight: bold;">${prefix}</span> <br> ${item}`;
+        
         suggestionsList.appendChild(li);
     });
     
@@ -161,7 +180,7 @@ function renderCategories() {
         const card = document.createElement('div'); card.className = 'category-card'; card.id = `cat-idx-${index}`; card.innerText = cat;
         card.addEventListener('click', () => { 
             if(!isHost || isWheelSpinning) return; playSound('click'); 
-            socket.emit('selectCategory', cat, sessionStorage.getItem('hostRoomId')); 
+            socket.emit('selectCategory', cat, localStorage.getItem('hostRoomId')); 
         });
         catGrid.appendChild(card);
     });
@@ -171,7 +190,7 @@ function renderCategories() {
         if(!isHost || isWheelSpinning) return; 
         playSound('start'); 
         const targetCat = availableCategories[Math.floor(Math.random() * availableCategories.length)]; 
-        socket.emit('spinWheel', targetCat, sessionStorage.getItem('hostRoomId')); 
+        socket.emit('spinWheel', targetCat, localStorage.getItem('hostRoomId')); 
     });
     catGrid.appendChild(randomCard);
 }
@@ -184,6 +203,7 @@ socket.on('categorySelected', (cat) => {
 socket.on('wheelSpinning', (targetCat) => {
     isWheelSpinning = true; 
     if(isHost) confirmStartGameBtn.classList.add('hidden');
+    
     document.getElementById('realWheelModal').classList.remove('hidden');
     
     const spinner = document.getElementById('wheelSpinnerElement');
@@ -222,7 +242,8 @@ socket.on('wheelSpinning', (targetCat) => {
 });
 
 socket.on('connect', () => { 
-    const urlParams = new URLSearchParams(window.location.search); const roomFromUrl = urlParams.get('room'); const hostRoomId = sessionStorage.getItem('hostRoomId'); const guestName = sessionStorage.getItem('guestName'); 
+    const urlParams = new URLSearchParams(window.location.search); const roomFromUrl = urlParams.get('room'); 
+    const hostRoomId = localStorage.getItem('hostRoomId'); const guestName = sessionStorage.getItem('guestName'); 
     if (hostRoomId) { 
         isHost = true; if(hostSettingsBtn) hostSettingsBtn.classList.remove('hidden'); if(copyInviteBtn) copyInviteBtn.classList.remove('hidden'); if(destroyRoomBtn) destroyRoomBtn.classList.remove('hidden');
         const savedName = localStorage.getItem('lockedPlayerName') || '𝐒𝐀𝐒𝐔𝐊𝐄';
@@ -231,7 +252,7 @@ socket.on('connect', () => {
         isHost = false; if(leaveRoomBtn) leaveRoomBtn.classList.remove('hidden');
         if (guestName) { if(playerNameInput) playerNameInput.value = guestName; socket.emit('joinRoom', { roomId: roomFromUrl, name: guestName, playerId: myPlayerId }); } 
     } else { 
-        sessionStorage.removeItem('hostRoomId'); sessionStorage.removeItem('guestName'); showScreen('welcome'); 
+        sessionStorage.removeItem('guestName'); showScreen('welcome'); 
     } 
 });
 
@@ -252,7 +273,10 @@ if(confirmHostPasswordBtn) confirmHostPasswordBtn.addEventListener('click', () =
     }
     hostPasswordModal.classList.add('hidden'); isHost = true; 
     if(hostSettingsBtn) hostSettingsBtn.classList.remove('hidden'); if(copyInviteBtn) copyInviteBtn.classList.remove('hidden'); if(destroyRoomBtn) destroyRoomBtn.classList.remove('hidden');
-    const newRoomId = Math.random().toString(36).substring(2, 8); sessionStorage.setItem('hostRoomId', newRoomId); 
+    
+    const newRoomId = Math.random().toString(36).substring(2, 8); 
+    localStorage.setItem('hostRoomId', newRoomId); 
+    
     const savedName = localStorage.getItem('lockedPlayerName') || '𝐒𝐀𝐒𝐔𝐊𝐄';
     socket.emit('createRoom', { roomId: newRoomId, playerId: myPlayerId, name: savedName }); 
     showScreen('waiting'); 
@@ -266,7 +290,17 @@ if(joinRoomBtn) joinRoomBtn.addEventListener('click', () => {
     showScreen('waiting'); audioWaiting.play().catch(e => console.log(e)); 
 });
 
-if (destroyRoomBtn) { destroyRoomBtn.addEventListener('click', () => { if (confirm('هل أنت متأكد من إغلاق الغرفة وطرد جميع اللاعبين للعودة للقائمة الرئيسية؟')) { socket.emit('leaveRoom'); sessionStorage.clear(); window.location.href = window.location.pathname; } }); }
+if (destroyRoomBtn) { 
+    destroyRoomBtn.addEventListener('click', () => { 
+        if (confirm('هل أنت متأكد من إغلاق الغرفة وطرد جميع اللاعبين للعودة للقائمة الرئيسية؟')) { 
+            socket.emit('leaveRoom'); 
+            localStorage.removeItem('hostRoomId'); 
+            sessionStorage.clear(); 
+            window.location.href = window.location.pathname; 
+        } 
+    }); 
+}
+
 if(leaveRoomBtn) leaveRoomBtn.addEventListener('click', () => { if(confirm('هل أنت متأكد من مغادرة الغرفة؟')) { socket.emit('leaveRoom'); sessionStorage.clear(); window.location.href = window.location.pathname; } });
 socket.on('errorMsg', (msg) => { if(invalidRoomModal && errorMsgText) { errorMsgText.innerText = msg; invalidRoomModal.classList.remove('hidden'); } });
 
@@ -294,10 +328,9 @@ socket.on('updatePlayers', (playersArray) => {
     }
 });
 
-// 🔥 إضافة الـ fallbackRoomId لأزرار الهوست عشان يشتغل حتى لو النت فصل ورجع ثانية
 if(actualStartBtn) actualStartBtn.addEventListener('click', (e) => { 
     e.target.disabled = true; playSound('start'); 
-    socket.emit('goToModeSelection', sessionStorage.getItem('hostRoomId')); 
+    socket.emit('goToModeSelection', localStorage.getItem('hostRoomId')); 
     setTimeout(() => e.target.disabled = false, 1000); 
 });
 
@@ -305,7 +338,7 @@ socket.on('showModeSelection', () => { showScreen('modeSelection'); chosenCatego
 
 if(confirmStartGameBtn) confirmStartGameBtn.addEventListener('click', (e) => { 
     e.target.disabled = true; playSound('start'); 
-    socket.emit('startGameWithCategory', chosenCategory, sessionStorage.getItem('hostRoomId')); 
+    socket.emit('startGameWithCategory', chosenCategory, localStorage.getItem('hostRoomId')); 
     setTimeout(() => e.target.disabled = false, 2000); 
 });
 
@@ -327,7 +360,11 @@ socket.on('gameStarted', (data) => {
     if (isHost && restartGameBtn) restartGameBtn.disabled = false; if (isHost && startVotingPhaseBtn) startVotingPhaseBtn.classList.remove('hidden');
 });
 
-if(startVotingPhaseBtn) startVotingPhaseBtn.addEventListener('click', (e) => { e.target.disabled = true; playSound('start'); socket.emit('startVotingPhase', sessionStorage.getItem('hostRoomId')); setTimeout(() => e.target.disabled = false, 2000); });
+if(startVotingPhaseBtn) startVotingPhaseBtn.addEventListener('click', (e) => { 
+    e.target.disabled = true; playSound('start'); 
+    socket.emit('startVotingPhase', localStorage.getItem('hostRoomId')); 
+    setTimeout(() => e.target.disabled = false, 2000); 
+});
 
 socket.on('votingStarted', (playersArray) => { 
     playSound('start'); showScreen('voting'); liveVoteLog.innerHTML = ''; voteCounter.innerText = `0/${playersArray.length}`; voteCounter.style.color = "#00f3ff"; voteCounter.style.textShadow = "none"; let gridHTML = ''; playersArray.forEach(p => { if (p.id !== myPlayerId) gridHTML += `<div class="vote-card" onclick="castVote('${p.id}', this)" data-player-id="${p.id}"><div style="font-size: 2rem; margin-bottom:10px;">${p.isHost ? '👑' : '👤'}</div><div style="font-weight:bold; color:#fff;">${p.name}</div></div>`; }); votingGrid.innerHTML = gridHTML; 
@@ -338,7 +375,7 @@ socket.on('youAlreadyVoted', (targetId) => { const allCards = document.querySele
 socket.on('playerRemovedFromVoting', (playerId) => { const card = document.querySelector(`.vote-card[data-player-id="${playerId}"]`); if (card) card.remove(); });
 
 window.castVote = function(targetId, cardElement) { 
-    const fRoom = sessionStorage.getItem('hostRoomId') || new URLSearchParams(window.location.search).get('room');
+    const fRoom = localStorage.getItem('hostRoomId') || new URLSearchParams(window.location.search).get('room');
     socket.emit('submitVote', { targetId: targetId, fallbackRoomId: fRoom }); 
     const allCards = document.querySelectorAll('.vote-card'); allCards.forEach(c => c.classList.add('disabled')); cardElement.classList.remove('disabled'); cardElement.classList.add('voted'); 
 };
@@ -368,18 +405,17 @@ socket.on('gameFinalResult', (data) => {
 if(finalOkBtn) finalOkBtn.addEventListener('click', () => { finalResultModal.classList.add('hidden'); if (isHost) { if(hostSettingsModal) hostSettingsModal.classList.remove('hidden'); } else { if(guestWaitingHostModal) guestWaitingHostModal.classList.remove('hidden'); } });
 socket.on('gameRestarted', () => { playSound('start'); if(guessInterval) clearInterval(guessInterval); showScreen('waiting'); votingResultModal.classList.add('hidden'); finalResultModal.classList.add('hidden'); tieBreakerModal.classList.add('hidden'); if(startVotingPhaseBtn) startVotingPhaseBtn.classList.add('hidden'); if(confirmGuessBtn) confirmGuessBtn.classList.add('hidden'); if (isHost && restartGameBtn && hostSettingsModal) { restartGameBtn.disabled = true; hostSettingsModal.classList.add('hidden'); } if(guestWaitingHostModal) guestWaitingHostModal.classList.add('hidden'); });
 
-// 🔥 إضافة الـ fallbackRoomId هنا كمان عشان الاسم يتغير حتى لو النت قطع
 window.editPlayerName = function(targetId) { 
     const newName = prompt('أدخل الاسم الجديد:'); 
     if (newName && newName.trim() !== '') { 
-        const fRoom = sessionStorage.getItem('hostRoomId') || new URLSearchParams(window.location.search).get('room');
+        const fRoom = localStorage.getItem('hostRoomId') || new URLSearchParams(window.location.search).get('room');
         socket.emit('changePlayerName', { targetId: targetId, newName: newName.trim(), fallbackRoomId: fRoom }); 
     } 
 }; 
 
 window.kickPlayer = function(targetId) { 
     if (confirm('طرد نهائي لهذا اللاعب؟')) {
-        const fRoom = sessionStorage.getItem('hostRoomId') || new URLSearchParams(window.location.search).get('room');
+        const fRoom = localStorage.getItem('hostRoomId') || new URLSearchParams(window.location.search).get('room');
         socket.emit('kickPlayer', { targetId: targetId, fallbackRoomId: fRoom }); 
     }
 };
@@ -389,7 +425,7 @@ if(mobileViewBtn) mobileViewBtn.addEventListener('click', () => { document.body.
 
 if(hostSettingsBtn) hostSettingsBtn.addEventListener('click', () => { if(hostSettingsModal) hostSettingsModal.classList.remove('hidden'); }); if(closeModalBtn) closeModalBtn.addEventListener('click', () => { if(hostSettingsModal) hostSettingsModal.classList.add('hidden'); });
 if(restartGameBtn) restartGameBtn.addEventListener('click', (e) => { e.target.disabled = true; if(confirm('إعادة اللعب وإرجاع الجميع لغرفة الانتظار؟')) socket.emit('restartGame'); setTimeout(() => e.target.disabled = false, 2000); });
-if(copyInviteBtn) copyInviteBtn.addEventListener('click', () => { const roomId = sessionStorage.getItem('hostRoomId'); const inviteLink = window.location.origin + window.location.pathname + '?room=' + roomId; navigator.clipboard.writeText(inviteLink).then(() => { if(notificationToast) { notificationToast.classList.remove('hidden'); setTimeout(() => notificationToast.classList.add('hidden'), 2500); } }); });
-socket.on('hostLeftRoom', (hostName) => { const hostLeftText = document.getElementById('hostLeftText'); if(hostLeftText) hostLeftText.innerText = `لقد تم اغلاق الغرفه لان الهوست (${hostName}) غادر الغرفه`; if(hostLeftModal) hostLeftModal.classList.remove('hidden'); sessionStorage.clear(); });
+if(copyInviteBtn) copyInviteBtn.addEventListener('click', () => { const roomId = localStorage.getItem('hostRoomId') || sessionStorage.getItem('hostRoomId'); const inviteLink = window.location.origin + window.location.pathname + '?room=' + roomId; navigator.clipboard.writeText(inviteLink).then(() => { if(notificationToast) { notificationToast.classList.remove('hidden'); setTimeout(() => notificationToast.classList.add('hidden'), 2500); } }); });
+socket.on('hostLeftRoom', (hostName) => { const hostLeftText = document.getElementById('hostLeftText'); if(hostLeftText) hostLeftText.innerText = `لقد تم اغلاق الغرفه لان الهوست (${hostName}) غادر الغرفه`; if(hostLeftModal) hostLeftModal.classList.remove('hidden'); sessionStorage.clear(); localStorage.removeItem('hostRoomId'); });
 const closeHostLeftBtn = document.getElementById('closeHostLeftBtn'); if(closeHostLeftBtn) closeHostLeftBtn.addEventListener('click', () => { if(hostLeftModal) hostLeftModal.classList.add('hidden'); window.location.href = window.location.pathname; });
-socket.on('youAreKickedPermanently', () => { if(kickedModal) kickedModal.classList.remove('hidden'); sessionStorage.clear(); });
+socket.on('youAreKickedPermanently', () => { if(kickedModal) kickedModal.classList.remove('hidden'); sessionStorage.clear(); localStorage.removeItem('hostRoomId'); });

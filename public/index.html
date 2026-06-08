@@ -34,9 +34,8 @@
         body.pc-mode .sidebar { width: 300px; max-height: none; padding: 15px; }
         body.pc-mode .main-board { flex: 1; padding: 30px; }
 
-        /* 🔥 تعديلات الموبايل عشان الأسماء متختفيش */
         body.mobile-mode .game-wrapper { flex-direction: column; max-width: 450px !important; height: auto; gap: 15px; }
-        body.mobile-mode .sidebar { width: 100%; max-height: none; padding: 15px; } /* لغيت الـ max-height عشان تاخد راحتها */
+        body.mobile-mode .sidebar { width: 100%; max-height: none; padding: 15px; }
         body.mobile-mode .main-board { width: 100%; min-height: 500px; padding: 15px; }
 
         .players-list-gartic { flex: 1; overflow-y: auto; padding-right: 5px; margin-bottom: 15px; }
@@ -46,7 +45,6 @@
         .player-name { font-weight: bold; font-size: 1.1rem; color: #fff; }
         .player-status { font-size: 0.8rem; color: #00ff88; }
 
-        /* 🔥 الابتكار العظيم: السكرول الأفقي للأسماء في الموبايل */
         body.mobile-mode .players-list-gartic { 
             display: flex; flex-direction: row; overflow-x: auto; overflow-y: hidden; 
             padding-bottom: 15px; gap: 12px; margin-bottom: 15px; scrollbar-width: thin; scrollbar-color: #00f3ff rgba(0,0,0,0.2);

@@ -1,12 +1,5 @@
-const navEntries = performance.getEntriesByType("navigation");
+// 🔥 شيلنا كود مسح الذاكرة اللي كان بيطردك لما تفتح الموبايل بعد ما نزلته
 const urlParamsSync = new URLSearchParams(window.location.search);
-if (navEntries.length > 0 && navEntries[0].type !== "reload") {
-    if (!urlParamsSync.get('room')) {
-        sessionStorage.removeItem('hostRoomId');
-        sessionStorage.removeItem('guestName');
-    }
-}
-
 const socket = io();
 
 // 🔥 بنك الأسئلة الذكية العملاق
@@ -187,7 +180,6 @@ socket.on('categorySelected', (cat) => {
     const card = document.getElementById(`cat-idx-${targetIdx}`); if(card) card.classList.add('selected'); chosenCategory = cat; if(isHost) confirmStartGameBtn.classList.remove('hidden');
 });
 
-// 🔥 التعديل العظيم في تزامن عجلة الحظ مع الصوت
 socket.on('wheelSpinning', (targetCat) => {
     isWheelSpinning = true; 
     if(isHost) confirmStartGameBtn.classList.add('hidden');
@@ -207,18 +199,14 @@ socket.on('wheelSpinning', (targetCat) => {
     spinner.style.transition = 'transform 5s cubic-bezier(0.1, 0.7, 0.1, 1)';
     spinner.style.transform = `rotate(${targetRotation}deg)`;
     
-    // 🔥 تزامن الصوت العبقري اللي بيطابق دوران العجلة بالظبط
     let startTime = Date.now();
     function playTick() {
         if (!isWheelSpinning) return;
         let elapsed = Date.now() - startTime;
         
-        // وقف التكتكة قبل النهاية بلحظات بسيطة عشان تبان طبيعية ومفيش صوت يضرب بعد ما تقف
         if (elapsed > 4900) return; 
-        
         playSound('vote');
         
-        // حساب معادلة التباطؤ (كل ما الوقت يعدي، التكتكة بتبقى أبطأ وأبطأ)
         let progress = elapsed / 5000; 
         let nextDelay = 30 + (Math.pow(progress, 3) * 500); 
         
@@ -228,7 +216,7 @@ socket.on('wheelSpinning', (targetCat) => {
 
     setTimeout(() => {
         isWheelSpinning = false;
-        playSound('win'); // صوت الفوز بيضرب فوراً مع الوقوف
+        playSound('win'); 
         
         document.querySelectorAll('.category-card').forEach(c => c.classList.remove('selected', 'roulette-active'));
         document.getElementById(`cat-idx-${targetIdx}`).classList.add('selected');

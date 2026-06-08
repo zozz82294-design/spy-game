@@ -190,20 +190,33 @@ io.on('connection', (socket) => {
         } catch (e) {}
     });
 
+    // 🔥 إصلاح تغيير الاسم عشان يشتغل دايماً حتى لو النت رمش
     socket.on('changePlayerName', (data) => { 
         try { 
-            if(socket.roomId && rooms[socket.roomId] && rooms[socket.roomId].players[data.targetId]) { 
-                rooms[socket.roomId].players[data.targetId].name = data.newName; 
-                io.to(socket.roomId).emit('updatePlayers', Object.values(rooms[socket.roomId].players)); 
-                io.to(rooms[socket.roomId].players[data.targetId].socketId).emit('forceNameLock', data.newName);
+            let roomId = socket.roomId;
+            if (!roomId) { for (const r in rooms) { if (rooms[r].players[socket.playerId]) { roomId = r; break; } } }
+            
+            if(roomId && rooms[roomId] && rooms[roomId].players[data.targetId]) { 
+                rooms[roomId].players[data.targetId].name = data.newName; 
+                io.to(roomId).emit('updatePlayers', Object.values(rooms[roomId].players)); 
+                io.to(rooms[roomId].players[data.targetId].socketId).emit('forceNameLock', data.newName);
             } 
         } catch(e){} 
     });
 
-    socket.on('kickPlayer', (targetId) => { try { const roomId = socket.roomId; if(roomId && rooms[roomId] && rooms[roomId].players[targetId]) { io.to(rooms[roomId].players[targetId].socketId).emit('youAreKickedPermanently'); handlePlayerLeave(roomId, targetId); } } catch(e){} });
-    socket.on('leaveRoom', () => { try { const roomId = socket.roomId; const playerId = socket.playerId; if (roomId && rooms[roomId] && rooms[roomId].players[playerId]) { handlePlayerLeave(roomId, playerId); socket.leave(roomId); } } catch(e){} });
+    // 🔥 إصلاح طرد اللاعب
+    socket.on('kickPlayer', (targetId) => { 
+        try { 
+            let roomId = socket.roomId;
+            if (!roomId) { for (const r in rooms) { if (rooms[r].players[socket.playerId]) { roomId = r; break; } } }
+            if(roomId && rooms[roomId] && rooms[roomId].players[targetId]) { 
+                io.to(rooms[roomId].players[targetId].socketId).emit('youAreKickedPermanently'); 
+                handlePlayerLeave(roomId, targetId); 
+            } 
+        } catch(e){} 
+    });
     
-    socket.on('goToModeSelection', () => { try { if(socket.roomId && rooms[socket.roomId]) { rooms[socket.roomId].featureVotes = { hints: [], questions: [] }; io.to(socket.roomId).emit('showModeSelection'); } } catch(e){} });
+    socket.on('leaveRoom', () => { try { const roomId = socket.roomId; const playerId = socket.playerId; if (roomId && rooms[roomId] && rooms[roomId].players[playerId]) { handlePlayerLeave(roomId, playerId); socket.leave(roomId); } } catch(e){} });
 
     socket.on('selectCategory', (cat) => { io.to(socket.roomId).emit('categorySelected', cat); });
     socket.on('spinWheel', (targetCat) => { io.to(socket.roomId).emit('wheelSpinning', targetCat); });
@@ -267,7 +280,6 @@ io.on('connection', (socket) => {
                 io.to(roomId).emit('guessingPhaseStarted', { words: rooms[roomId].guessingWords, duration: 30 });
                 if(rooms[roomId].guessTimer) clearTimeout(rooms[roomId].guessTimer);
                 rooms[roomId].guessTimer = setTimeout(() => { 
-                    // 🔥 حماية: إنهاء حالة التخمين فوراً لما الوقت يخلص
                     if(rooms[roomId] && rooms[roomId].gameState === 'guessing') { 
                         rooms[roomId].gameState = 'waiting';
                         io.to(roomId).emit('spyTimeOut'); 
@@ -279,15 +291,12 @@ io.on('connection', (socket) => {
 
     socket.on('spyHoverWord', (word) => { try { const roomId = socket.roomId; const playerId = socket.playerId; if(roomId && rooms[roomId]) io.to(roomId).emit('spySelectedWord', { word: word, spyName: rooms[roomId].players[playerId].name }); } catch(e){} });
     
-    // 🔥 الحماية السحرية لمنع التخمين المتكرر:
     socket.on('spyConfirmWord', (chosenWord) => { 
         try { 
             const roomId = socket.roomId; const playerId = socket.playerId; 
             if(roomId && rooms[roomId]) { 
-                // لو الحالة مش تخمين (يعني اختار خلاص)، السيرفر يرفض يستقبل إجابة تانية
                 if (rooms[roomId].gameState !== 'guessing') return; 
-                
-                rooms[roomId].gameState = 'waiting'; // تغيير الحالة عشان ميعرفش يدوس تاني
+                rooms[roomId].gameState = 'waiting'; 
                 if(rooms[roomId].guessTimer) clearTimeout(rooms[roomId].guessTimer); 
                 io.to(roomId).emit('gameFinalResult', { spyName: rooms[roomId].players[playerId].name, chosenWord: chosenWord, correctWord: rooms[roomId].word, isCorrect: (chosenWord === rooms[roomId].word) }); 
             } 
@@ -310,7 +319,10 @@ io.on('connection', (socket) => {
         try { 
             const roomId = socket.roomId; const playerId = socket.playerId; 
             if (roomId && rooms[roomId] && rooms[roomId].players[playerId]) { 
-                rooms[roomId].players[playerId].disconnectTimeout = setTimeout(() => { handlePlayerLeave(roomId, playerId); }, 180000); 
+                const isHost = rooms[roomId].players[playerId].isHost;
+                // 🔥 الهوست ليه ساعة كاملة سماح (3600000 ملي ثانية) عشان الغرفة متتمسحش، والضيوف 3 دقايق
+                const timeoutLimit = isHost ? 3600000 : 180000; 
+                rooms[roomId].players[playerId].disconnectTimeout = setTimeout(() => { handlePlayerLeave(roomId, playerId); }, timeoutLimit); 
             } 
         } catch(e){} 
     });

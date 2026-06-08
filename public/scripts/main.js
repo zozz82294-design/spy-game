@@ -1,5 +1,3 @@
-// 🔥 شيلنا كود مسح الذاكرة اللي كان بيطردك لما تفتح الموبايل بعد ما نزلته
-const urlParamsSync = new URLSearchParams(window.location.search);
 const socket = io();
 
 // 🔥 بنك الأسئلة الذكية العملاق
@@ -74,7 +72,7 @@ createStars();
 function applyRgbWaveToElement(element, text) { if (element) element.textContent = text; }
 
 const audioJoin = new Audio('audio/join.mp3'); const audioWaiting = new Audio('audio/waiting.mp3'); const audioStart = new Audio('audio/start.mp3');
-const roomFromUrlSync = urlParamsSync.get('room'); const playerNameInput = document.getElementById('playerNameInput');
+const urlParamsSync = new URLSearchParams(window.location.search); const roomFromUrlSync = urlParamsSync.get('room'); const playerNameInput = document.getElementById('playerNameInput');
 
 socket.on('forceNameLock', (newName) => {
     localStorage.setItem('lockedPlayerName', newName); sessionStorage.setItem('guestName', newName);
@@ -161,7 +159,10 @@ function renderCategories() {
     const catGrid = document.getElementById('categoriesGrid'); if(!catGrid) return; catGrid.innerHTML = '';
     availableCategories.forEach((cat, index) => {
         const card = document.createElement('div'); card.className = 'category-card'; card.id = `cat-idx-${index}`; card.innerText = cat;
-        card.addEventListener('click', () => { if(!isHost || isWheelSpinning) return; playSound('click'); socket.emit('selectCategory', cat); });
+        card.addEventListener('click', () => { 
+            if(!isHost || isWheelSpinning) return; playSound('click'); 
+            socket.emit('selectCategory', cat, sessionStorage.getItem('hostRoomId')); 
+        });
         catGrid.appendChild(card);
     });
     const randomCard = document.createElement('div'); randomCard.className = 'category-card random-card'; randomCard.id = 'cat-random'; randomCard.innerText = 'اختيار عشوائي 🎡';
@@ -170,7 +171,7 @@ function renderCategories() {
         if(!isHost || isWheelSpinning) return; 
         playSound('start'); 
         const targetCat = availableCategories[Math.floor(Math.random() * availableCategories.length)]; 
-        socket.emit('spinWheel', targetCat); 
+        socket.emit('spinWheel', targetCat, sessionStorage.getItem('hostRoomId')); 
     });
     catGrid.appendChild(randomCard);
 }
@@ -183,7 +184,6 @@ socket.on('categorySelected', (cat) => {
 socket.on('wheelSpinning', (targetCat) => {
     isWheelSpinning = true; 
     if(isHost) confirmStartGameBtn.classList.add('hidden');
-    
     document.getElementById('realWheelModal').classList.remove('hidden');
     
     const spinner = document.getElementById('wheelSpinnerElement');
@@ -203,13 +203,10 @@ socket.on('wheelSpinning', (targetCat) => {
     function playTick() {
         if (!isWheelSpinning) return;
         let elapsed = Date.now() - startTime;
-        
         if (elapsed > 4900) return; 
         playSound('vote');
-        
         let progress = elapsed / 5000; 
         let nextDelay = 30 + (Math.pow(progress, 3) * 500); 
-        
         setTimeout(playTick, nextDelay);
     }
     playTick();
@@ -217,16 +214,10 @@ socket.on('wheelSpinning', (targetCat) => {
     setTimeout(() => {
         isWheelSpinning = false;
         playSound('win'); 
-        
         document.querySelectorAll('.category-card').forEach(c => c.classList.remove('selected', 'roulette-active'));
         document.getElementById(`cat-idx-${targetIdx}`).classList.add('selected');
         chosenCategory = targetCat;
-        
-        setTimeout(() => {
-            document.getElementById('realWheelModal').classList.add('hidden');
-            if(isHost) confirmStartGameBtn.classList.remove('hidden');
-        }, 1500);
-        
+        setTimeout(() => { document.getElementById('realWheelModal').classList.add('hidden'); if(isHost) confirmStartGameBtn.classList.remove('hidden'); }, 1500);
     }, 5000); 
 });
 
@@ -303,9 +294,20 @@ socket.on('updatePlayers', (playersArray) => {
     }
 });
 
-if(actualStartBtn) actualStartBtn.addEventListener('click', (e) => { e.target.disabled = true; playSound('start'); socket.emit('goToModeSelection'); setTimeout(() => e.target.disabled = false, 1000); });
+// 🔥 إضافة الـ fallbackRoomId لأزرار الهوست عشان يشتغل حتى لو النت فصل ورجع ثانية
+if(actualStartBtn) actualStartBtn.addEventListener('click', (e) => { 
+    e.target.disabled = true; playSound('start'); 
+    socket.emit('goToModeSelection', sessionStorage.getItem('hostRoomId')); 
+    setTimeout(() => e.target.disabled = false, 1000); 
+});
+
 socket.on('showModeSelection', () => { showScreen('modeSelection'); chosenCategory = null; isWheelSpinning = false; confirmStartGameBtn.classList.add('hidden'); renderCategories(); });
-if(confirmStartGameBtn) confirmStartGameBtn.addEventListener('click', (e) => { e.target.disabled = true; playSound('start'); socket.emit('startGameWithCategory', chosenCategory); setTimeout(() => e.target.disabled = false, 2000); });
+
+if(confirmStartGameBtn) confirmStartGameBtn.addEventListener('click', (e) => { 
+    e.target.disabled = true; playSound('start'); 
+    socket.emit('startGameWithCategory', chosenCategory, sessionStorage.getItem('hostRoomId')); 
+    setTimeout(() => e.target.disabled = false, 2000); 
+});
 
 socket.on('gameStarted', (data) => {
     if(data) { 
@@ -334,7 +336,12 @@ socket.on('votingStarted', (playersArray) => {
 socket.on('votingTied', (data) => { playSound('lose'); tiedPlayersNames.innerText = data.tiedNames; tieBreakerModal.classList.remove('hidden'); let timeLeft = 12; tieTimerEl.innerText = timeLeft; if(tieInterval) clearInterval(tieInterval); tieInterval = setInterval(() => { timeLeft--; tieTimerEl.innerText = timeLeft; if(timeLeft <= 0) { clearInterval(tieInterval); tieBreakerModal.classList.add('hidden'); } }, 1000); });
 socket.on('youAlreadyVoted', (targetId) => { const allCards = document.querySelectorAll('.vote-card'); allCards.forEach(c => c.classList.add('disabled')); const myCard = document.querySelector(`.vote-card[data-player-id="${targetId}"]`); if(myCard) { myCard.classList.remove('disabled'); myCard.classList.add('voted'); } });
 socket.on('playerRemovedFromVoting', (playerId) => { const card = document.querySelector(`.vote-card[data-player-id="${playerId}"]`); if (card) card.remove(); });
-window.castVote = function(targetId, cardElement) { socket.emit('submitVote', targetId); const allCards = document.querySelectorAll('.vote-card'); allCards.forEach(c => c.classList.add('disabled')); cardElement.classList.remove('disabled'); cardElement.classList.add('voted'); };
+
+window.castVote = function(targetId, cardElement) { 
+    const fRoom = sessionStorage.getItem('hostRoomId') || new URLSearchParams(window.location.search).get('room');
+    socket.emit('submitVote', { targetId: targetId, fallbackRoomId: fRoom }); 
+    const allCards = document.querySelectorAll('.vote-card'); allCards.forEach(c => c.classList.add('disabled')); cardElement.classList.remove('disabled'); cardElement.classList.add('voted'); 
+};
 
 socket.on('voteRegistered', (data) => { 
     if(data.voterName !== "النظام") playSound('vote'); voteCounter.innerText = `${data.currentVotes}/${data.totalRequired}`; if(data.currentVotes >= data.totalRequired) { voteCounter.style.color = "#00ff88"; voteCounter.style.textShadow = "0 0 10px #00ff88"; } if (data.voterName !== "النظام") { const logP = document.createElement('div'); logP.className = 'log-entry'; logP.innerHTML = `${data.voterName} صوت على <span class="target-name">${data.targetName}</span>`; liveVoteLog.prepend(logP); } 
@@ -361,8 +368,21 @@ socket.on('gameFinalResult', (data) => {
 if(finalOkBtn) finalOkBtn.addEventListener('click', () => { finalResultModal.classList.add('hidden'); if (isHost) { if(hostSettingsModal) hostSettingsModal.classList.remove('hidden'); } else { if(guestWaitingHostModal) guestWaitingHostModal.classList.remove('hidden'); } });
 socket.on('gameRestarted', () => { playSound('start'); if(guessInterval) clearInterval(guessInterval); showScreen('waiting'); votingResultModal.classList.add('hidden'); finalResultModal.classList.add('hidden'); tieBreakerModal.classList.add('hidden'); if(startVotingPhaseBtn) startVotingPhaseBtn.classList.add('hidden'); if(confirmGuessBtn) confirmGuessBtn.classList.add('hidden'); if (isHost && restartGameBtn && hostSettingsModal) { restartGameBtn.disabled = true; hostSettingsModal.classList.add('hidden'); } if(guestWaitingHostModal) guestWaitingHostModal.classList.add('hidden'); });
 
-window.editPlayerName = function(targetId) { const newName = prompt('أدخل الاسم الجديد:'); if (newName && newName.trim() !== '') { socket.emit('changePlayerName', { targetId: targetId, newName: newName.trim() }); } }; 
-window.kickPlayer = function(targetId) { if (confirm('طرد نهائي لهذا اللاعب؟')) socket.emit('kickPlayer', targetId); };
+// 🔥 إضافة الـ fallbackRoomId هنا كمان عشان الاسم يتغير حتى لو النت قطع
+window.editPlayerName = function(targetId) { 
+    const newName = prompt('أدخل الاسم الجديد:'); 
+    if (newName && newName.trim() !== '') { 
+        const fRoom = sessionStorage.getItem('hostRoomId') || new URLSearchParams(window.location.search).get('room');
+        socket.emit('changePlayerName', { targetId: targetId, newName: newName.trim(), fallbackRoomId: fRoom }); 
+    } 
+}; 
+
+window.kickPlayer = function(targetId) { 
+    if (confirm('طرد نهائي لهذا اللاعب؟')) {
+        const fRoom = sessionStorage.getItem('hostRoomId') || new URLSearchParams(window.location.search).get('room');
+        socket.emit('kickPlayer', { targetId: targetId, fallbackRoomId: fRoom }); 
+    }
+};
 
 if(pcViewBtn) pcViewBtn.addEventListener('click', () => { document.body.className = 'pc-mode'; pcViewBtn.classList.add('active-view'); if(mobileViewBtn) mobileViewBtn.classList.remove('active-view'); }); 
 if(mobileViewBtn) mobileViewBtn.addEventListener('click', () => { document.body.className = 'mobile-mode'; mobileViewBtn.classList.add('active-view'); if(pcViewBtn) pcViewBtn.classList.remove('active-view'); });

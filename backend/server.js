@@ -190,12 +190,11 @@ io.on('connection', (socket) => {
         } catch (e) {}
     });
 
-    // 🔥 إصلاح تغيير الاسم عشان يشتغل دايماً حتى لو النت رمش
+    // 🔥 إصلاح تغيير الاسم وتدعيمه عشان لو الموبايل رمش
     socket.on('changePlayerName', (data) => { 
         try { 
-            let roomId = socket.roomId;
+            let roomId = socket.roomId || data.fallbackRoomId;
             if (!roomId) { for (const r in rooms) { if (rooms[r].players[socket.playerId]) { roomId = r; break; } } }
-            
             if(roomId && rooms[roomId] && rooms[roomId].players[data.targetId]) { 
                 rooms[roomId].players[data.targetId].name = data.newName; 
                 io.to(roomId).emit('updatePlayers', Object.values(rooms[roomId].players)); 
@@ -204,10 +203,12 @@ io.on('connection', (socket) => {
         } catch(e){} 
     });
 
-    // 🔥 إصلاح طرد اللاعب
-    socket.on('kickPlayer', (targetId) => { 
+    // 🔥 إصلاح الطرد وتدعيمه
+    socket.on('kickPlayer', (data) => { 
         try { 
-            let roomId = socket.roomId;
+            let targetId = typeof data === 'object' ? data.targetId : data;
+            let fallbackRoomId = typeof data === 'object' ? data.fallbackRoomId : null;
+            let roomId = socket.roomId || fallbackRoomId;
             if (!roomId) { for (const r in rooms) { if (rooms[r].players[socket.playerId]) { roomId = r; break; } } }
             if(roomId && rooms[roomId] && rooms[roomId].players[targetId]) { 
                 io.to(rooms[roomId].players[targetId].socketId).emit('youAreKickedPermanently'); 
@@ -215,15 +216,38 @@ io.on('connection', (socket) => {
             } 
         } catch(e){} 
     });
-    
+
     socket.on('leaveRoom', () => { try { const roomId = socket.roomId; const playerId = socket.playerId; if (roomId && rooms[roomId] && rooms[roomId].players[playerId]) { handlePlayerLeave(roomId, playerId); socket.leave(roomId); } } catch(e){} });
 
-    socket.on('selectCategory', (cat) => { io.to(socket.roomId).emit('categorySelected', cat); });
-    socket.on('spinWheel', (targetCat) => { io.to(socket.roomId).emit('wheelSpinning', targetCat); });
+    // 🔥 درع الحماية لكل أوامر الهوست
+    socket.on('goToModeSelection', (fallbackRoomId) => { 
+        try { 
+            let roomId = socket.roomId || fallbackRoomId;
+            if (!roomId) { for (const r in rooms) { if (rooms[r].players[socket.playerId]) { roomId = r; socket.roomId = r; break; } } }
+            if(roomId && rooms[roomId]) { rooms[roomId].featureVotes = { hints: [], questions: [] }; io.to(roomId).emit('showModeSelection'); } 
+        } catch(e){} 
+    });
 
-    socket.on('startGameWithCategory', (categoryName) => {
+    socket.on('selectCategory', (cat, fallbackRoomId) => { 
+        try { 
+            let roomId = socket.roomId || fallbackRoomId;
+            if (!roomId) { for (const r in rooms) { if (rooms[r].players[socket.playerId]) { roomId = r; socket.roomId = r; break; } } }
+            if(roomId && rooms[roomId]) { io.to(roomId).emit('categorySelected', cat); } 
+        } catch(e){} 
+    });
+
+    socket.on('spinWheel', (targetCat, fallbackRoomId) => { 
+        try { 
+            let roomId = socket.roomId || fallbackRoomId;
+            if (!roomId) { for (const r in rooms) { if (rooms[r].players[socket.playerId]) { roomId = r; socket.roomId = r; break; } } }
+            if(roomId && rooms[roomId]) { io.to(roomId).emit('wheelSpinning', targetCat); } 
+        } catch(e){} 
+    });
+
+    socket.on('startGameWithCategory', (categoryName, fallbackRoomId) => {
         try {
-            const roomId = socket.roomId;
+            let roomId = socket.roomId || fallbackRoomId;
+            if (!roomId) { for (const r in rooms) { if (rooms[r].players[socket.playerId]) { roomId = r; socket.roomId = r; break; } } }
             if(roomId && rooms[roomId]) {
                 rooms[roomId].gameState = 'playing'; rooms[roomId].votes = {}; 
                 if(rooms[roomId].guessTimer) clearTimeout(rooms[roomId].guessTimer);
@@ -251,17 +275,18 @@ io.on('connection', (socket) => {
             let roomId = socket.roomId || fallbackRoomId;
             if (!roomId) { for (const r in rooms) { if (rooms[r].players[socket.playerId]) { roomId = r; socket.roomId = r; break; } } }
             if(roomId && rooms[roomId]) { 
-                rooms[roomId].gameState = 'voting'; 
-                rooms[roomId].votes = {}; 
+                rooms[roomId].gameState = 'voting'; rooms[roomId].votes = {}; 
                 if(rooms[roomId].tieTimer) clearTimeout(rooms[roomId].tieTimer);
                 io.to(roomId).emit('votingStarted', Object.values(rooms[roomId].players)); 
             } 
         } catch(e){} 
     });
 
-    socket.on('submitVote', (targetId) => {
+    socket.on('submitVote', (data) => {
         try {
-            let roomId = socket.roomId;
+            let targetId = typeof data === 'object' ? data.targetId : data;
+            let fallbackRoomId = typeof data === 'object' ? data.fallbackRoomId : null;
+            let roomId = socket.roomId || fallbackRoomId;
             if (!roomId) { for (const r in rooms) { if (rooms[r].players[socket.playerId]) { roomId = r; break; } } }
             const playerId = socket.playerId;
             if(roomId && rooms[roomId] && rooms[roomId].gameState === 'voting') {
@@ -281,8 +306,7 @@ io.on('connection', (socket) => {
                 if(rooms[roomId].guessTimer) clearTimeout(rooms[roomId].guessTimer);
                 rooms[roomId].guessTimer = setTimeout(() => { 
                     if(rooms[roomId] && rooms[roomId].gameState === 'guessing') { 
-                        rooms[roomId].gameState = 'waiting';
-                        io.to(roomId).emit('spyTimeOut'); 
+                        rooms[roomId].gameState = 'waiting'; io.to(roomId).emit('spyTimeOut'); 
                     } 
                 }, 30000); 
             }
@@ -309,8 +333,7 @@ io.on('connection', (socket) => {
             if (!roomId) { for (const r in rooms) { if (rooms[r].players[socket.playerId]) { roomId = r; break; } } }
             if(roomId && rooms[roomId]) { 
                 if(rooms[roomId].guessTimer) clearTimeout(rooms[roomId].guessTimer); if(rooms[roomId].tieTimer) clearTimeout(rooms[roomId].tieTimer); 
-                rooms[roomId].gameState = 'waiting'; rooms[roomId].votes = {}; 
-                io.to(roomId).emit('gameRestarted'); 
+                rooms[roomId].gameState = 'waiting'; rooms[roomId].votes = {}; io.to(roomId).emit('gameRestarted'); 
             } 
         } catch(e){} 
     });
@@ -319,8 +342,8 @@ io.on('connection', (socket) => {
         try { 
             const roomId = socket.roomId; const playerId = socket.playerId; 
             if (roomId && rooms[roomId] && rooms[roomId].players[playerId]) { 
+                // 🔥 لو الهوست النت فصل عنده هيقعد ساعة كاملة مش هيطرد عشان الغرفة متتبخرش، لو ضيف هيقعد 3 دقايق
                 const isHost = rooms[roomId].players[playerId].isHost;
-                // 🔥 الهوست ليه ساعة كاملة سماح (3600000 ملي ثانية) عشان الغرفة متتمسحش، والضيوف 3 دقايق
                 const timeoutLimit = isHost ? 3600000 : 180000; 
                 rooms[roomId].players[playerId].disconnectTimeout = setTimeout(() => { handlePlayerLeave(roomId, playerId); }, timeoutLimit); 
             } 

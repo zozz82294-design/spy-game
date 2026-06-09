@@ -190,7 +190,6 @@ io.on('connection', (socket) => {
         } catch (e) {}
     });
 
-    // 🔥 إصلاح تغيير الاسم وتدعيمه عشان لو الموبايل رمش
     socket.on('changePlayerName', (data) => { 
         try { 
             let roomId = socket.roomId || data.fallbackRoomId;
@@ -203,7 +202,6 @@ io.on('connection', (socket) => {
         } catch(e){} 
     });
 
-    // 🔥 إصلاح الطرد وتدعيمه
     socket.on('kickPlayer', (data) => { 
         try { 
             let targetId = typeof data === 'object' ? data.targetId : data;
@@ -219,7 +217,6 @@ io.on('connection', (socket) => {
 
     socket.on('leaveRoom', () => { try { const roomId = socket.roomId; const playerId = socket.playerId; if (roomId && rooms[roomId] && rooms[roomId].players[playerId]) { handlePlayerLeave(roomId, playerId); socket.leave(roomId); } } catch(e){} });
 
-    // 🔥 درع الحماية لكل أوامر الهوست
     socket.on('goToModeSelection', (fallbackRoomId) => { 
         try { 
             let roomId = socket.roomId || fallbackRoomId;
@@ -342,7 +339,6 @@ io.on('connection', (socket) => {
         try { 
             const roomId = socket.roomId; const playerId = socket.playerId; 
             if (roomId && rooms[roomId] && rooms[roomId].players[playerId]) { 
-                // 🔥 لو الهوست النت فصل عنده هيقعد ساعة كاملة مش هيطرد عشان الغرفة متتبخرش، لو ضيف هيقعد 3 دقايق
                 const isHost = rooms[roomId].players[playerId].isHost;
                 const timeoutLimit = isHost ? 3600000 : 180000; 
                 rooms[roomId].players[playerId].disconnectTimeout = setTimeout(() => { handlePlayerLeave(roomId, playerId); }, timeoutLimit); 
@@ -351,4 +347,5 @@ io.on('connection', (socket) => {
     });
 });
 
-server.listen(PORT, () => { console.log(`🚀 Server running on port ${PORT}`); });
+// 🔥 تعديل البورت ليعمل بشكل مثالي مع منصة Render
+server.listen(PORT, '0.0.0.0', () => { console.log(`🚀 Server running on port ${PORT}`); });

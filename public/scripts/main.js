@@ -1,7 +1,9 @@
+// 🔥 شيلنا كود التنظيف عشان الغرفة متقفلش لوحدها
 const urlParamsSync = new URLSearchParams(window.location.search);
-const socket = io();
 
-// بنك الأسئلة الذكية العملاق
+// 🔥 إجبار الاتصال المباشر (WebSockets) عشان زرايرك تدوس طلقة وتستجيب فوراً على منصة Render
+const socket = io({ transports: ['websocket'], upgrade: false });
+
 const cleverQuestions = [
     "متى كانت آخر مرة استخدمت فيها الحاجة دي؟", "هل الحجم بيفرق في جودته أو سعره؟", 
     "موجود في كل بيت ولا بيوت معينة؟", "سعره غالي ولا في متناول الجميع؟", 
@@ -30,7 +32,6 @@ const cleverQuestions = [
     "هل بتأثر على حاسة الشم أو التذوق؟", "هل ليها ماركات عالمية مشهورة بتتنافس فيها؟"
 ];
 
-// بنك الهينتات العميقة العملاق
 const cleverHints = [
     "حاجة مألوفة جداً وبنشوفها كتير.", "استخدامه معروف للكل ومفيش حد ميعرفوش.", 
     "ممكن ييجي بألوان وأشكال مختلفة.", "مش كل الناس بتهتم بيه بنفس الدرجة.", 
@@ -131,7 +132,6 @@ function showScreen(screenName) {
     }
 }
 
-// 🔥 دالة الهينتات بعد التطوير العظيم لربط الجملة بالتصنيف
 function showSuggestions(type) {
     if(!myRoleData || myRoleData.isSpy) return; 
     
@@ -141,7 +141,6 @@ function showSuggestions(type) {
     suggestionsTitle.style.color = type === 'hints' ? "#00f3ff" : "#00ff88";
     suggestionsTitle.style.textShadow = type === 'hints' ? "0 0 15px #00f3ff" : "0 0 15px #00ff88";
     
-    // 🔥 إضافة البادئة الذكية حسب التصنيف
     const categoryPrefixes = {
         "حاجات جوا وبرا البيت": "بخصوص (الحاجة دي اللي في البيت أو براه) 👈",
         "أكل وشرب": "بخصوص (الأكلة أو المشروب ده) 👈",
@@ -160,10 +159,7 @@ function showSuggestions(type) {
     selected.forEach(item => {
         const li = document.createElement('li');
         li.style.marginBottom = "10px"; li.style.padding = "12px"; li.style.background = "rgba(255,255,255,0.05)"; li.style.border = "1px solid rgba(255,255,255,0.1)"; li.style.borderRadius = "8px"; li.className = "suggestion-item"; 
-        
-        // دمج البادئة مع السؤال/الهينت
         li.innerHTML = `<span style="color: ${type === 'hints' ? '#00f3ff' : '#00ff88'}; font-weight: bold;">${prefix}</span> <br> ${item}`;
-        
         suggestionsList.appendChild(li);
     });
     

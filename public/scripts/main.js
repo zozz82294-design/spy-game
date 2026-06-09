@@ -1,64 +1,50 @@
-// 🔥 شيلنا كود التنظيف عشان الغرفة متقفلش لوحدها
 const urlParamsSync = new URLSearchParams(window.location.search);
-
-// 🔥 إجبار الاتصال المباشر (WebSockets) عشان زرايرك تدوس طلقة وتستجيب فوراً على منصة Render
 const socket = io({ transports: ['websocket'], upgrade: false });
 
-const cleverQuestions = [
-    "متى كانت آخر مرة استخدمت فيها الحاجة دي؟", "هل الحجم بيفرق في جودته أو سعره؟", 
-    "موجود في كل بيت ولا بيوت معينة؟", "سعره غالي ولا في متناول الجميع؟", 
-    "هل الأطفال بيحبوه ولا للكبار بس؟", "لونه بيأثر على اختيارك ليه؟", 
-    "بتفضل تستخدمه لوحدك ولا مع حد؟", "هل ممكن نستغنى عنه بسهولة في حياتنا؟", 
-    "بيتأثر بالحرارة أو الجو؟", "بيفضل معاك فترة طويلة ولا بيستهلك/بيبوظ بسرعة؟", 
-    "ممكن تلاقيه في الشارع عادي؟", "هل ليه ريحة أو صوت مميز؟", 
-    "ينفع نهديه لحد في مناسبة؟", "طريقة استخدامه محتاجة مجهود بدني؟", 
-    "مصنوع من مواد طبيعية ولا صناعية؟", "هل هو حاجة أساسية ولا رفاهية؟", 
-    "حجمه أكبر من كف الإيد؟", "ينفع تحطه في جيبك؟", 
-    "هل بيحتاج كهربا أو طاقة عشان يشتغل؟", "لو ضاع منك هتزعل عليه أو تدور عليه كتير؟", 
-    "بتشوفه كل يوم بعينك؟", "ممكن تشتريه من السوبر ماركت؟", 
-    "هل بيعتبر اختراع قديم ولا حديث؟", "بيستخدم في الشتاء أكتر ولا الصيف؟", 
-    "تقدر تعمله بنفسك في البيت؟", "هل هي حاجة ملموسة بنمسكها بإيدينا بسهولة؟", 
-    "بتستخدمها كل يوم ولا في مناسبات معينة؟", "هل بتعمل صوت مميز وهي شغالة أو بنستخدمها؟", 
-    "في منها ألوان كتير ولا ألوانها محدودة؟", "ممكن تضرنا لو وقعت علينا أو استخدمناها غلط؟", 
-    "ينفع تحطها في شنطتك وأنت خارج؟", "موجودة في كل أوضة في البيت ولا مكان معين بس؟", 
-    "هل بتخلص وبنحتاج نشتري غيرها باستمرار؟", "هل الأطفال مسموح ليهم يستخدموها لوحدهم؟", 
-    "هل بتتباع في الصيدليات ولا مكاتب ولا محلات لبس؟", "هل ليها علاقة بالأكل أو الشرب بشكل أو بآخر؟", 
-    "بتعيش سنين ولا بتترمي بعد فترة قصيرة؟", "لو باظت، بتصلحها ولا بتشتري غيرها فوراً؟", 
-    "هل بتستخدمها وإنت قاعد ولا وإنت بتتحرك؟", "هل حجمها ممكن يتغير (تتقفل وتتفتح أو تتني)؟", 
-    "هل بتحتاج تتدرب أو تقرأ كتالوج عشان تعرف تستخدمها؟", "هل تعتبر حاجة شخصية جداً ولا عادي حد يستلفها؟", 
-    "هل بتحتاج مياه أو تنظيف مستمر؟", "فيها زجاج أو معدن في تكوينها الأساسي؟", 
-    "لو سافرت هتاخدها معاك ولا هتسيبها؟", "هل ممكن تلاقيها في المدرسة أو الجامعة؟", 
-    "هل بتحتاج تركيز وإنت بتتعامل معاها؟", "هل بتستهلك مساحة كبيرة في التخزين؟", 
-    "هل بتأثر على حاسة الشم أو التذوق؟", "هل ليها ماركات عالمية مشهورة بتتنافس فيها؟"
-];
+// 🔥 بنك الهينتات الاحترافية (الكلمة الواحدة العميقة) مقسم حسب التصنيف
+const shortHints = {
+    "حاجات جوا وبرا البيت": ["خشب", "يومي", "أساسي", "راحة", "تنظيف", "معدن", "كهربا", "ديكور", "بيبوظ", "بلاستيك", "بينور", "بنلمسه", "مهم جداً", "روتين", "عملي", "زينة"],
+    "أكل وشرب": ["مزاج", "ريحة", "مسكر", "حادق", "طاقة", "دايت", "سخن", "ساقع", "دليفري", "سريع", "يومي", "عزومة", "مشهور", "صحي", "مكونات", "بالشوكه", "إدمان"],
+    "أدوات وأشياء": ["معدن", "بلاستيك", "صغير", "حادة", "عملي", "في الجيب", "شنطة", "مكتب", "مدرسة", "شغل", "هدية", "بيخلص", "بنشتريه", "بيلف", "أساسي"],
+    "أماكن ومواصلات": ["تذكرة", "مشوار", "زحمة", "فلوس", "هواء", "حكومي", "خاص", "سريع", "بطيء", "شغل", "ترفيه", "تجمع", "سفر", "مبنى", "حديد", "بنزين"],
+    "حيوانات ونباتات": ["طبيعة", "لون", "شجر", "ريحة", "أليف", "مفترس", "سريع", "ميه", "طين", "زينة", "أخضر", "صوت", "بيطير", "بيمشي", "برّي", "بحر"],
+    "مهن ووظائف": ["شغل", "بدلة", "فلوس", "شهادة", "مهارة", "تعب", "طوارئ", "مكتب", "شارع", "احترام", "بدني", "ذهني", "ليل", "نهار", "مستقبل", "أدوات", "خطر"],
+    "رياضة وهوايات": ["صحة", "تسلية", "مجهود", "عرق", "تحدي", "كورة", "ملعب", "جيم", "فريق", "فردي", "وقت فاضي", "شغف", "أدوات", "تركيز", "ذهني", "أعصاب"],
+    "أجهزة وتكنولوجيا": ["شاشة", "كهربا", "إنترنت", "شاحن", "بطارية", "إدمان", "زرار", "تحديث", "تسلية", "شغل", "غالي", "تطور", "سلك", "تواصل", "صوت", "لمس"]
+};
 
-const cleverHints = [
-    "حاجة مألوفة جداً وبنشوفها كتير.", "استخدامه معروف للكل ومفيش حد ميعرفوش.", 
-    "ممكن ييجي بألوان وأشكال مختلفة.", "مش كل الناس بتهتم بيه بنفس الدرجة.", 
-    "موجود من زمان جداً وتطور مع الوقت.", "ليه أكتر من نوع وماركة.", 
-    "صعب تتلخبط فيه أو تديه اسم تاني.", "وزنه غالباً مش بيكون مشكلة.", 
-    "بيعبر عن حاجة في الروتين اليومي.", "ممكن يخلص أو يتغير مع الاستخدام المستمر.", 
-    "مفيش غنى عنه في أوقات معينة.", "بيدي طابع خاص أو بيسهل خطوة مهمة.", 
-    "الناس بتختلف في تفضيلها ليه.", "ممكن يكون غالي وممكن يكون رخيص جداً.", 
-    "موجود حوالينا أكتر مما بنتخيل.", "بيحتاج مكان معين عشان نحتفظ بيه.", 
-    "طريقة تصنيعه بقت أسهل من زمان.", "بيكون مفيد جداً وقت الزنقة.", 
-    "ممكن تلاقيه في شنطتك أو درج مكتبك.", "بيعتبر من الأساسيات عند بعض الناس.", 
-    "لو مش موجود بنحس بنقص بسيط.", "ممكن تتشاركه مع حد وممكن لأ.", 
-    "مش بيحتاج مهارة خاصة عشان تستخدمه.", "في منه أحجام تناسب كل الاحتياجات.", 
-    "بنشتريه وإحنا متأكدين إحنا عايزينه ليه.", "حاجة بنتعامل معاها من غير ما نفكر كتير.", 
-    "ممكن تكون مصدر إزعاج لو مش شغالة كويس.", "بتعلمنا حاجة أو بتسهل علينا حاجة يومية.", 
-    "في ناس بتعتبرها جزء من شخصيتها أو ذوقها.", "ممكن تلاقيها في أماكن عامة وأماكن خاصة.", 
-    "بتتأثر بالبيئة المحيطة بيها (حرارة، تراب، مياه).", "ممكن تكون خطيرة أو مؤذية لو استخدمناها باستهتار.", 
-    "بعض الناس بتحب تجمع منها أشكال أو أنواع كنوع من الهواية.", "صعب تتخيل يومك أو أسبوعك من غير ما تشوفها أو تسمع عنها.", 
-    "ممكن تشتريها مستعملة وممكن تجيبها جديدة بكرتونتها.", "ليها عمر افتراضي وبعدين كفاءتها بتقل.", 
-    "بترتبط بذكرى معينة أو موقف عند بعض الناس.", "ممكن تتصنع من أكتر من مادة (بلاستيك، خشب، قماش، معدن).", 
-    "فيها جزء بيتحرك أو بيتغير شكله.", "ممكن تكون سبب في مشكلة أو أزمة لو نسيناها في حتة.", 
-    "في ناس بتدفع فيها مبالغ خيالية لمجرد إنها ماركة مشهورة.", "بتستخدمها أكتر وإنت بره البيت ولا جواه؟ (فكر فيها كده).", 
-    "ليها علاقة بالطاقة أو بتوفر علينا مجهود بدني.", "بتأثر على حواسنا بشكل مباشر.", 
-    "ممكن تكون هدية مثالية جداً وممكن تكون حاجة متتجابش هدية أصلاً.", "بتشوفها أكتر بالنهار ولا بالليل؟", 
-    "ممكن تلاقيها في عربيتك أو وسيلة مواصلات.", "ليها علاقة بالنظافة أو الترتيب أو النظام.", 
-    "ساعات بنستخدمها وإحنا متضايقين وساعات وإحنا مبسوطين.", "شكلها اتغير تماماً من 50 سنة لحد دلوقتي."
-];
+// 🔥 بنك الأسئلة القصيرة والمباشرة اللي توقع الجاسوس
+const shortQuestions = {
+    "حاجات جوا وبرا البيت": ["في كل أوضة؟", "بنلمسه كل يوم؟", "بفيشة؟", "بيتكسر بسهولة؟", "غالي؟", "حجمه كبير؟", "ليه لون ثابت؟", "بيعمل صوت؟", "بنقعد عليه؟", "بينور؟"],
+    "أكل وشرب": ["فيه سكر؟", "بناكله كل يوم؟", "دليفري؟", "بالشوكه ولا الإيد؟", "سخن ولا ساقع؟", "بيطخن؟", "مفيد؟", "غالي؟", "بنشربه؟", "فيه لحمة؟", "بيطبخ؟"],
+    "أدوات وأشياء": ["في الجيب؟", "بلاستيك ولا معدن؟", "استخدام يومي؟", "مهم في الشغل؟", "بيشتغل بكهربا؟", "ليه عمر افتراضي؟", "للمدرسة؟", "بيخلص ونشتري غيره؟", "ينفع هدية؟"],
+    "أماكن ومواصلات": ["تذكرة؟", "بنزين؟", "زحمة؟", "حكومي ولا خاص؟", "ترفيه ولا شغل؟", "مكيف؟", "في كل المحافظات؟", "بنسافر بيه؟", "فيه أكل؟", "مفتوح 24 ساعة؟"],
+    "حيوانات ونباتات": ["أليف ولا شرس؟", "أخضر؟", "بيعيش في الميه؟", "بيطير؟", "بناكله؟", "ليه صوت؟", "سريع؟", "في البيت؟", "طبيعي ولا زينة؟"],
+    "مهن ووظائف": ["في مكتب؟", "في الشارع؟", "خطر؟", "لبس مخصص؟", "ليل ولا نهار؟", "طوارئ؟", "بيتعامل مع ناس؟", "مجهود بدني؟", "أدوات خاصة؟", "محتاج شهادة؟"],
+    "رياضة وهوايات": ["بكرة؟", "فردي ولا فريق؟", "في ملعب؟", "مجهود؟", "بتخسس؟", "في البيت؟", "محتاجة أدوات؟", "تركيز؟", "ميه؟", "أعصاب؟"],
+    "أجهزة وتكنولوجيا": ["فيها شاشة؟", "بطارية ولا فيشة؟", "محتاجة نت؟", "بتعمل إدمان؟", "شغل ولا تسلية؟", "غالية؟", "بتطلع صوت؟", "في الجيب؟", "ليها تحديثات؟", "بنتواصل بيها؟"]
+};
+
+// 🔥 هينتات مخصصة بالمللي لأشهر الكلمات عشان تبان محترف جداً
+const specificWordHints = {
+    "كاميرا": ["استديو", "إنترنت", "ذكريات", "فلاش", "عدسة", "زوم", "صورة"],
+    "اكس بوكس": ["دراع", "شاشة", "أونلاين", "سهر", "تحدي", "ألعاب", "أخضر"],
+    "بلايستيشن": ["دراع", "شاشة", "أونلاين", "سهر", "تحدي", "حصرية", "أزرق"],
+    "سرير": ["نوم", "راحة", "خشب", "مخدة", "نهاية اليوم"],
+    "موبايل": ["نت", "اتصال", "تطبيقات", "شاحن", "في الجيب"],
+    "كمبيوتر": ["كيبورد", "ماوس", "نت", "شغل", "بي سي"],
+    "لاب توب": ["بطارية", "مفاتيح", "شغل", "تنقل", "شنطة"],
+    "تفاح": ["أحمر", "نيوتن", "دكتور", "شجرة", "قرمشة"],
+    "موز": ["أصفر", "طاقة", "قرد", "تقشير", "سناك"],
+    "قهوة": ["كافيين", "مزاج", "سهر", "مر", "بُن", "الصبح"],
+    "شاي": ["مزاج", "نعناع", "سكر", "غليان", "مشهور"],
+    "بيتزا": ["جبنة", "فرن", "دليفري", "إيطالي", "مثلثات"],
+    "مستشفى": ["طوارئ", "علاج", "دكتور", "إسعاف", "أدوية"],
+    "طيارة": ["سحاب", "جناح", "تذكرة", "مطار", "كابتن"],
+    "قطار": ["محطة", "زحمة", "سكة", "حديد", "طويل"],
+    "مدرسة": ["كتب", "طابور", "حصة", "شرح", "بدري"],
+    "دكتور": ["سماعة", "عيادة", "روشتة", "علاج", "أبيض"]
+};
 
 function createStars() {
     const container = document.getElementById('starsContainer'); container.innerHTML = '';
@@ -74,7 +60,7 @@ createStars();
 function applyRgbWaveToElement(element, text) { if (element) element.textContent = text; }
 
 const audioJoin = new Audio('audio/join.mp3'); const audioWaiting = new Audio('audio/waiting.mp3'); const audioStart = new Audio('audio/start.mp3');
-const roomFromUrlSync = urlParamsSync.get('room'); const playerNameInput = document.getElementById('playerNameInput');
+const playerNameInput = document.getElementById('playerNameInput');
 
 socket.on('forceNameLock', (newName) => {
     localStorage.setItem('lockedPlayerName', newName); sessionStorage.setItem('guestName', newName);
@@ -84,7 +70,7 @@ socket.on('forceNameLock', (newName) => {
 const lockedName = localStorage.getItem('lockedPlayerName');
 if (lockedName && playerNameInput) { playerNameInput.value = lockedName; playerNameInput.readOnly = true; playerNameInput.style.background = 'rgba(0,0,0,0.5)'; playerNameInput.style.color = '#888'; }
 
-if (roomFromUrlSync) {
+if (urlParamsSync.get('room')) {
     document.getElementById('goToWaitingBtn').classList.add('hidden'); if(playerNameInput) playerNameInput.classList.remove('hidden'); document.getElementById('joinRoomBtn').classList.remove('hidden');
     const playJoinAudio = () => { audioJoin.play().catch(e => {}); document.removeEventListener('click', playJoinAudio); if(playerNameInput) playerNameInput.removeEventListener('focus', playJoinAudio); };
     document.addEventListener('click', playJoinAudio); if(playerNameInput) playerNameInput.addEventListener('focus', playJoinAudio);
@@ -132,17 +118,18 @@ function showScreen(screenName) {
     }
 }
 
+// 🔥 الدالة السحرية لإظهار الهينتات الاحترافية
 function showSuggestions(type) {
     if(!myRoleData || myRoleData.isSpy) return; 
     
     suggestionsList.innerHTML = '';
-    let sourceArray = type === 'hints' ? cleverHints : cleverQuestions;
-    suggestionsTitle.innerText = type === 'hints' ? "💡 هينتات عميقة" : "❓ أسئلة ذكية";
+    suggestionsTitle.innerText = type === 'hints' ? "💡 هينتات احترافية" : "❓ أسئلة ذكية";
     suggestionsTitle.style.color = type === 'hints' ? "#00f3ff" : "#00ff88";
     suggestionsTitle.style.textShadow = type === 'hints' ? "0 0 15px #00f3ff" : "0 0 15px #00ff88";
     
+    // البادئات الذكية حسب التصنيف
     const categoryPrefixes = {
-        "حاجات جوا وبرا البيت": "بخصوص (الحاجة دي اللي في البيت أو براه) 👈",
+        "حاجات جوا وبرا البيت": "بخصوص (الشيء ده اللي في البيت) 👈",
         "أكل وشرب": "بخصوص (الأكلة أو المشروب ده) 👈",
         "أدوات وأشياء": "بخصوص (الأداة أو الشيء ده) 👈",
         "أماكن ومواصلات": "بخصوص (المكان أو المواصلة دي) 👈",
@@ -153,13 +140,36 @@ function showSuggestions(type) {
     };
     const prefix = categoryPrefixes[myRoleData.category] || "بخصوص (الشيء ده) 👈";
     
-    let shuffled = sourceArray.sort(() => 0.5 - Math.random());
+    let pool = [];
+    const cat = myRoleData.category;
+    const word = myRoleData.word;
+
+    // جلب الداتا بناءً على النوع والكلمة
+    if (type === 'hints') {
+        let catHints = shortHints[cat] || shortHints["أدوات وأشياء"];
+        pool = [...catHints];
+        // لو الكلمة ليها هينت مخصص عميق، حطه في الأول!
+        if (specificWordHints[word]) {
+            pool = [...specificWordHints[word], ...pool];
+        }
+    } else {
+        let catQs = shortQuestions[cat] || shortQuestions["أدوات وأشياء"];
+        pool = [...catQs];
+    }
+    
+    // إزالة التكرار وسحب 10 بس بشكل عشوائي
+    pool = [...new Set(pool)];
+    let shuffled = pool.sort(() => 0.5 - Math.random());
     let selected = shuffled.slice(0, 10);
     
+    // رسم الشاشة وعرضهم
     selected.forEach(item => {
         const li = document.createElement('li');
         li.style.marginBottom = "10px"; li.style.padding = "12px"; li.style.background = "rgba(255,255,255,0.05)"; li.style.border = "1px solid rgba(255,255,255,0.1)"; li.style.borderRadius = "8px"; li.className = "suggestion-item"; 
-        li.innerHTML = `<span style="color: ${type === 'hints' ? '#00f3ff' : '#00ff88'}; font-weight: bold;">${prefix}</span> <br> ${item}`;
+        
+        // دمج البادئة النيون مع الهينت الاحترافي الواضح
+        li.innerHTML = `<span style="color: ${type === 'hints' ? '#00f3ff' : '#00ff88'}; font-weight: bold; font-size: 0.9rem;">${prefix}</span> <br> <span style="font-size: 1.3rem; font-weight: bold; color: #fff; text-shadow: 0 0 5px rgba(255,255,255,0.3);">${item}</span>`;
+        
         suggestionsList.appendChild(li);
     });
     
@@ -199,21 +209,17 @@ socket.on('categorySelected', (cat) => {
 socket.on('wheelSpinning', (targetCat) => {
     isWheelSpinning = true; 
     if(isHost) confirmStartGameBtn.classList.add('hidden');
-    
     document.getElementById('realWheelModal').classList.remove('hidden');
     
     const spinner = document.getElementById('wheelSpinnerElement');
     const targetIdx = availableCategories.indexOf(targetCat);
     
-    spinner.style.transition = 'none';
-    spinner.style.transform = 'rotate(0deg)';
-    void spinner.offsetWidth; 
+    spinner.style.transition = 'none'; spinner.style.transform = 'rotate(0deg)'; void spinner.offsetWidth; 
     
     const randomOffset = Math.floor(Math.random() * 30) - 15;
     const targetRotation = (360 * 8) - (targetIdx * 45) + randomOffset;
     
-    spinner.style.transition = 'transform 5s cubic-bezier(0.1, 0.7, 0.1, 1)';
-    spinner.style.transform = `rotate(${targetRotation}deg)`;
+    spinner.style.transition = 'transform 5s cubic-bezier(0.1, 0.7, 0.1, 1)'; spinner.style.transform = `rotate(${targetRotation}deg)`;
     
     let startTime = Date.now();
     function playTick() {
@@ -228,8 +234,7 @@ socket.on('wheelSpinning', (targetCat) => {
     playTick();
 
     setTimeout(() => {
-        isWheelSpinning = false;
-        playSound('win'); 
+        isWheelSpinning = false; playSound('win'); 
         document.querySelectorAll('.category-card').forEach(c => c.classList.remove('selected', 'roulette-active'));
         document.getElementById(`cat-idx-${targetIdx}`).classList.add('selected');
         chosenCategory = targetCat;
@@ -254,28 +259,19 @@ socket.on('connect', () => {
 
 socket.on('syncState', (state) => { if (state === 'waiting') { showScreen('waiting'); } else if (state === 'modeSelection') { showScreen('modeSelection'); } });
 
-if(goToWaitingBtn) goToWaitingBtn.addEventListener('click', () => { 
-    hostPasswordInput.value = ''; 
-    hostPasswordModal.classList.remove('hidden'); 
-});
-
+if(goToWaitingBtn) goToWaitingBtn.addEventListener('click', () => { hostPasswordInput.value = ''; hostPasswordModal.classList.remove('hidden'); });
 if(cancelHostPasswordBtn) cancelHostPasswordBtn.addEventListener('click', () => { hostPasswordModal.classList.add('hidden'); });
 if(closeWrongPasswordBtn) closeWrongPasswordBtn.addEventListener('click', () => { wrongPasswordModal.classList.add('hidden'); });
 
 if(confirmHostPasswordBtn) confirmHostPasswordBtn.addEventListener('click', () => {
     const hostPass = hostPasswordInput.value.trim();
-    if (hostPass !== '098') { 
-        hostPasswordModal.classList.add('hidden'); wrongPasswordModal.classList.remove('hidden'); return; 
-    }
+    if (hostPass !== '098') { hostPasswordModal.classList.add('hidden'); wrongPasswordModal.classList.remove('hidden'); return; }
     hostPasswordModal.classList.add('hidden'); isHost = true; 
     if(hostSettingsBtn) hostSettingsBtn.classList.remove('hidden'); if(copyInviteBtn) copyInviteBtn.classList.remove('hidden'); if(destroyRoomBtn) destroyRoomBtn.classList.remove('hidden');
     
-    const newRoomId = Math.random().toString(36).substring(2, 8); 
-    localStorage.setItem('hostRoomId', newRoomId); 
-    
+    const newRoomId = Math.random().toString(36).substring(2, 8); localStorage.setItem('hostRoomId', newRoomId); 
     const savedName = localStorage.getItem('lockedPlayerName') || '𝐒𝐀𝐒𝐔𝐊𝐄';
-    socket.emit('createRoom', { roomId: newRoomId, playerId: myPlayerId, name: savedName }); 
-    showScreen('waiting'); 
+    socket.emit('createRoom', { roomId: newRoomId, playerId: myPlayerId, name: savedName }); showScreen('waiting'); 
 });
 
 if(joinRoomBtn) joinRoomBtn.addEventListener('click', () => { 
@@ -286,17 +282,7 @@ if(joinRoomBtn) joinRoomBtn.addEventListener('click', () => {
     showScreen('waiting'); audioWaiting.play().catch(e => console.log(e)); 
 });
 
-if (destroyRoomBtn) { 
-    destroyRoomBtn.addEventListener('click', () => { 
-        if (confirm('هل أنت متأكد من إغلاق الغرفة وطرد جميع اللاعبين للعودة للقائمة الرئيسية؟')) { 
-            socket.emit('leaveRoom'); 
-            localStorage.removeItem('hostRoomId'); 
-            sessionStorage.clear(); 
-            window.location.href = window.location.pathname; 
-        } 
-    }); 
-}
-
+if (destroyRoomBtn) { destroyRoomBtn.addEventListener('click', () => { if (confirm('هل أنت متأكد من إغلاق الغرفة وطرد جميع اللاعبين للعودة للقائمة الرئيسية؟')) { socket.emit('leaveRoom'); localStorage.removeItem('hostRoomId'); sessionStorage.clear(); window.location.href = window.location.pathname; } }); }
 if(leaveRoomBtn) leaveRoomBtn.addEventListener('click', () => { if(confirm('هل أنت متأكد من مغادرة الغرفة؟')) { socket.emit('leaveRoom'); sessionStorage.clear(); window.location.href = window.location.pathname; } });
 socket.on('errorMsg', (msg) => { if(invalidRoomModal && errorMsgText) { errorMsgText.innerText = msg; invalidRoomModal.classList.remove('hidden'); } });
 
@@ -310,7 +296,6 @@ socket.on('updatePlayers', (playersArray) => {
         }); 
         playersListDiv.innerHTML = playersHTML; 
     }
-
     if (isHost) { if (playersArray.length >= 3) { if(startGameBtn) startGameBtn.classList.add('hidden'); if(actualStartBtn) actualStartBtn.classList.remove('hidden'); } else { if(startGameBtn) { startGameBtn.innerText = "في انتظار باقي اللاعبين... ⏳"; startGameBtn.classList.remove('hidden'); } if(actualStartBtn) actualStartBtn.classList.add('hidden'); } } else { if(startGameBtn) { startGameBtn.innerText = "في انتظار الهوست لاختيار التصنيف ⏳"; startGameBtn.classList.remove('hidden'); } if(actualStartBtn) actualStartBtn.classList.add('hidden'); }
     
     if (isHost && modalPlayersList) { 
@@ -324,19 +309,9 @@ socket.on('updatePlayers', (playersArray) => {
     }
 });
 
-if(actualStartBtn) actualStartBtn.addEventListener('click', (e) => { 
-    e.target.disabled = true; playSound('start'); 
-    socket.emit('goToModeSelection', localStorage.getItem('hostRoomId')); 
-    setTimeout(() => e.target.disabled = false, 1000); 
-});
-
+if(actualStartBtn) actualStartBtn.addEventListener('click', (e) => { e.target.disabled = true; playSound('start'); socket.emit('goToModeSelection', localStorage.getItem('hostRoomId')); setTimeout(() => e.target.disabled = false, 1000); });
 socket.on('showModeSelection', () => { showScreen('modeSelection'); chosenCategory = null; isWheelSpinning = false; confirmStartGameBtn.classList.add('hidden'); renderCategories(); });
-
-if(confirmStartGameBtn) confirmStartGameBtn.addEventListener('click', (e) => { 
-    e.target.disabled = true; playSound('start'); 
-    socket.emit('startGameWithCategory', chosenCategory, localStorage.getItem('hostRoomId')); 
-    setTimeout(() => e.target.disabled = false, 2000); 
-});
+if(confirmStartGameBtn) confirmStartGameBtn.addEventListener('click', (e) => { e.target.disabled = true; playSound('start'); socket.emit('startGameWithCategory', chosenCategory, localStorage.getItem('hostRoomId')); setTimeout(() => e.target.disabled = false, 2000); });
 
 socket.on('gameStarted', (data) => {
     if(data) { 
@@ -356,16 +331,9 @@ socket.on('gameStarted', (data) => {
     if (isHost && restartGameBtn) restartGameBtn.disabled = false; if (isHost && startVotingPhaseBtn) startVotingPhaseBtn.classList.remove('hidden');
 });
 
-if(startVotingPhaseBtn) startVotingPhaseBtn.addEventListener('click', (e) => { 
-    e.target.disabled = true; playSound('start'); 
-    socket.emit('startVotingPhase', localStorage.getItem('hostRoomId')); 
-    setTimeout(() => e.target.disabled = false, 2000); 
-});
+if(startVotingPhaseBtn) startVotingPhaseBtn.addEventListener('click', (e) => { e.target.disabled = true; playSound('start'); socket.emit('startVotingPhase', localStorage.getItem('hostRoomId')); setTimeout(() => e.target.disabled = false, 2000); });
 
-socket.on('votingStarted', (playersArray) => { 
-    playSound('start'); showScreen('voting'); liveVoteLog.innerHTML = ''; voteCounter.innerText = `0/${playersArray.length}`; voteCounter.style.color = "#00f3ff"; voteCounter.style.textShadow = "none"; let gridHTML = ''; playersArray.forEach(p => { if (p.id !== myPlayerId) gridHTML += `<div class="vote-card" onclick="castVote('${p.id}', this)" data-player-id="${p.id}"><div style="font-size: 2rem; margin-bottom:10px;">${p.isHost ? '👑' : '👤'}</div><div style="font-weight:bold; color:#fff;">${p.name}</div></div>`; }); votingGrid.innerHTML = gridHTML; 
-});
-
+socket.on('votingStarted', (playersArray) => { playSound('start'); showScreen('voting'); liveVoteLog.innerHTML = ''; voteCounter.innerText = `0/${playersArray.length}`; voteCounter.style.color = "#00f3ff"; voteCounter.style.textShadow = "none"; let gridHTML = ''; playersArray.forEach(p => { if (p.id !== myPlayerId) gridHTML += `<div class="vote-card" onclick="castVote('${p.id}', this)" data-player-id="${p.id}"><div style="font-size: 2rem; margin-bottom:10px;">${p.isHost ? '👑' : '👤'}</div><div style="font-weight:bold; color:#fff;">${p.name}</div></div>`; }); votingGrid.innerHTML = gridHTML; });
 socket.on('votingTied', (data) => { playSound('lose'); tiedPlayersNames.innerText = data.tiedNames; tieBreakerModal.classList.remove('hidden'); let timeLeft = 12; tieTimerEl.innerText = timeLeft; if(tieInterval) clearInterval(tieInterval); tieInterval = setInterval(() => { timeLeft--; tieTimerEl.innerText = timeLeft; if(timeLeft <= 0) { clearInterval(tieInterval); tieBreakerModal.classList.add('hidden'); } }, 1000); });
 socket.on('youAlreadyVoted', (targetId) => { const allCards = document.querySelectorAll('.vote-card'); allCards.forEach(c => c.classList.add('disabled')); const myCard = document.querySelector(`.vote-card[data-player-id="${targetId}"]`); if(myCard) { myCard.classList.remove('disabled'); myCard.classList.add('voted'); } });
 socket.on('playerRemovedFromVoting', (playerId) => { const card = document.querySelector(`.vote-card[data-player-id="${playerId}"]`); if (card) card.remove(); });
@@ -376,9 +344,7 @@ window.castVote = function(targetId, cardElement) {
     const allCards = document.querySelectorAll('.vote-card'); allCards.forEach(c => c.classList.add('disabled')); cardElement.classList.remove('disabled'); cardElement.classList.add('voted'); 
 };
 
-socket.on('voteRegistered', (data) => { 
-    if(data.voterName !== "النظام") playSound('vote'); voteCounter.innerText = `${data.currentVotes}/${data.totalRequired}`; if(data.currentVotes >= data.totalRequired) { voteCounter.style.color = "#00ff88"; voteCounter.style.textShadow = "0 0 10px #00ff88"; } if (data.voterName !== "النظام") { const logP = document.createElement('div'); logP.className = 'log-entry'; logP.innerHTML = `${data.voterName} صوت على <span class="target-name">${data.targetName}</span>`; liveVoteLog.prepend(logP); } 
-});
+socket.on('voteRegistered', (data) => { if(data.voterName !== "النظام") playSound('vote'); voteCounter.innerText = `${data.currentVotes}/${data.totalRequired}`; if(data.currentVotes >= data.totalRequired) { voteCounter.style.color = "#00ff88"; voteCounter.style.textShadow = "0 0 10px #00ff88"; } if (data.voterName !== "النظام") { const logP = document.createElement('div'); logP.className = 'log-entry'; logP.innerHTML = `${data.voterName} صوت على <span class="target-name">${data.targetName}</span>`; liveVoteLog.prepend(logP); } });
 
 socket.on('votingEnded', (data) => { const vTitle = document.getElementById('votingResultTitle'); const vDesc1 = document.getElementById('votingResultDesc1'); const vDesc2 = document.getElementById('votingResultDesc2'); if (!myRoleData.isSpy) { spyProceedBtn.classList.add('hidden'); if (data.isSpyCaught) { playSound('win'); vTitle.innerText = "عمل جيد! 👏"; vTitle.style.color = "#00ff88"; vDesc1.innerText = `لقد كان ${data.votedPlayerName} الجاسوس فعلاً، أحسنتم.`; vDesc2.innerText = "في انتظار تخمينه للكلمة..."; } else { playSound('lose'); vTitle.innerText = "اختيار خاطئ! ❌"; vTitle.style.color = "#ff0055"; vDesc1.innerText = `لم يكن ${data.votedPlayerName} الجاسوس. لقد كان ${data.spyName}.`; vDesc2.innerText = "في انتظار تخمينه للكلمة..."; } } else { spyProceedBtn.classList.remove('hidden'); if (data.isSpyCaught) { playSound('lose'); vTitle.innerText = "تم كشفك! 🚨"; vTitle.style.color = "#ff0055"; vDesc1.innerText = `لقد تم كشفك يا ${data.spyName}.`; vDesc2.innerText = "ابذل قصارى جهدك المرة القادمة!"; spyProceedBtn.innerText = "خمن الكلمة"; } else { playSound('win'); vTitle.innerText = "نجاح باهر! 🕵️‍♂️"; vTitle.style.color = "#00ff88"; vDesc1.innerText = `لقد اختاروا شخصاً خاطئاً، نجحت في التخفي يا ${data.spyName}.`; vDesc2.innerText = ""; spyProceedBtn.innerText = "تخمين الكلمة"; } } votingResultModal.classList.remove('hidden'); });
 

@@ -24,79 +24,33 @@
 
         .hidden { display: none !important; }
 
-        /* 🔥 الماوس الاحترافي للكمبيوتر */
-        body.pc-mode { 
-            cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 24 24' fill='%2300f3ff' stroke='%23ffffff' stroke-width='1.5'%3E%3Cpath d='M4 2L20 10L13 13L10 20L4 2Z'/%3E%3C/svg%3E") 4 2, auto !important; 
-        }
-        body.pc-mode button, body.pc-mode .category-card, body.pc-mode .vote-card, body.pc-mode .word-card, body.pc-mode input, body.pc-mode .general-settings-icon, body.pc-mode .host-settings-icon { 
-            cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 24 24' fill='%23ff0055' stroke='%23ffffff' stroke-width='1.5'%3E%3Cpath d='M4 2L20 10L13 13L10 20L4 2Z'/%3E%3C/svg%3E") 4 2, pointer !important; 
-        }
+        body.pc-mode { cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 24 24' fill='%2300f3ff' stroke='%23ffffff' stroke-width='1.5'%3E%3Cpath d='M4 2L20 10L13 13L10 20L4 2Z'/%3E%3C/svg%3E") 4 2, auto !important; }
+        body.pc-mode button, body.pc-mode .category-card, body.pc-mode .vote-card, body.pc-mode .word-card, body.pc-mode input, body.pc-mode .general-settings-icon, body.pc-mode .host-settings-icon { cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 24 24' fill='%23ff0055' stroke='%23ffffff' stroke-width='1.5'%3E%3Cpath d='M4 2L20 10L13 13L10 20L4 2Z'/%3E%3C/svg%3E") 4 2, pointer !important; }
 
-        .glass-container { 
-            margin: 20px auto; 
-            padding: 25px; 
-            max-width: 450px; 
-            background: rgba(15, 23, 42, 0.8); 
-            border-radius: 15px; 
-            border: 1px solid #334155; 
-        }
-        
+        .glass-container { margin: 20px auto; padding: 25px; max-width: 450px; background: rgba(15, 23, 42, 0.8); border-radius: 15px; border: 1px solid #334155; }
         body.pc-mode .glass-container { max-width: 600px; }
 
-        button { 
-            font-family: 'Cairo', sans-serif; 
-            transition: transform 0.2s, box-shadow 0.2s; 
-            background: rgba(0,0,0,0.4); 
-            color: #fff; 
-            cursor: pointer; 
-            border-radius: 8px; 
-            border: 1px solid #00f3ff; 
-            padding: 12px; 
-            font-weight: bold;
-        }
+        button { font-family: 'Cairo', sans-serif; transition: transform 0.2s, box-shadow 0.2s; background: rgba(0,0,0,0.4); color: #fff; cursor: pointer; border-radius: 8px; border: 1px solid #00f3ff; padding: 12px; font-weight: bold;}
         button:hover { transform: scale(1.05); }
 
         .game-wrapper { display: flex; margin: 20px auto; width: 95%; }
-        
-        .sidebar { 
-            background: rgba(15, 23, 42, 0.9); 
-            border: 2px solid #00f3ff; 
-            border-radius: 15px; 
-            display: flex; 
-            flex-direction: column; 
-            box-shadow: 0 0 15px rgba(0, 243, 255, 0.1); 
-        }
-        
-        .main-board { 
-            background: rgba(10, 10, 15, 0.95); 
-            border: 3px solid #fff; 
-            border-radius: 15px; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center; 
-            position: relative; 
-            overflow-y: auto; 
-            box-shadow: inset 0 0 30px rgba(255,255,255,0.05), 0 0 20px rgba(0,0,0,0.5); 
-        }
+        .sidebar { background: rgba(15, 23, 42, 0.9); border: 2px solid #00f3ff; border-radius: 15px; display: flex; flex-direction: column; box-shadow: 0 0 15px rgba(0, 243, 255, 0.1); }
+        .main-board { background: rgba(10, 10, 15, 0.95); border: 3px solid #fff; border-radius: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow-y: auto; box-shadow: inset 0 0 30px rgba(255,255,255,0.05), 0 0 20px rgba(0,0,0,0.5); }
 
-        /* 💻 وضع الكمبيوتر */
         body.pc-mode .game-wrapper { flex-direction: row; max-width: 1200px; height: 85vh; gap: 20px; }
         body.pc-mode .sidebar { width: 300px; max-height: none; padding: 15px; }
         body.pc-mode .main-board { flex: 1; padding: 30px; }
 
-        /* 📱 وضع الموبايل */
         body.mobile-mode .game-wrapper { flex-direction: column; max-width: 450px !important; height: auto; gap: 15px; }
         body.mobile-mode .sidebar { width: 100%; max-height: none; padding: 15px; }
         body.mobile-mode .main-board { width: 100%; min-height: 500px; padding: 15px; }
 
-        /* سكرول اللاعبين */
-        .players-list-gartic { flex: 1; overflow-y: auto; padding-right: 5px; margin-bottom: 15px; }
-        .player-item { display: flex; align-items: center; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 10px; margin-bottom: 10px; }
-        .player-avatar { width: 45px; height: 45px; background: #00f3ff; color: #000; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 1.5rem; margin-left: 12px; border: 2px solid #fff; }
-        .player-info { flex: 1; display: flex; flex-direction: column; } 
+        .players-list-gartic { flex: 1; overflow-y: auto; padding-right: 5px; margin-bottom: 15px; transition: all 0.3s ease; }
+        .player-item { display: flex; align-items: center; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 10px; margin-bottom: 10px; transition: transform 0.3s ease; }
+        .player-avatar { width: 45px; height: 45px; background: #00f3ff; color: #000; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 1.5rem; margin-left: 12px; border: 2px solid #fff; flex-shrink: 0;}
+        .player-info { flex: 1; display: flex; flex-direction: column; width: 100%; } 
         .player-name { font-weight: bold; font-size: 1.1rem; color: #fff; } 
-        .player-status { font-size: 0.8rem; color: #00ff88; }
+        .player-status { font-size: 0.8rem; color: #00ff88; display: flex; align-items: center; width: 100%; }
         
         body.mobile-mode .players-list-gartic { display: flex; flex-direction: row; overflow-x: auto; overflow-y: hidden; padding-bottom: 15px; gap: 12px; margin-bottom: 15px; scrollbar-width: thin; scrollbar-color: #00f3ff rgba(0,0,0,0.2); }
         body.mobile-mode .players-list-gartic::-webkit-scrollbar { height: 6px; } 
@@ -104,6 +58,7 @@
         body.mobile-mode .players-list-gartic::-webkit-scrollbar-thumb { background: #00f3ff; border-radius: 10px; }
         body.mobile-mode .player-item { flex: 0 0 auto; width: 140px; flex-direction: column; justify-content: center; text-align: center; margin-bottom: 0; padding: 15px 5px; } 
         body.mobile-mode .player-avatar { margin-left: 0; margin-bottom: 10px; width: 55px; height: 55px; font-size: 2rem; }
+        body.mobile-mode .player-status { justify-content: center; flex-wrap: wrap; gap: 5px; }
 
         .btn-sidebar { width: 100%; margin-bottom: 10px; padding: 10px; font-size: 0.95rem; } 
         .btn-danger { background: rgba(255, 0, 85, 0.2); border-color: #ff0055; color: #fff; } 
@@ -150,6 +105,10 @@
         .password-input { width: 80%; padding: 15px; font-size: 1.5rem; text-align: center; letter-spacing: 5px; border-radius: 10px; border: 2px solid #00f3ff; background: rgba(0,0,0,0.5); color: #fff; margin-bottom: 20px; outline: none; } 
         .password-input:focus { box-shadow: 0 0 15px rgba(0, 243, 255, 0.5); }
         
+        .custom-scroll::-webkit-scrollbar { width: 8px; }
+        .custom-scroll::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 10px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #00f3ff; border-radius: 10px; }
+
         .real-wheel-container { position: relative; width: 280px; height: 280px; border-radius: 50%; border: 4px solid #fff; box-shadow: 0 0 25px #00f3ff, inset 0 0 15px rgba(0,0,0,0.8); margin: 30px auto; overflow: hidden; } 
         .wheel-spinner { width: 100%; height: 100%; border-radius: 50%; position: relative; background: conic-gradient(from -22.5deg, #ff0055 0 45deg, #00f3ff 45deg 90deg, #00ff88 90deg 135deg, #ffe600 135deg 180deg, #b000ff 180deg 225deg, #ff8c00 225deg 270deg, #0055ff 270deg 315deg, #ff00aa 315deg 360deg); } 
         .wheel-pointer { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 35px solid #fff; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.5)); z-index: 10; } 
@@ -166,7 +125,9 @@
         #chatInput:focus { border-color: #00f3ff; }
         .chat-msg { margin-bottom: 8px; font-size: 1rem; line-height: 1.4; animation: fadeIn 0.3s ease; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 5px;}
         .chat-msg .sender { font-weight: bold; color: #00f3ff; margin-left: 5px; }
-        .chat-msg.correct { color: #000; font-weight: bold; background: #00ff88; padding: 8px; border-radius: 8px; text-align: center; border-bottom: none;}
+        
+        /* 🔥 تعديل رسالة الشات لتصبح هادية وجميلة */
+        .chat-msg.correct { color: #00ff88; font-weight: bold; text-align: right; background: transparent; padding: 0; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 5px;}
         
         .podium-section { display: flex; justify-content: center; align-items: flex-end; gap: 15px; margin: 30px auto; max-width: 450px; height: 220px; width: 100%;}
         .podium-block { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; flex: 1; max-width: 120px; border-radius: 10px 10px 0 0; padding-bottom: 10px; position: relative; }
@@ -179,7 +140,7 @@
         .pod-score { font-size: 1.1rem; color: #000; font-weight: bold; background: rgba(255,255,255,0.9); padding: 2px 10px; border-radius: 10px; margin-top: 5px; border: 1px solid #000;}
     </style>
 </head>
-<body>
+<body class="mobile-mode">
     <div id="starsContainer"></div>
     <div id="notificationToast" class="toast hidden">تم النسخ! 📋</div>
 
@@ -241,6 +202,7 @@
     <div id="tieBreakerModal" class="modal-overlay hidden" style="z-index: 999999;"><div class="modal-content glass-container" style="text-align: center;"><div style="font-size: 4rem; margin-bottom: 15px;">⚖️</div><h2 class="neon-text" style="color: #ff0055;">تعادل!</h2><p style="color: #ccc;">تعادل: <span id="tiedPlayersNames" style="color: #fff; font-weight: bold;"></span></p><div id="tieTimer" style="font-size: 3rem; color: #00ff88; font-weight: bold;">12</div></div></div>
     <div id="votingResultModal" class="modal-overlay hidden" style="z-index: 999999;"><div class="modal-content glass-container" style="text-align: center;"><div id="votingResultIcon" style="font-size: 4rem;">🎭</div><h2 id="votingResultTitle" class="neon-text">النتيجة</h2><p id="votingResultDesc1" style="color: #ccc;"></p><p id="votingResultDesc2" style="color: #ccc; margin-bottom: 25px;"></p><button id="spyProceedBtn" class="hidden" style="width: 100%;">تخمين الكلمة 🧠</button></div></div>
     <div id="finalResultModal" class="modal-overlay hidden" style="z-index: 999999;"><div class="modal-content glass-container" style="text-align: center;"><h2 class="neon-text" style="color: #00f3ff;">نتيجة الجولة 🏁</h2><p id="finalResultText1"></p><p id="finalResultText2" style="font-size: 1.4rem; color: #00f3ff; font-weight: bold;"></p><p id="finalResultText3"></p><p id="finalResultText4" style="font-size: 1.3rem; font-weight: bold;"></p><button id="finalOkBtn" style="width: 100%;">حسناً 👍</button></div></div>
+    
     <div id="guestWaitingHostModal" class="modal-overlay hidden" style="z-index: 999999;"><div class="modal-content glass-container" style="text-align: center;"><div style="font-size: 4rem; margin-bottom: 15px;">⏳</div><h2 class="neon-text" style="color: #00f3ff; margin-bottom: 20px;">الرجاء الانتظار!</h2><p style="color: #ccc; font-size: 1.1rem; line-height: 1.6;">في انتظار الهوستر لإعادة اللعب أو إنهاء اللعبة بالكامل.</p></div></div>
 
     <div id="welcomeScreen" class="glass-container active">
@@ -251,7 +213,7 @@
         <input type="text" id="playerNameInput" class="name-input hidden" placeholder="اكتب اسمك هنا يا بطل..." autocomplete="off">
         <div class="view-options" style="margin-bottom: 20px;">
             <button id="pcViewBtn" class="btn-view">كمبيوتر 💻</button>
-            <button id="mobileViewBtn" class="btn-view">موبايل 📱</button>
+            <button id="mobileViewBtn" class="btn-view active-view">موبايل 📱</button>
         </div>
         
         <button id="goToSpyBtn" style="width: 100%; margin-bottom: 10px; border-color: #00f3ff; color: #fff;">لعبة الجاسوس 🕵️‍♂️</button>
@@ -261,7 +223,6 @@
     </div>
 
     <div id="gameLayout" class="game-wrapper hidden">
-        
         <aside class="sidebar">
             <h3 style="text-align: center; color: #00f3ff; margin-bottom: 15px; font-weight: bold; text-shadow: 0 0 10px #00f3ff;">اللاعبين (<span id="playerCount">0</span>)</h3>
             <div id="playersList" class="players-list-gartic"></div>
@@ -297,11 +258,13 @@
                 <div style="background: rgba(0,0,0,0.5); padding: 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 25px;">
                     <p style="color: #ccc; font-size: 1.1rem; margin-bottom: 12px;">ابحثوا عن الجاسوس!</p>
                     <p style="color: #64748b; font-size: 0.9rem; line-height: 1.5;">تناقشوا الآن عبر الصوت واكتشفوا من لا يعرف الكلمة.</p>
+                    
                     <div id="helperButtons" class="hidden" style="margin-top: 20px; display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
                         <button id="btnSuggestHints" style="background: rgba(0, 243, 255, 0.1); border-color: #00f3ff; color: #00f3ff; padding: 12px 25px; font-size: 1.1rem; flex: 1; max-width: 250px;">اقتراح هينتات 💡</button>
                         <button id="btnSuggestQuestions" style="background: rgba(0, 255, 136, 0.1); border-color: #00ff88; color: #00ff88; padding: 12px 25px; font-size: 1.1rem; flex: 1; max-width: 250px;">اقتراح أسئلة ❓</button>
                     </div>
                 </div>
+
                 <button id="startVotingPhaseBtn" class="hidden" style="width: 80%; font-size: 1.2rem;">بدء التصويت 🗳️</button>
             </div>
 
@@ -321,7 +284,9 @@
             </div>
 
             <div id="rebusGameScreen" class="inner-screen hidden" style="width: 100%; text-align: center;">
-                <h2 class="rgb-title" style="font-size: 2rem; margin-bottom: 10px;">جولة <span id="rebusRoundNum">1</span> / 10</h2>
+                <h2 class="rgb-title" style="font-size: 2rem; margin-bottom: 5px;">جولة <span id="rebusRoundNum">1</span> / 10</h2>
+                <h3 id="rebusCategoryDisplay" style="color: #00ff88; font-size: 1.3rem; margin-bottom: 15px; text-shadow: 0 0 10px #00ff88;">تصنيف: ---</h3>
+                
                 <div class="puzzle-display">
                     <span id="puzzleText" class="puzzle-part">...</span>
                 </div>

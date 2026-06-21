@@ -14,26 +14,73 @@ app.get('/health', (req, res) => res.status(200).send('OK'));
 
 let rooms = {};
 
+// ----------------------------------------------------
+// الداتا والألغاز
+// ----------------------------------------------------
 const rebusPuzzles = [
-    { category: "اسم بنت", clue: "ع + 🍺", answer: "عبير" }, { category: "اسم حيوان", clue: "س + 🕋", answer: "سمكة" }, { category: "مكان", clue: "م + ✈️", answer: "مطار" }, { category: "وظيفة", clue: "ب + 🚪", answer: "بواب" }, { category: "جماد", clue: "ق + 🌕", answer: "قمر" }, { category: "اسم فاكهة", clue: "ر + 👨", answer: "رمان" }, { category: "اسم حيوان", clue: "ف + 🐀", answer: "فار" }, { category: "خضار", clue: "ب + 🧅", answer: "بصل" }, { category: "اسم حيوان", clue: "ح + 🐎", answer: "حصان" }, { category: "مواصلات", clue: "ط + ✈️", answer: "طيارة" }, { category: "أداة مطبخ", clue: "س + 🔪", answer: "سكينة" }, { category: "اسم دولة", clue: "ق + 💧", answer: "قطر" }, { category: "اسم دولة", clue: "ع + 👨", answer: "عمان" }, { category: "أكلة", clue: "م + 🍝", answer: "مكرونة" }, { category: "أداة", clue: "ك + 🏆", answer: "كاس" }, { category: "اسم فاكهة", clue: "ت + 🍎", answer: "تفاح" }, { category: "اسم بنت", clue: "س + 🌙", answer: "سمر" }, { category: "اسم ولد", clue: "ع + 🏗️", answer: "عمار" }, { category: "مكان", clue: "ب + 🌡️", answer: "بحر" }, { category: "جماد", clue: "س + 🚗", answer: "سيارة" }
+    { category: "اسم بنت", clue: "ع + 🍺", answer: "عبير" },
+    { category: "اسم حيوان", clue: "س + 🕋", answer: "سمكة" },
+    { category: "مكان", clue: "م + ✈️", answer: "مطار" },
+    { category: "وظيفة", clue: "ب + 🚪", answer: "بواب" },
+    { category: "جماد", clue: "ق + 🌕", answer: "قمر" },
+    { category: "اسم فاكهة", clue: "ر + 👨", answer: "رمان" },
+    { category: "اسم حيوان", clue: "ف + 🐀", answer: "فار" },
+    { category: "خضار", clue: "ب + 🧅", answer: "بصل" },
+    { category: "اسم حيوان", clue: "ح + 🐎", answer: "حصان" },
+    { category: "مواصلات", clue: "ط + ✈️", answer: "طيارة" },
+    { category: "أداة مطبخ", clue: "س + 🔪", answer: "سكينة" },
+    { category: "اسم دولة", clue: "ق + 💧", answer: "قطر" },
+    { category: "اسم دولة", clue: "ع + 👨", answer: "عمان" },
+    { category: "أكلة", clue: "م + 🍝", answer: "مكرونة" },
+    { category: "أداة", clue: "ك + 🏆", answer: "كاس" },
+    { category: "اسم فاكهة", clue: "ت + 🍎", answer: "تفاح" },
+    { category: "اسم بنت", clue: "س + 🌙", answer: "سمر" },
+    { category: "اسم ولد", clue: "ع + 🏗️", answer: "عمار" },
+    { category: "مكان", clue: "ب + 🌡️", answer: "بحر" },
+    { category: "جماد", clue: "س + 🚗", answer: "سيارة" }
 ];
 
-const categorizedWords = { "حاجات جوا وبرا البيت": ["سرير", "مخدة", "بطانية", "دولاب", "شماعة", "مراية", "سجادة", "ستارة", "نجفة", "لمبة", "فيشة", "مفتاح كهرباء", "باب", "شباك", "بلكونة", "ريموت", "تلفزيون", "كنبة", "كرسي", "طاولة", "مكتب", "ساعة حائط", "فازة", "وردة", "صورة", "مروحة", "تكييف", "دفاية", "غسالة", "ثلاجة", "بوتاجاز", "فرن", "ميكروويف", "خلاط", "كاتل", "حنفية", "حوض", "صابونة", "فوطة", "ليفة", "شامبو", "معجون أسنان", "فرشاة أسنان", "مشط", "مقص أظافر", "استشوار", "مكواة", "مكنسة", "ممسحة", "مقشة", "جاروف", "زبالة", "كيس", "علبة", "صندوق", "درج", "قفل", "شنطة", "محفظة", "نظارة", "شاحن", "سماعة", "لاب توب", "تابلت", "كيبورد", "ماوس", "سلك", "كرتونة", "مسمار", "شاكوش", "مفك", "بنسة", "غراء", "شريط لحام", "بطارية", "ولاعة", "شمعة", "كبريت", "مبخرة", "سبحة", "سجادة صلاة", "مصحف", "قلم", "ورقة", "دباسة", "استيكة", "براية", "مسطرة", "لون", "لوحة", "ملف", "تقويم", "نوتة", "منبه", "حصالة", "ميزان", "طفاية حريق", "عمود نور", "إشارة مرور", "رصيف", "يافطة", "صندوق زبالة", "كشك", "نافورة", "تمثال", "سور", "بوابة", "عتبة", "بلاط", "أسفلت", "طوبة", "زلطة", "يافطة محل", "كابينة تليفون", "مطب", "كوبري مشاة", "نفق", "جراج", "بدروم", "روف", "خزان مياه", "دش", "بانيو", "بيديه", "سخان", "شفاط", "انبوبة", "ولاعة غاز", "فنجان", "طبق", "معلقة", "شوكة", "سكينة", "كوباية", "دورق", "براد", "صينية", "مطبقية", "قطاعة", "مصفاة", "طشت", "جردل", "خرطوم", "بوابة عمارة", "يافطة دكتور", "يافطة صيدلية", "شجرة في الشارع", "عربية راكنة", "موتوسيكل راكن", "توكتوك", "ميكروباص", "كشك سجاير", "فرشة فاكهة", "عربية فول", "عربية كبدة", "فرن عيش", "محل بقالة", "سوبر ماركت", "حلاق", "مكوجي", "مغسلة"], "أكل وشرب": ["أرز", "مكرونة", "عيش", "بيض", "جبنة", "لبن", "زبادي", "عسل", "حلاوة", "مربى", "زيت", "سمنة", "زبدة", "ملح", "سكر", "فلفل", "كمون", "شطة", "كاتشب", "مايونيز", "بطاطس", "طماطم", "خيار", "بصل", "ثوم", "جزر", "فلفل رومي", "بتنجان", "كوسة", "بسلة", "فاصوليا", "عدس", "فول", "طعمية", "كشري", "حواوشي", "بيتزا", "برجر", "شاورما", "كباب", "كفتة", "فراخ", "لحمة", "سمك", "تونة", "كبدة", "شوربة", "سلطة", "مخلل", "شيبسي", "لبان", "بونبوني", "شوكولاتة", "بسكويت", "كيكة", "ايس كريم", "كنافة", "بسبوسة", "فاكهة", "تفاح", "موز", "برتقال", "عنب", "بطيخ", "مانجو", "فراولة", "خوخ", "رمان", "كمثرى", "جوافة", "تمر", "تين", "مشمش", "أناناس", "كيوي", "كانز", "مياه", "شاي", "قهوة", "عصير", "بيبسي", "كوكاكولا", "سفن اب", "ميرندا", "عصير قصب", "تمر هندي", "سوبيا", "لبن رايب", "ينسون", "نعناع", "قرفة", "كاكاو", "نسكافيه", "كابتشينو", "شاي بلبن", "سحلب", "خروب", "كريب", "فطير", "بان كيك", "وافل", "دوناتس", "جيلي", "مارشميلو", "غزل البنات", "لب", "سوداني", "فستق", "لوز", "بندق", "كاجو", "عين جمل", "بقسماط", "شابورة", "كرواسون", "باتيه", "سميط", "فايش", "ملوخية", "سبانخ", "قلقاس", "محشي", "ورق عنب", "كرنب", "ممبار", "بامية", "قرنبيط", "بروكلي", "مشروم", "ليمون", "اسبريسو", "موكا", "لاتيه", "شاي أخضر", "قهوة تركي", "قهوة عربي", "عصير مانجو", "عصير فراولة", "عصير تفاح", "سردين", "جمبري", "كابوريا", "استاكوزا", "سبيط", "سمك بلطي", "سمك بوري", "لحمة مفرومة", "سجق", "سوسيس", "بسطرمة", "لانشون", "رومي مدخن", "جبنة رومي", "جبنة بيضا", "جبنة نستو", "جبنة قديمة", "مية معدنية", "مية غازية", "شويبس", "فيروز", "عصير قمر الدين", "عصير برتقال", "عصير ليمون", "زبادو", "ميلك شيك", "فرابيتشينو", "سموزي"], "أدوات وأشياء": ["سكينة", "شوكة", "معلقة", "طبق", "كوباية", "فنجان", "براد", "حلة", "طاسة", "صينية", "مبشرة", "مقشرة", "مصفاة", "هراسة", "مغرفة", "هون", "لبانة", "كنكة", "طقم توابل", "برطمان", "ترمس", "طرشي", "زمزمية", "لانش بوكس", "شنطة سفر", "كوتشي", "صندل", "شبشب", "شراب", "قميص", "بنطلون", "تيشيرت", "بلوفر", "جاكيت", "بالطو", "بدلة", "فستان", "طرحة", "جيبة", "بيجامة", "جلاليبة", "عباية", "كاب", "برنيطة", "جوانتي", "كوفية", "حزام", "كرافتة", "ساعة يد", "خاتم", "غويشة", "سلسلة", "حلق", "توكة", "بنسة شعر", "بروش", "ميدالية", "شمسية", "علم", "خريطة", "بوصلة", "تلسكوب", "ميكروسكوب", "كاميرا", "ميكروفون", "بيانو", "جيتار", "طبلة", "كمانجة", "ناي", "قانون", "سماعة دي جي", "مروحة ايد", "ريشة", "كرة قدم", "كرة سلة", "مضرب تنس", "طاولة بينج بونج", "شطرنج", "دومينو", "كوتشينة", "سلم وتعبان", "لودو", "طيارة ورق", "مرجيحة", "زحليقة", "مسدس ميه", "بالونة", "صاروخ", "عروسة لعبة", "دبدوب", "عجلة", "سكوتر", "نظارة شمس", "نظارة نظر", "عدسات", "محلول", "قطرة", "بلاستر", "شاش", "قطن", "سرنجة", "ترمومتر", "خيط", "إبرة", "مقص", "مازورة", "متر", "فرشاة صبغ", "رولة", "جردل", "خرطوم", "سلم خشب", "منشار", "شنيور", "صاروخ كهربائي", "مسمار قلاووظ", "صامولة", "وردة مسمار", "أزميل", "مبرد", "مشرط", "مفك صليبة", "مفك عادة", "كماشة", "قطاعة سلك", "شريط قياس", "ميزان ميه", "كوريك", "مفتاح انجليزي", "مفتاح فرنساوي", "قلم رصاص", "قلم جاف", "قلم سبورة", "قلم فلوماستر", "كراسة", "كشكول", "كتاب", "مجلد", "دوسيه", "خراطة", "استيكة", "كوريكتور", "صمغ", "سلوتيب", "استيك", "دبوس مكتب", "دبوس طرحة"], "أماكن ومواصلات": ["جامع", "كنيسة", "مستشفى", "صيدلية", "مدرسة", "حضانة", "جامعة", "سنتر", "مكتبة", "محل", "سوبر ماركت", "مول", "مطعم", "كافيه", "ورشة", "بنك", "بنزينة", "قسم شرطة", "مطافي", "سجن", "محكمة", "سفارة", "قصر", "فيلا", "عمارة", "شقة", "فندق", "سينما", "مسرح", "كباريه", "سيرك", "ملاهي", "حديقة", "جنينة", "غابة", "صحراء", "شاطئ", "بحر", "نهر", "بحيرة", "جبل", "كهف", "شارع", "كوبري", "نفق", "محطة", "رصيف", "مطار", "ميناء", "مركب", "سفينة", "لنش", "يخت", "قارب", "غواصة", "طيارة", "هليكوبتر", "سيارة", "تاكسي", "ميكروباص", "اتوبيس", "مترو", "قطار", "ترام", "توكتوك", "موتوسيكل", "فيسبا", "عجلة", "سكوتر", "لودر", "ونش", "عربية اسعاف", "عربية مطافي", "بوكس شرطة", "دبابة", "مخبز", "مغسلة", "كوافير", "صالون حلاقة", "صالة جيم", "نادي", "استاد", "ملعب", "حمام سباحة", "متحف", "معرض", "عيادة", "معمل تحاليل", "شركة", "مصنع", "مخزن", "سوق", "جزارة", "مسمط", "مقلة", "عطارة", "مكتب بريد", "سنترال", "شهر عقاري", "مرور", "سجل مدني", "طيارة ورق", "بالون طائر", "تلفريك", "حصان", "عربية كارو", "عربية نقل", "تريلا", "عربية نص نقل", "توك توك", "موتوسيكل صيني", "بيتش باجي", "جيت سكي", "بدال", "عوامة", "موقف اتوبيسات", "محطة قطر", "محطة مترو", "صالة وصول", "برج مراقبة", "منارة", "جزر", "واحة", "وادي", "شلال", "بركان", "خيمة", "عشة", "كوخ", "قبة", "ميدان", "دوران", "تقاطع", "حارة", "زقاق"], "حيوانات ونباتات": ["أسد", "نمر", "فهد", "ذئب", "ثعلب", "كلب", "قطة", "فار", "أرنب", "قرد", "نسناس", "فيل", "زرافة", "حصان", "حمار", "جمل", "بقرة", "جاموسة", "خروف", "معزة", "خنزير", "غزال", "دب", "باندا", "كنغر", "كوالا", "تمساح", "ثعبان", "سحلية", "برص", "سلحفاة", "ضفدع", "سمكة", "قرش", "حوت", "دولفين", "أخطبوط", "قنديل بحر", "استاكوزا", "كابوريا", "نحلة", "نملة", "دبانة", "ناموسة", "صرصار", "عنكبوت", "عقرب", "فراشة", "غراب", "حمامة", "عصفور", "صقر", "نسر", "بومة", "ببغاء", "بطة", "وزة", "فرخة", "ديك", "ديك رومي", "نعامة", "بطريق", "شجرة", "نخلة", "صبار", "نجيلة", "غصن", "ورقة شجر", "ليمونة", "برتقالة", "بذرة", "قنفذ", "خفاش", "سنجاب", "حرباء", "دودة", "يرقة", "خنفساء", "جرادة", "جعل", "دبور", "فرس النهر", "وحيد القرن", "فقمة", "حصان البحر", "نجم البحر", "محار", "جمبري", "سبيط", "طاووس", "نورس", "بجعة", "لقلق", "نعناع", "ريحان", "بقدونس", "كزبرة", "شبت", "كرفس", "جرجير", "خس", "فجل", "صبارة", "وردة بلدي", "فل", "ياسمين", "نرجس", "عباد الشمس", "قرنفل", "توليب", "بصلة", "فص ثوم", "جدر", "ساق", "لحاء", "ثمرة", "زهرة", "شجيرة", "سوسة", "برغوت", "قملة", "قراد", "بق", "خنزير غينيا", "دب قطبي", "بطريق", "فقمة", "كلب بحر", "سيد قشطة", "حمار وحشي", "غوريلا", "شمبانزي", "طحالب", "عشب", "نبات ظل"], "مهن ووظائف": ["دكتور", "مهندس", "مدرس", "ضابط", "محامي", "قاضي", "طيار", "ممرضة", "صيدلي", "نجار", "سباك", "كهربائي", "حداد", "جزار", "خباز", "حلاق", "كوافير", "محاسب", "مدير", "سكرتير", "صحفي", "مذيع", "ممثل", "مغني", "رسام", "كاتب", "عالم", "فلاح", "سواق", "بواب", "حارس", "طباخ", "جرسون", "عامل", "ميكانيكي", "صياد", "مفتش", "طبيب أسنان", "دكتور بيطري", "طبيب عيون", "جراح", "مسعف", "مهندس معماري", "مهندس ديكور", "مهندس كمبيوتر", "مبرمج", "مصمم", "مصور", "مونتير", "مخرج", "مؤلف", "شاعر", "ملحن", "موزع", "عازف", "راقص", "لاعب كورة", "مدرب", "حكم", "رئيس", "وزير", "محافظ", "عمدة", "ظابط شرطة", "ضابط جيش", "عسكري", "عريف", "شاويش", "محقق", "مخبر", "سباك صحي", "نقاش", "مبيض محارة", "بنا", "صنايعي", "مقاول", "سواق تاكسي", "سواق ميكروباص", "سواق قطر", "سواق طيارة", "كابتن بحري", "بحار", "غطاس", "مضيفة طيران", "مندوب مبيعات", "كاشير", "بياع", "صاحب محل", "تاجر", "مستورد", "جواهرجي", "سايس", "قهوجي", "جزمجي", "خياط", "ترزي", "منجد", "فني تكييف", "فني ألوميتال", "عامل نظافة", "زبال", "ساعي بريد", "طيار دليفري", "أمين مخزن", "بودي جارد", "كابتن جيم", "دكتور نفسي", "أخصائي تغذية", "فني أشعة", "كيميائي", "فيزيائي"], "رياضة وهوايات": ["كرة قدم", "كرة سلة", "كرة طائرة", "تنس", "تنس طاولة", "اسكواش", "سباحة", "غوص", "جري", "مشي", "عجل", "فروسية", "ملاكمة", "مصارعة", "كاراتيه", "جودو", "تايكوندو", "جمباز", "رفع أثقال", "شطرنج", "قراءة", "كتابة", "رسم", "تلوين", "عزف", "غناء", "تصوير", "صيد", "طبخ", "خياطة", "تطريز", "نحت", "تخييم", "كرة يد", "كرة ماء", "تنس أرضي", "ريشة طاولة", "بلياردو", "سنوكر", "بولينج", "جولف", "هرم", "تزلج", "تزحلق", "ركوب أمواج", "شراع", "تجديف", "سباق سيارات", "سباق موتوسيكلات", "ماراثون", "وثب طويل", "وثب عالي", "رمي رمح", "رمي جلة", "رمي قرص", "رماية", "قوس وسهم", "سلاح شيش", "أيروبيكس", "يوجا", "زومبا", "كمال أجسام", "بيلاتس", "تصوير فوتوغرافي", "مونتاج فيديو", "تصميم جرافيك", "برمجة", "لعب جيمنج", "بلايستيشن", "جمع طوابع", "جمع عملات", "تربية عصافير", "تربية قطط", "تربية كلاب", "زراعة بلكونة", "أشغال يدوية", "كروشيه", "تريكو", "صناعة حظاظات", "تجميع بازل", "كلمات متقاطعة", "سودوكو", "قراءة روايات", "كتابة شعر", "تدوين", "تمثيل مسرحي", "مشاهدة أفلام", "سماع مزيكا", "رقص باليه", "رقص شعبي", "باركور", "غطس حر", "تسلق جبال", "قفز بالمظلات", "سكيت بورد"], "أجهزة وتكنولوجيا": ["موبايل", "لابتوب", "كمبيوتر", "ايباد", "تابلت", "سماعة", "مايك", "كاميرا", "شاشة", "بروجيكتور", "طابعة", "راوتر", "فلاشة", "هارد", "كيبورد", "ماوس", "بلايستيشن", "اكس بوكس", "ذراع تحكم", "شاحن", "باور بانك", "ساعة ذكية", "نظارة واقع افتراضي", "روبوت", "تكييف", "تلفزيون", "راديو", "كيسة كمبيوتر", "مازربورد", "بروسيسور", "رامات", "كارت شاشة", "كارت صوت", "مروحة بروسيسور", "باور سبلاي", "دي في دي", "سي دي", "اسطوانة", "شريط كاسيت", "فيديو", "ريسيفر", "طبق دش", "عدسة دش", "سلك نت", "كابل شاحن", "رأس شاحن", "شاحن وايرلس", "سماعة بلوتوث", "سماعة ايربودز", "صب ووفر", "مكبر صوت", "مايك استوديو", "كاميرا ديجيتال", "كاميرا فيديو", "ترايبود", "رينج لايت", "فلاش كاميرا", "ميموري كارد", "هارد اكسترنال", "شاشة سمارت", "شاشة كمبيوتر", "ماوس باد", "كيبورد جيمنج", "ماوس جيمنج", "نظارة ثري دي", "درون", "طيارة تصوير", "جهاز بصمة", "كاميرا مراقبة", "انتركم", "فاكس", "تليفون أرضي", "آلة حاسبة", "ماكينة كاشير", "ماكينة عد فلوس", "سويتش نت", "اكسس بوينت", "ريموت كنترول", "ريموت تكييف", "منبه ديجيتال", "جهاز إنذار", "حساس حركة", "رسيفر واي فاي", "نظارة ذكية", "قلم ليزر", "ميكروفون لاسلكي"] };
+const categorizedWords = {
+    "حاجات جوا وبرا البيت": ["سرير", "مخدة", "بطانية", "دولاب", "شماعة", "مراية", "سجادة", "ستارة", "نجفة", "لمبة", "فيشة", "مفتاح كهرباء", "باب", "شباك", "بلكونة", "ريموت", "تلفزيون", "كنبة", "كرسي", "طاولة", "مكتب", "ساعة حائط", "فازة", "وردة", "صورة", "مروحة", "تكييف", "دفاية", "غسالة", "ثلاجة", "بوتاجاز", "فرن", "ميكروويف", "خلاط", "كاتل", "حنفية", "حوض", "صابونة", "فوطة", "ليفة", "شامبو", "معجون أسنان", "فرشاة أسنان", "مشط", "مقص أظافر", "استشوار", "مكواة", "مكنسة", "ممسحة", "مقشة", "جاروف", "زبالة", "كيس", "علبة", "صندوق", "درج", "قفل", "شنطة", "محفظة", "نظارة", "شاحن", "سماعة", "لاب توب", "تابلت", "كيبورد", "ماوس", "سلك", "كرتونة", "مسمار", "شاكوش", "مفك", "بنسة", "غراء", "شريط لحام", "بطارية", "ولاعة", "شمعة", "كبريت", "مبخرة", "سبحة", "سجادة صلاة", "مصحف", "قلم", "ورقة", "دباسة", "استيكة", "براية", "مسطرة", "لون", "لوحة", "ملف", "تقويم", "نوتة", "منبه", "حصالة", "ميزان", "طفاية حريق", "عمود نور", "إشارة مرور", "رصيف", "يافطة", "صندوق زبالة", "كشك", "نافورة", "تمثال", "سور", "بوابة", "عتبة", "بلاط", "أسفلت", "طوبة", "زلطة", "يافطة محل", "كابينة تليفون", "مطب", "كوبري مشاة", "نفق", "جراج", "بدروم", "روف", "خزان مياه", "دش", "بانيو", "بيديه", "سخان", "شفاط", "انبوبة", "ولاعة غاز", "فنجان", "طبق", "معلقة", "شوكة", "سكينة", "كوباية", "دورق", "براد", "صينية", "مطبقية", "قطاعة", "مصفاة", "طشت", "جردل", "خرطوم", "بوابة عمارة", "يافطة دكتور", "يافطة صيدلية", "شجرة في الشارع", "عربية راكنة", "موتوسيكل راكن", "توكتوك", "ميكروباص", "كشك سجاير", "فرشة فاكهة", "عربية فول", "عربية كبدة", "فرن عيش", "محل بقالة", "سوبر ماركت", "حلاق", "مكوجي", "مغسلة"],
+    "أكل وشرب": ["أرز", "مكرونة", "عيش", "بيض", "جبنة", "لبن", "زبادي", "عسل", "حلاوة", "مربى", "زيت", "سمنة", "زبدة", "ملح", "سكر", "فلفل", "كمون", "شطة", "كاتشب", "مايونيز", "بطاطس", "طماطم", "خيار", "بصل", "ثوم", "جزر", "فلفل رومي", "بتنجان", "كوسة", "بسلة", "فاصوليا", "عدس", "فول", "طعمية", "كشري", "حواوشي", "بيتزا", "برجر", "شاورما", "كباب", "كفتة", "فراخ", "لحمة", "سمك", "تونة", "كبدة", "شوربة", "سلطة", "مخلل", "شيبسي", "لبان", "بونبوني", "شوكولاتة", "بسكويت", "كيكة", "ايس كريم", "كنافة", "بسبوسة", "فاكهة", "تفاح", "موز", "برتقال", "عنب", "بطيخ", "مانجو", "فراولة", "خوخ", "رمان", "كمثرى", "جوافة", "تمر", "تين", "مشمش", "أناناس", "كيوي", "كانز", "مياه", "شاي", "قهوة", "عصير", "بيبسي", "كوكاكولا", "سفن اب", "ميرندا", "عصير قصب", "تمر هندي", "سوبيا", "لبن رايب", "ينسون", "نعناع", "قرفة", "كاكاو", "نسكافيه", "كابتشينو", "شاي بلبن", "سحلب", "خروب", "كريب", "فطير", "بان كيك", "وافل", "دوناتس", "جيلي", "مارشميلو", "غزل البنات", "لب", "سوداني", "فستق", "لوز", "بندق", "كاجو", "عين جمل", "بقسماط", "شابورة", "كرواسون", "باتيه", "سميط", "فايش", "ملوخية", "سبانخ", "قلقاس", "محشي", "ورق عنب", "كرنب", "ممبار", "بامية", "قرنبيط", "بروكلي", "مشروم", "ليمون", "اسبريسو", "موكا", "لاتيه", "شاي أخضر", "قهوة تركي", "قهوة عربي", "عصير مانجو", "عصير فراولة", "عصير تفاح", "سردين", "جمبري", "كابوريا", "استاكوزا", "سبيط", "سمك بلطي", "سمك بوري", "لحمة مفرومة", "سجق", "سوسيس", "بسطرمة", "لانشون", "رومي مدخن", "جبنة رومي", "جبنة بيضا", "جبنة نستو", "جبنة قديمة", "مية معدنية", "مية غازية", "شويبس", "فيروز", "عصير قمر الدين", "عصير برتقال", "عصير ليمون", "زبادو", "ميلك شيك", "فرابيتشينو", "سموزي"],
+    "أدوات وأشياء": ["سكينة", "شوكة", "معلقة", "طبق", "كوباية", "فنجان", "براد", "حلة", "طاسة", "صينية", "مبشرة", "مقشرة", "مصفاة", "هراسة", "مغرفة", "هون", "لبانة", "كنكة", "طقم توابل", "برطمان", "ترمس", "طرشي", "زمزمية", "لانش بوكس", "شنطة سفر", "كوتشي", "صندل", "شبشب", "شراب", "قميص", "بنطلون", "تيشيرت", "بلوفر", "جاكيت", "بالطو", "بدلة", "فستان", "طرحة", "جيبة", "بيجامة", "جلاليبة", "عباية", "كاب", "برنيطة", "جوانتي", "كوفية", "حزام", "كرافتة", "ساعة يد", "خاتم", "غويشة", "سلسلة", "حلق", "توكة", "بنسة شعر", "بروش", "ميدالية", "شمسية", "علم", "خريطة", "بوصلة", "تلسكوب", "ميكروسكوب", "كاميرا", "ميكروفون", "بيانو", "جيتار", "طبلة", "كمانجة", "ناي", "قانون", "سماعة دي جي", "مروحة ايد", "ريشة", "كرة قدم", "كرة سلة", "مضرب تنس", "طاولة بينج بونج", "شطرنج", "دومينو", "كوتشينة", "سلم وتعبان", "لودو", "طيارة ورق", "مرجيحة", "زحليقة", "مسدس ميه", "بالونة", "صاروخ", "عروسة لعبة", "دبدوب", "عجلة", "سكوتر", "نظارة شمس", "نظارة نظر", "عدسات", "محلول", "قطرة", "بلاستر", "شاش", "قطن", "سرنجة", "ترمومتر", "خيط", "إبرة", "مقص", "مازورة", "متر", "فرشاة صبغ", "رولة", "جردل", "خرطوم", "سلم خشب", "منشار", "شنيور", "صاروخ كهربائي", "مسمار قلاووظ", "صامولة", "وردة مسمار", "أزميل", "مبرد", "مشرط", "مفك صليبة", "مفك عادة", "كماشة", "قطاعة سلك", "شريط قياس", "ميزان ميه", "كوريك", "مفتاح انجليزي", "مفتاح فرنساوي", "قلم رصاص", "قلم جاف", "قلم سبورة", "قلم فلوماستر", "كراسة", "كشكول", "كتاب", "مجلد", "دوسيه", "خراطة", "استيكة", "كوريكتور", "صمغ", "سلوتيب", "استيك", "دبوس مكتب", "دبوس طرحة"],
+    "أماكن ومواصلات": ["جامع", "كنيسة", "مستشفى", "صيدلية", "مدرسة", "حضانة", "جامعة", "سنتر", "مكتبة", "محل", "سوبر ماركت", "مول", "مطعم", "كافيه", "ورشة", "بنك", "بنزينة", "قسم شرطة", "مطافي", "سجن", "محكمة", "سفارة", "قصر", "فيلا", "عمارة", "شقة", "فندق", "سينما", "مسرح", "كباريه", "سيرك", "ملاهي", "حديقة", "جنينة", "غابة", "صحراء", "شاطئ", "بحر", "نهر", "بحيرة", "جبل", "كهف", "شارع", "كوبري", "نفق", "محطة", "رصيف", "مطار", "ميناء", "مركب", "سفينة", "لنش", "يخت", "قارب", "غواصة", "طيارة", "هليكوبتر", "سيارة", "تاكسي", "ميكروباص", "اتوبيس", "مترو", "قطار", "ترام", "توكتوك", "موتوسيكل", "فيسبا", "عجلة", "سكوتر", "لودر", "ونش", "عربية اسعاف", "عربية مطافي", "بوكس شرطة", "دبابة", "مخبز", "مغسلة", "كوافير", "صالون حلاقة", "صالة جيم", "نادي", "استاد", "ملعب", "حمام سباحة", "متحف", "معرض", "عيادة", "معمل تحاليل", "شركة", "مصنع", "مخزن", "سوق", "جزارة", "مسمط", "مقلة", "عطارة", "مكتب بريد", "سنترال", "شهر عقاري", "مرور", "سجل مدني", "طيارة ورق", "بالون طائر", "تلفريك", "حصان", "عربية كارو", "عربية نقل", "تريلا", "عربية نص نقل", "توك توك", "موتوسيكل صيني", "بيتش باجي", "جيت سكي", "بدال", "عوامة", "موقف اتوبيسات", "محطة قطر", "محطة مترو", "صالة وصول", "برج مراقبة", "منارة", "جزر", "واحة", "وادي", "شلال", "بركان", "خيمة", "عشة", "كوخ", "قبة", "ميدان", "دوران", "تقاطع", "حارة", "زقاق"],
+    "حيوانات ونباتات": ["أسد", "نمر", "فهد", "ذئب", "ثعلب", "كلب", "قطة", "فار", "أرنب", "قرد", "نسناس", "فيل", "زرافة", "حصان", "حمار", "جمل", "بقرة", "جاموسة", "خروف", "معزة", "خنزير", "غزال", "دب", "باندا", "كنغر", "كوالا", "تمساح", "ثعبان", "سحلية", "برص", "سلحفاة", "ضفدع", "سمكة", "قرش", "حوت", "دولفين", "أخطبوط", "قنديل بحر", "استاكوزا", "كابوريا", "نحلة", "نملة", "دبانة", "ناموسة", "صرصار", "عنكبوت", "عقرب", "فراشة", "غراب", "حمامة", "عصفور", "صقر", "نسر", "بومة", "ببغاء", "بطة", "وزة", "فرخة", "ديك", "ديك رومي", "نعامة", "بطريق", "شجرة", "نخلة", "صبار", "نجيلة", "غصن", "ورقة شجر", "ليمونة", "برتقالة", "بذرة", "قنفذ", "خفاش", "سنجاب", "حرباء", "دودة", "يرقة", "خنفساء", "جرادة", "جعل", "دبور", "فرس النهر", "وحيد القرن", "فقمة", "حصان البحر", "نجم البحر", "محار", "جمبري", "سبيط", "طاووس", "نورس", "بجعة", "لقلق", "نعناع", "ريحان", "بقدونس", "كزبرة", "شبت", "كرفس", "جرجير", "خس", "فجل", "صبارة", "وردة بلدي", "فل", "ياسمين", "نرجس", "عباد الشمس", "قرنفل", "توليب", "بصلة", "فص ثوم", "جدر", "ساق", "لحاء", "ثمرة", "زهرة", "شجيرة", "سوسة", "برغوت", "قملة", "قراد", "بق", "خنزير غينيا", "دب قطبي", "بطريق", "فقمة", "كلب بحر", "سيد قشطة", "حمار وحشي", "غوريلا", "شمبانزي", "طحالب", "عشب", "نبات ظل"],
+    "مهن ووظائف": ["دكتور", "مهندس", "مدرس", "ضابط", "محامي", "قاضي", "طيار", "ممرضة", "صيدلي", "نجار", "سباك", "كهربائي", "حداد", "جزار", "خباز", "حلاق", "كوافير", "محاسب", "مدير", "سكرتير", "صحفي", "مذيع", "ممثل", "مغني", "رسام", "كاتب", "عالم", "فلاح", "سواق", "بواب", "حارس", "طباخ", "جرسون", "عامل", "ميكانيكي", "صياد", "مفتش", "طبيب أسنان", "دكتور بيطري", "طبيب عيون", "جراح", "مسعف", "مهندس معماري", "مهندس ديكور", "مهندس كمبيوتر", "مبرمج", "مصمم", "مصور", "مونتير", "مخرج", "مؤلف", "شاعر", "ملحن", "موزع", "عازف", "راقص", "لاعب كورة", "مدرب", "حكم", "رئيس", "وزير", "محافظ", "عمدة", "ظابط شرطة", "ضابط جيش", "عسكري", "عريف", "شاويش", "محقق", "مخبر", "سباك صحي", "نقاش", "مبيض محارة", "بنا", "صنايعي", "مقاول", "سواق تاكسي", "سواق ميكروباص", "سواق قطر", "سواق طيارة", "كابتن بحري", "بحار", "غطاس", "مضيفة طيران", "مندوب مبيعات", "كاشير", "بياع", "صاحب محل", "تاجر", "مستورد", "جواهرجي", "سايس", "قهوجي", "جزمجي", "خياط", "ترزي", "منجد", "فني تكييف", "فني ألوميتال", "عامل نظافة", "زبال", "ساعي بريد", "طيار دليفري", "أمين مخزن", "بودي جارد", "كابتن جيم", "دكتور نفسي", "أخصائي تغذية", "فني أشعة", "كيميائي", "فيزيائي"],
+    "رياضة وهوايات": ["كرة قدم", "كرة سلة", "كرة طائرة", "تنس", "تنس طاولة", "اسكواش", "سباحة", "غوص", "جري", "مشي", "عجل", "فروسية", "ملاكمة", "مصارعة", "كاراتيه", "جودو", "تايكوندو", "جمباز", "رفع أثقال", "شطرنج", "قراءة", "كتابة", "رسم", "تلوين", "عزف", "غناء", "تصوير", "صيد", "طبخ", "خياطة", "تطريز", "نحت", "تخييم", "كرة يد", "كرة ماء", "تنس أرضي", "ريشة طاولة", "بلياردو", "سنوكر", "بولينج", "جولف", "هرم", "تزلج", "تزحلق", "ركوب أمواج", "شراع", "تجديف", "سباق سيارات", "سباق موتوسيكلات", "ماراثون", "وثب طويل", "وثب عالي", "رمي رمح", "رمي جلة", "رمي قرص", "رماية", "قوس وسهم", "سلاح شيش", "أيروبيكس", "يوجا", "زومبا", "كمال أجسام", "بيلاتس", "تصوير فوتوغرافي", "مونتاج فيديو", "تصميم جرافيك", "برمجة", "لعب جيمنج", "بلايستيشن", "جمع طوابع", "جمع عملات", "تربية عصافير", "تربية قطط", "تربية كلاب", "زراعة بلكونة", "أشغال يدوية", "كروشيه", "تريكو", "صناعة حظاظات", "تجميع بازل", "كلمات متقاطعة", "سودوكو", "قراءة روايات", "كتابة شعر", "تدوين", "تمثيل مسرحي", "مشاهدة أفلام", "سماع مزيكا", "رقص باليه", "رقص شعبي", "باركور", "غطس حر", "تسلق جبال", "قفز بالمظلات", "سكيت بورد"],
+    "أجهزة وتكنولوجيا": ["موبايل", "لابتوب", "كمبيوتر", "ايباد", "تابلت", "سماعة", "مايك", "كاميرا", "شاشة", "بروجيكتور", "طابعة", "راوتر", "فلاشة", "هارد", "كيبورد", "ماوس", "بلايستيشن", "اكس بوكس", "ذراع تحكم", "شاحن", "باور بانك", "ساعة ذكية", "نظارة واقع افتراضي", "روبوت", "تكييف", "تلفزيون", "راديو", "كيسة كمبيوتر", "مازربورد", "بروسيسور", "رامات", "كارت شاشة", "كارت صوت", "مروحة بروسيسور", "باور سبلاي", "دي في دي", "سي دي", "اسطوانة", "شريط كاسيت", "فيديو", "ريسيفر", "طبق دش", "عدسة دش", "سلك نت", "كابل شاحن", "رأس شاحن", "شاحن وايرلس", "سماعة بلوتوث", "سماعة ايربودز", "صب ووفر", "مكبر صوت", "مايك استوديو", "كاميرا ديجيتال", "كاميرا فيديو", "ترايبود", "رينج لايت", "فلاش كاميرا", "ميموري كارد", "هارد اكسترنال", "شاشة سمارت", "شاشة كمبيوتر", "ماوس باد", "كيبورد جيمنج", "ماوس جيمنج", "نظارة ثري دي", "درون", "طيارة تصوير", "جهاز بصمة", "كاميرا مراقبة", "انتركم", "فاكس", "تليفون أرضي", "آلة حاسبة", "ماكينة كاشير", "ماكينة عد فلوس", "سويتش نت", "اكسس بوينت", "ريموت كنترول", "ريموت تكييف", "منبه ديجيتال", "جهاز إنذار", "حساس حركة", "رسيفر واي فاي", "نظارة ذكية", "قلم ليزر", "ميكروفون لاسلكي"]
+};
 
 process.on('uncaughtException', (err) => { console.error('Uncaught Exception:', err); });
 process.on('unhandledRejection', (reason, promise) => { console.error('Unhandled Rejection:', reason); });
 
 function shuffleArray(array) {
     let currentIndex = array.length, randomIndex;
-    while (currentIndex !== 0) { randomIndex = Math.floor(Math.random() * currentIndex); currentIndex--; [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]]; }
+    while (currentIndex !== 0) {
+        randomIndex = Math.floor(Math.random() * currentIndex);
+        currentIndex--;
+        [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+    }
     return array;
 }
 
 function getSimilarWords(correctWord, categoryName) {
     let categoryWords = categorizedWords[categoryName] || [];
-    let filtered = categoryWords.filter(w => w !== correctWord); filtered = shuffleArray(filtered); let selected = filtered.slice(0, 14);
-    if (selected.length < 14) { let otherWords = []; Object.keys(categorizedWords).forEach(cat => { if (cat !== categoryName) otherWords.push(...categorizedWords[cat]); }); otherWords = otherWords.filter(w => w !== correctWord && !selected.includes(w)); otherWords = shuffleArray(otherWords); selected = selected.concat(otherWords.slice(0, 14 - selected.length)); }
-    selected.push(correctWord); return shuffleArray(selected); 
+    let filtered = categoryWords.filter(w => w !== correctWord);
+    filtered = shuffleArray(filtered);
+    let selected = filtered.slice(0, 14);
+
+    if (selected.length < 14) {
+        let otherWords = [];
+        Object.keys(categorizedWords).forEach(cat => { 
+            if (cat !== categoryName) otherWords.push(...categorizedWords[cat]); 
+        });
+        otherWords = otherWords.filter(w => w !== correctWord && !selected.includes(w));
+        otherWords = shuffleArray(otherWords);
+        selected = selected.concat(otherWords.slice(0, 14 - selected.length));
+    }
+    selected.push(correctWord); 
+    return shuffleArray(selected); 
 }
 
 function cleanupRoom(roomId) {
@@ -41,72 +88,144 @@ function cleanupRoom(roomId) {
     if (rooms[roomId].guessTimer) clearTimeout(rooms[roomId].guessTimer);
     if (rooms[roomId].tieTimer) clearTimeout(rooms[roomId].tieTimer);
     if (rooms[roomId].rebusTimer) clearTimeout(rooms[roomId].rebusTimer);
-    if (rooms[roomId].players) { Object.values(rooms[roomId].players).forEach(p => { if (p.disconnectTimeout) clearTimeout(p.disconnectTimeout); }); }
+    if (rooms[roomId].players) { 
+        Object.values(rooms[roomId].players).forEach(p => { 
+            if (p.disconnectTimeout) clearTimeout(p.disconnectTimeout); 
+        }); 
+    }
     delete rooms[roomId];
 }
 
+// ترتيب اللاعبين بالنقاط
 function emitUpdatedPlayers(roomId) {
     if (!rooms[roomId]) return;
     let playersArray = Object.values(rooms[roomId].players).map(p => ({
         ...p,
         score: rooms[roomId].scores && rooms[roomId].scores[p.id] !== undefined ? rooms[roomId].scores[p.id] : 0
     }));
+    
     playersArray.sort((a, b) => {
         if (b.score !== a.score) return b.score - a.score;
         return a.id.localeCompare(b.id); 
     });
+    
     io.to(roomId).emit('updatePlayers', playersArray);
 }
 
 function checkVotingResult(roomId) {
     if (!rooms[roomId]) return;
-    const voteCounts = {}; Object.values(rooms[roomId].votes).forEach(id => { voteCounts[id] = (voteCounts[id] || 0) + 1; });
-    let maxVotes = 0; for (const count of Object.values(voteCounts)) { if (count > maxVotes) maxVotes = count; }
-    const tiedIds = []; for (const [id, count] of Object.entries(voteCounts)) { if (count === maxVotes) tiedIds.push(id); }
+    
+    const voteCounts = {}; 
+    Object.values(rooms[roomId].votes).forEach(id => { voteCounts[id] = (voteCounts[id] || 0) + 1; });
+    
+    let maxVotes = 0; 
+    for (const count of Object.values(voteCounts)) { if (count > maxVotes) maxVotes = count; }
+    
+    const tiedIds = []; 
+    for (const [id, count] of Object.entries(voteCounts)) { if (count === maxVotes) tiedIds.push(id); }
+    
     const totalPlayers = Object.keys(rooms[roomId].players).length;
+    
     if (tiedIds.length > 1 && totalPlayers > 1) {
-        rooms[roomId].gameState = 'voting_tied'; const tiedNames = tiedIds.map(id => rooms[roomId].players[id] ? rooms[roomId].players[id].name : "لاعب غادر").join(' و ');
-        io.to(roomId).emit('votingTied', { tiedNames: tiedNames }); rooms[roomId].votes = {}; 
+        rooms[roomId].gameState = 'voting_tied'; 
+        const tiedNames = tiedIds.map(id => rooms[roomId].players[id] ? rooms[roomId].players[id].name : "لاعب غادر").join(' و ');
+        io.to(roomId).emit('votingTied', { tiedNames: tiedNames }); 
+        rooms[roomId].votes = {}; 
+        
         if (rooms[roomId].tieTimer) clearTimeout(rooms[roomId].tieTimer);
-        rooms[roomId].tieTimer = setTimeout(() => { if(rooms[roomId] && rooms[roomId].gameState === 'voting_tied') { rooms[roomId].gameState = 'voting'; io.to(roomId).emit('votingStarted', Object.values(rooms[roomId].players)); } }, 12000); 
+        rooms[roomId].tieTimer = setTimeout(() => { 
+            if(rooms[roomId] && rooms[roomId].gameState === 'voting_tied') { 
+                rooms[roomId].gameState = 'voting'; 
+                io.to(roomId).emit('votingStarted', Object.values(rooms[roomId].players)); 
+            } 
+        }, 12000); 
         return;
     }
-    rooms[roomId].gameState = 'voting_result'; const topVotedId = tiedIds[0]; const isSpyCaught = (topVotedId === rooms[roomId].spyId);
-    const votedPlayer = rooms[roomId].players[topVotedId]; const votedPlayerName = votedPlayer ? votedPlayer.name : "لاعب غادر";
-    const spyPlayer = rooms[roomId].players[rooms[roomId].spyId]; const spyName = spyPlayer ? spyPlayer.name : "الجاسوس";
+    
+    rooms[roomId].gameState = 'voting_result'; 
+    const topVotedId = tiedIds[0]; 
+    const isSpyCaught = (topVotedId === rooms[roomId].spyId);
+    const votedPlayer = rooms[roomId].players[topVotedId]; 
+    const votedPlayerName = votedPlayer ? votedPlayer.name : "لاعب غادر";
+    const spyPlayer = rooms[roomId].players[rooms[roomId].spyId]; 
+    const spyName = spyPlayer ? spyPlayer.name : "الجاسوس";
+    
     io.to(roomId).emit('votingEnded', { isSpyCaught: isSpyCaught, votedPlayerName: votedPlayerName, spyName: spyName, spyId: rooms[roomId].spyId });
 }
 
 function handlePlayerLeave(roomId, playerId) {
     if (!rooms[roomId] || !rooms[roomId].players[playerId]) return;
-    const isHost = rooms[roomId].players[playerId].isHost; const wasVoting = (rooms[roomId].gameState === 'voting'); let gameAborted = false;
-    if (isHost) { const hostName = rooms[roomId].players[playerId].name; io.to(roomId).emit('hostLeftRoom', hostName); cleanupRoom(roomId); return; }
-    if (rooms[roomId].spyId === playerId && ['playing', 'voting', 'guessing', 'voting_result', 'voting_tied'].includes(rooms[roomId].gameState)) { if(rooms[roomId].guessTimer) clearTimeout(rooms[roomId].guessTimer); if(rooms[roomId].tieTimer) clearTimeout(rooms[roomId].tieTimer); rooms[roomId].gameState = 'waiting'; rooms[roomId].votes = {}; io.to(roomId).emit('gameRestarted'); gameAborted = true; }
+    
+    const isHost = rooms[roomId].players[playerId].isHost; 
+    const wasVoting = (rooms[roomId].gameState === 'voting'); 
+    let gameAborted = false;
+    
+    if (isHost) { 
+        const hostName = rooms[roomId].players[playerId].name; 
+        io.to(roomId).emit('hostLeftRoom', hostName); 
+        cleanupRoom(roomId); 
+        return; 
+    }
+    
+    if (rooms[roomId].spyId === playerId && ['playing', 'voting', 'guessing', 'voting_result', 'voting_tied'].includes(rooms[roomId].gameState)) { 
+        if(rooms[roomId].guessTimer) clearTimeout(rooms[roomId].guessTimer); 
+        if(rooms[roomId].tieTimer) clearTimeout(rooms[roomId].tieTimer); 
+        rooms[roomId].gameState = 'waiting'; 
+        rooms[roomId].votes = {}; 
+        io.to(roomId).emit('gameRestarted'); 
+        gameAborted = true; 
+    }
+    
     delete rooms[roomId].players[playerId];
+    
     if (rooms[roomId]) {
         emitUpdatedPlayers(roomId);
         if (Object.keys(rooms[roomId].players).length === 0) { cleanupRoom(roomId); return; }
+        
         if (wasVoting && !gameAborted) {
             if (rooms[roomId].votes[playerId]) delete rooms[roomId].votes[playerId];
-            const totalVotes = Object.keys(rooms[roomId].votes).length; const remainingPlayersCount = Object.keys(rooms[roomId].players).length;
-            io.to(roomId).emit('playerRemovedFromVoting', playerId); io.to(roomId).emit('voteRegistered', { voterName: "النظام", targetName: "", currentVotes: totalVotes, totalRequired: remainingPlayersCount });
+            const totalVotes = Object.keys(rooms[roomId].votes).length; 
+            const remainingPlayersCount = Object.keys(rooms[roomId].players).length;
+            io.to(roomId).emit('playerRemovedFromVoting', playerId); 
+            io.to(roomId).emit('voteRegistered', { voterName: "النظام", targetName: "", currentVotes: totalVotes, totalRequired: remainingPlayersCount });
             if (totalVotes >= remainingPlayersCount && remainingPlayersCount > 0) checkVotingResult(roomId);
         }
     }
 }
 
+// ----------------------------------------------------
+// اتصالات السيرفر (Socket.io)
+// ----------------------------------------------------
 io.on('connection', (socket) => {
     socket.on('createRoom', (data) => {
         try {
-            const roomId = data.roomId; const playerId = data.playerId; const hostName = data.name || '𝐒𝐀𝐒𝐔𝐊𝐄';
-            socket.join(roomId); socket.roomId = roomId; socket.playerId = playerId;
-            if (!rooms[roomId]) { rooms[roomId] = { players: {}, gameState: 'waiting', gameMode: data.gameMode || 'spy', scores: {}, currentRound: 0, guessedPlayers: [] }; }
+            const roomId = data.roomId; 
+            const playerId = data.playerId; 
+            const hostName = data.name || '𝐒𝐀𝐒𝐔𝐊𝐄';
+            
+            socket.join(roomId); 
+            socket.roomId = roomId; 
+            socket.playerId = playerId;
+            
+            if (!rooms[roomId]) { 
+                rooms[roomId] = { 
+                    players: {}, gameState: 'waiting', gameMode: data.gameMode || 'spy', 
+                    scores: {}, currentRound: 0, guessedPlayers: [] 
+                }; 
+            }
+            
             rooms[roomId].gameMode = data.gameMode || 'spy';
             if (!rooms[roomId].scores) rooms[roomId].scores = {};
             rooms[roomId].scores[playerId] = 0; 
-            if (rooms[roomId].players[playerId] && rooms[roomId].players[playerId].disconnectTimeout) { clearTimeout(rooms[roomId].players[playerId].disconnectTimeout); rooms[roomId].players[playerId].disconnectTimeout = null; }
+            
+            if (rooms[roomId].players[playerId] && rooms[roomId].players[playerId].disconnectTimeout) { 
+                clearTimeout(rooms[roomId].players[playerId].disconnectTimeout); 
+                rooms[roomId].players[playerId].disconnectTimeout = null; 
+            }
+            
             const existingName = rooms[roomId].players[playerId] ? rooms[roomId].players[playerId].name : hostName;
             rooms[roomId].players[playerId] = { id: playerId, socketId: socket.id, name: existingName, isHost: true };
+            
             emitUpdatedPlayers(roomId);
             socket.emit('syncState', rooms[roomId].gameState, rooms[roomId].gameMode);
         } catch (e) {}
@@ -114,33 +233,76 @@ io.on('connection', (socket) => {
 
     socket.on('joinRoom', (data) => {
         try {
-            const roomId = data.roomId; const playerId = data.playerId;
+            const roomId = data.roomId; 
+            const playerId = data.playerId;
+            
             if (rooms[roomId]) {
                 const isExistingPlayer = !!rooms[roomId].players[playerId];
-                if (!isExistingPlayer && rooms[roomId].gameState !== 'waiting') { socket.emit('errorMsg', 'لقد بدأت اللعبة بالفعل! 🚫 لا يمكنك الانضمام الآن.'); return; }
-                socket.join(roomId); socket.roomId = roomId; socket.playerId = playerId;
+                if (!isExistingPlayer && rooms[roomId].gameState !== 'waiting') { 
+                    socket.emit('errorMsg', 'لقد بدأت اللعبة بالفعل! 🚫 لا يمكنك الانضمام الآن.'); 
+                    return; 
+                }
+                
+                socket.join(roomId); 
+                socket.roomId = roomId; 
+                socket.playerId = playerId;
                 
                 if (isExistingPlayer) {
-                    if (rooms[roomId].players[playerId].disconnectTimeout) { clearTimeout(rooms[roomId].players[playerId].disconnectTimeout); rooms[roomId].players[playerId].disconnectTimeout = null; }
+                    if (rooms[roomId].players[playerId].disconnectTimeout) { 
+                        clearTimeout(rooms[roomId].players[playerId].disconnectTimeout); 
+                        rooms[roomId].players[playerId].disconnectTimeout = null; 
+                    }
                     rooms[roomId].players[playerId].socketId = socket.id;
                 } else {
-                    let finalName = data.name.trim(); let suffix = 1;
-                    while(Object.values(rooms[roomId].players).some(p => p.name === finalName)) { finalName = `${data.name.trim()} (${suffix})`; suffix++; }
+                    let finalName = data.name.trim(); 
+                    let suffix = 1;
+                    while(Object.values(rooms[roomId].players).some(p => p.name === finalName)) { 
+                        finalName = `${data.name.trim()} (${suffix})`; 
+                        suffix++; 
+                    }
                     rooms[roomId].players[playerId] = { id: playerId, socketId: socket.id, name: finalName, isHost: false };
                     rooms[roomId].scores[playerId] = 0;
                 }
+                
                 emitUpdatedPlayers(roomId);
                 socket.emit('syncState', rooms[roomId].gameState, rooms[roomId].gameMode);
             }
         } catch (e) {}
     });
 
-    socket.on('changePlayerName', (data) => { let roomId = socket.roomId || data.fallbackRoomId; if(roomId && rooms[roomId] && rooms[roomId].players[data.targetId]) { rooms[roomId].players[data.targetId].name = data.newName; emitUpdatedPlayers(roomId); io.to(rooms[roomId].players[data.targetId].socketId).emit('forceNameLock', data.newName); } });
-    socket.on('kickPlayer', (data) => { let tid = data.targetId; let roomId = socket.roomId || data.fallbackRoomId; if(roomId && rooms[roomId] && rooms[roomId].players[tid]) { delete rooms[roomId].players[tid]; emitUpdatedPlayers(roomId); } });
-    socket.on('leaveRoom', () => { const roomId = socket.roomId; if (roomId && rooms[roomId]) { delete rooms[roomId].players[socket.playerId]; emitUpdatedPlayers(roomId); } });
+    socket.on('changePlayerName', (data) => { 
+        let roomId = socket.roomId || data.fallbackRoomId; 
+        if(roomId && rooms[roomId] && rooms[roomId].players[data.targetId]) { 
+            rooms[roomId].players[data.targetId].name = data.newName; 
+            emitUpdatedPlayers(roomId); 
+            io.to(rooms[roomId].players[data.targetId].socketId).emit('forceNameLock', data.newName); 
+        } 
+    });
+    
+    socket.on('kickPlayer', (data) => { 
+        let tid = data.targetId; 
+        let roomId = socket.roomId || data.fallbackRoomId; 
+        if(roomId && rooms[roomId] && rooms[roomId].players[tid]) { 
+            delete rooms[roomId].players[tid]; 
+            emitUpdatedPlayers(roomId); 
+        } 
+    });
+    
+    socket.on('leaveRoom', () => { 
+        const roomId = socket.roomId; 
+        if (roomId && rooms[roomId]) { 
+            delete rooms[roomId].players[socket.playerId]; 
+            emitUpdatedPlayers(roomId); 
+        } 
+    });
 
-    // 🔥 تصليح الأزرار المفقودة (التصنيفات وعجلة الحظ في الجاسوس)
-    socket.on('goToModeSelection', (fallbackRoomId) => { let r = socket.roomId || fallbackRoomId; if(r && rooms[r]) io.to(r).emit('showModeSelection'); });
+    // ----------------------------------------------------
+    // أوامر الجاسوس (مفكوكة وكاملة)
+    // ----------------------------------------------------
+    socket.on('goToModeSelection', (fallbackRoomId) => { 
+        let r = socket.roomId || fallbackRoomId; 
+        if(r && rooms[r]) io.to(r).emit('showModeSelection'); 
+    });
     
     socket.on('selectCategory', (cat, fallbackRoomId) => { 
         let r = socket.roomId || fallbackRoomId;
@@ -155,31 +317,120 @@ io.on('connection', (socket) => {
     socket.on('startGameWithCategory', (cat, fallbackRoomId) => {
         let r = socket.roomId || fallbackRoomId;
         if(r && rooms[r]) {
-            rooms[r].gameState = 'playing'; const wl = categorizedWords[cat] || categorizedWords["أكل وشرب"];
-            const w = wl[Math.floor(Math.random() * wl.length)]; rooms[r].word = w; rooms[r].category = cat; 
-            const pArr = Object.values(rooms[r].players); const g = pArr.filter(p => !p.isHost);
-            let sId = g.length > 0 ? g[Math.floor(Math.random() * g.length)].id : pArr[0].id; rooms[r].spyId = sId;
+            rooms[r].gameState = 'playing'; 
+            
+            const wl = categorizedWords[cat] || categorizedWords["أكل وشرب"];
+            const w = wl[Math.floor(Math.random() * wl.length)]; 
+            rooms[r].word = w; 
+            rooms[r].category = cat; 
+            
+            const pArr = Object.values(rooms[r].players); 
+            const g = pArr.filter(p => !p.isHost);
+            let sId = g.length > 0 ? g[Math.floor(Math.random() * g.length)].id : pArr[0].id; 
+            rooms[r].spyId = sId;
+            
             pArr.forEach(p => io.to(p.socketId).emit('gameStarted', { word: w, isSpy: p.id === sId, category: cat }));
         }
     });
 
+    socket.on('startVotingPhase', (fallbackRoomId) => { 
+        let roomId = socket.roomId || fallbackRoomId;
+        if(roomId && rooms[roomId]) { 
+            rooms[roomId].gameState = 'voting'; 
+            rooms[roomId].votes = {}; 
+            if(rooms[roomId].tieTimer) clearTimeout(rooms[roomId].tieTimer);
+            io.to(roomId).emit('votingStarted', Object.values(rooms[roomId].players)); 
+        } 
+    });
+
+    socket.on('submitVote', (data) => {
+        let targetId = typeof data === 'object' ? data.targetId : data; 
+        let fallbackRoomId = typeof data === 'object' ? data.fallbackRoomId : null;
+        let roomId = socket.roomId || fallbackRoomId; 
+        const playerId = socket.playerId;
+        
+        if(roomId && rooms[roomId] && rooms[roomId].gameState === 'voting') {
+            rooms[roomId].votes[playerId] = targetId; 
+            const totalVotes = Object.keys(rooms[roomId].votes).length; 
+            const totalPlayers = Object.keys(rooms[roomId].players).length;
+            
+            io.to(roomId).emit('voteRegistered', { 
+                voterName: rooms[roomId].players[playerId].name, 
+                targetName: rooms[roomId].players[targetId] ? rooms[roomId].players[targetId].name : "لاعب غادر", 
+                currentVotes: totalVotes, 
+                totalRequired: totalPlayers 
+            });
+            
+            if(totalVotes >= totalPlayers) checkVotingResult(roomId);
+        }
+    });
+
+    socket.on('startGuessingPhase', () => {
+        const roomId = socket.roomId;
+        if(roomId && rooms[roomId]) {
+            rooms[roomId].gameState = 'guessing'; 
+            rooms[roomId].guessingWords = getSimilarWords(rooms[roomId].word, rooms[roomId].category); 
+            rooms[roomId].guessEndTime = Date.now() + 30000; 
+            
+            io.to(roomId).emit('guessingPhaseStarted', { words: rooms[roomId].guessingWords, duration: 30 });
+            
+            if(rooms[roomId].guessTimer) clearTimeout(rooms[roomId].guessTimer);
+            rooms[roomId].guessTimer = setTimeout(() => { 
+                if(rooms[roomId] && rooms[roomId].gameState === 'guessing') { 
+                    rooms[roomId].gameState = 'waiting'; 
+                    io.to(roomId).emit('spyTimeOut'); 
+                } 
+            }, 30000); 
+        }
+    });
+
+    socket.on('spyHoverWord', (word) => { 
+        const roomId = socket.roomId; const playerId = socket.playerId; 
+        if(roomId && rooms[roomId]) io.to(roomId).emit('spySelectedWord', { word: word, spyName: rooms[roomId].players[playerId].name }); 
+    });
+    
+    socket.on('spyConfirmWord', (chosenWord) => { 
+        const roomId = socket.roomId; const playerId = socket.playerId; 
+        if(roomId && rooms[roomId]) { 
+            if (rooms[roomId].gameState !== 'guessing') return; 
+            rooms[roomId].gameState = 'waiting'; 
+            if(rooms[roomId].guessTimer) clearTimeout(rooms[roomId].guessTimer); 
+            
+            io.to(roomId).emit('gameFinalResult', { 
+                spyName: rooms[roomId].players[playerId].name, 
+                chosenWord: chosenWord, 
+                correctWord: rooms[roomId].word, 
+                isCorrect: (chosenWord === rooms[roomId].word) 
+            }); 
+        } 
+    });
+
+    // ----------------------------------------------------
+    // أوامر لعبة التخمين
+    // ----------------------------------------------------
     socket.on('startRebusGame', (fallbackRoomId) => {
         let r = socket.roomId || fallbackRoomId;
         if(r && rooms[r]) {
-            rooms[r].gameState = 'rebus_playing'; rooms[r].gameMode = 'rebus'; rooms[r].scores = {};
+            rooms[r].gameState = 'rebus_playing'; 
+            rooms[r].gameMode = 'rebus'; 
+            rooms[r].scores = {};
             Object.keys(rooms[r].players).forEach(pid => rooms[r].scores[pid] = 0);
-            emitUpdatedPlayers(r);
-            rooms[r].currentRound = 0; startNextRebusRound(r);
+            emitUpdatedPlayers(r); 
+            rooms[r].currentRound = 0; 
+            startNextRebusRound(r);
         }
     });
 
     socket.on('sendChatMsg', (data) => {
         let r = socket.roomId || data.fallbackRoomId;
         if(r && rooms[r] && rooms[r].gameState === 'rebus_playing') {
-            let pid = socket.playerId; let pName = rooms[r].players[pid].name;
+            let pid = socket.playerId; 
+            let pName = rooms[r].players[pid].name;
+            
             if(rooms[r].guessedPlayers.includes(pid)) return; 
 
             if(data.msg.trim() === rooms[r].currentPuzzle.answer) {
+                // النظام الديناميكي (الأول 20 وبيقل لحد 11)
                 let guessedCount = rooms[r].guessedPlayers.length;
                 let pts = 20 - guessedCount;
                 if (pts < 11) pts = 11;
@@ -203,11 +454,20 @@ io.on('connection', (socket) => {
     function startNextRebusRound(roomId) {
         if(!rooms[roomId]) return;
         rooms[roomId].currentRound++;
+        
         if(rooms[roomId].currentRound > 10) {
             rooms[roomId].gameState = 'waiting';
-            let sorted = Object.keys(rooms[roomId].scores).map(pid => ({ name: rooms[roomId].players[pid] ? rooms[roomId].players[pid].name : 'غادر', score: rooms[roomId].scores[pid] })).sort((a,b) => b.score - a.score);
-            io.to(roomId).emit('rebusGameOver', sorted); return;
+            let sorted = Object.keys(rooms[roomId].scores)
+                .map(pid => ({ 
+                    name: rooms[roomId].players[pid] ? rooms[roomId].players[pid].name : 'غادر', 
+                    score: rooms[roomId].scores[pid] 
+                }))
+                .sort((a,b) => b.score - a.score);
+                
+            io.to(roomId).emit('rebusGameOver', sorted); 
+            return;
         }
+        
         rooms[roomId].guessedPlayers = [];
         let puz = rebusPuzzles[Math.floor(Math.random() * rebusPuzzles.length)];
         rooms[roomId].currentPuzzle = puz;
@@ -220,59 +480,37 @@ io.on('connection', (socket) => {
 
     function endRebusRound(roomId) {
         if(!rooms[roomId]) return;
-        io.to(roomId).emit('rebusRoundEnded', { answer: rooms[roomId].currentPuzzle.answer });
+        // نبعت عدد اللي جاوبوا صح عشان نعرف نطلع صوت الفوز ولا الخسارة
+        const winnersCount = rooms[roomId].guessedPlayers.length;
+        io.to(roomId).emit('rebusRoundEnded', { answer: rooms[roomId].currentPuzzle.answer, winners: winnersCount });
         setTimeout(() => startNextRebusRound(roomId), 4000);
     }
 
-    socket.on('startVotingPhase', (fallbackRoomId) => { 
-        let roomId = socket.roomId || fallbackRoomId;
-        if(roomId && rooms[roomId]) { 
-            rooms[roomId].gameState = 'voting'; rooms[roomId].votes = {}; 
-            if(rooms[roomId].tieTimer) clearTimeout(rooms[roomId].tieTimer);
-            io.to(roomId).emit('votingStarted', Object.values(rooms[roomId].players)); 
-        } 
-    });
-
-    socket.on('submitVote', (data) => {
-        let targetId = typeof data === 'object' ? data.targetId : data; let fallbackRoomId = typeof data === 'object' ? data.fallbackRoomId : null;
-        let roomId = socket.roomId || fallbackRoomId; const playerId = socket.playerId;
-        if(roomId && rooms[roomId] && rooms[roomId].gameState === 'voting') {
-            rooms[roomId].votes[playerId] = targetId; const totalVotes = Object.keys(rooms[roomId].votes).length; const totalPlayers = Object.keys(rooms[roomId].players).length;
-            io.to(roomId).emit('voteRegistered', { voterName: rooms[roomId].players[playerId].name, targetName: rooms[roomId].players[targetId] ? rooms[roomId].players[targetId].name : "لاعب غادر", currentVotes: totalVotes, totalRequired: totalPlayers });
-            if(totalVotes >= totalPlayers) checkVotingResult(roomId);
-        }
-    });
-
-    socket.on('startGuessingPhase', () => {
-        const roomId = socket.roomId;
-        if(roomId && rooms[roomId]) {
-            rooms[roomId].gameState = 'guessing'; rooms[roomId].guessingWords = getSimilarWords(rooms[roomId].word, rooms[roomId].category); rooms[roomId].guessEndTime = Date.now() + 30000; 
-            io.to(roomId).emit('guessingPhaseStarted', { words: rooms[roomId].guessingWords, duration: 30 });
-            if(rooms[roomId].guessTimer) clearTimeout(rooms[roomId].guessTimer);
-            rooms[roomId].guessTimer = setTimeout(() => { if(rooms[roomId] && rooms[roomId].gameState === 'guessing') { rooms[roomId].gameState = 'waiting'; io.to(roomId).emit('spyTimeOut'); } }, 30000); 
-        }
-    });
-
-    socket.on('spyHoverWord', (word) => { const roomId = socket.roomId; const playerId = socket.playerId; if(roomId && rooms[roomId]) io.to(roomId).emit('spySelectedWord', { word: word, spyName: rooms[roomId].players[playerId].name }); });
-    socket.on('spyConfirmWord', (chosenWord) => { 
-        const roomId = socket.roomId; const playerId = socket.playerId; 
-        if(roomId && rooms[roomId]) { 
-            if (rooms[roomId].gameState !== 'guessing') return; 
-            rooms[roomId].gameState = 'waiting'; if(rooms[roomId].guessTimer) clearTimeout(rooms[roomId].guessTimer); 
-            io.to(roomId).emit('gameFinalResult', { spyName: rooms[roomId].players[playerId].name, chosenWord: chosenWord, correctWord: rooms[roomId].word, isCorrect: (chosenWord === rooms[roomId].word) }); 
-        } 
-    });
-
+    // ----------------------------------------------------
+    // زرار إعادة اللعب الموحد
+    // ----------------------------------------------------
     socket.on('restartGame', () => { 
-        let r = socket.roomId; if (!r) { for (const rm in rooms) { if (rooms[rm].players[socket.playerId]) { r = rm; break; } } }
+        let r = socket.roomId; 
+        if (!r) { 
+            for (const rm in rooms) { 
+                if (rooms[rm].players[socket.playerId]) { r = rm; break; } 
+            } 
+        }
+        
         if(r && rooms[r]) { 
-            if(rooms[r].guessTimer) clearTimeout(rooms[r].guessTimer); if(rooms[r].tieTimer) clearTimeout(rooms[r].tieTimer); if(rooms[r].rebusTimer) clearTimeout(rooms[r].rebusTimer);
-            rooms[r].gameState = 'waiting'; rooms[r].votes = {}; io.to(r).emit('gameRestarted'); 
+            if(rooms[r].guessTimer) clearTimeout(rooms[r].guessTimer); 
+            if(rooms[r].tieTimer) clearTimeout(rooms[r].tieTimer); 
+            if(rooms[r].rebusTimer) clearTimeout(rooms[r].rebusTimer);
+            
+            rooms[r].gameState = 'waiting'; 
+            rooms[r].votes = {}; 
+            io.to(r).emit('gameRestarted'); 
         } 
     });
 
     socket.on('disconnect', () => { 
-        const roomId = socket.roomId; const playerId = socket.playerId; 
+        const roomId = socket.roomId; 
+        const playerId = socket.playerId; 
         if (roomId && rooms[roomId] && rooms[roomId].players[playerId]) { 
             const isHost = rooms[roomId].players[playerId].isHost;
             const timeoutLimit = isHost ? 3600000 : 180000; 

@@ -125,10 +125,13 @@
         #chatInput:focus { border-color: #00f3ff; }
         .chat-msg { margin-bottom: 8px; font-size: 1rem; line-height: 1.4; animation: fadeIn 0.3s ease; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 5px;}
         .chat-msg .sender { font-weight: bold; color: #00f3ff; margin-left: 5px; }
+        .chat-msg.correct { color: #000; font-weight: bold; text-align: right; background: transparent; padding: 0; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 5px;}
+        .chat-msg.close-guess { color: #ff4444; font-weight: bold; text-align: right; background: transparent; padding: 0; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 5px;}
         
-        /* 🔥 تعديل رسالة الشات لتصبح هادية وجميلة */
-        .chat-msg.correct { color: #00ff88; font-weight: bold; text-align: right; background: transparent; padding: 0; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 5px;}
-        
+        /* 🔥 شريط التايمر الجديد */
+        .timer-bar-container { width: 100%; max-width: 400px; height: 12px; background: rgba(255,255,255,0.1); border-radius: 10px; margin: 0 auto 20px auto; overflow: hidden; border: 1px solid #333; }
+        .timer-bar { height: 100%; width: 100%; background: #00f3ff; transition: width 1s linear, background-color 0.5s ease; }
+
         .podium-section { display: flex; justify-content: center; align-items: flex-end; gap: 15px; margin: 30px auto; max-width: 450px; height: 220px; width: 100%;}
         .podium-block { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; flex: 1; max-width: 120px; border-radius: 10px 10px 0 0; padding-bottom: 10px; position: relative; }
         .podium-1 { height: 170px; background: linear-gradient(to top, #ffd700, #ffea00); order: 2; z-index: 10; box-shadow: 0 0 25px rgba(255,215,0,0.6); border: 2px solid #fff; border-bottom: none;}
@@ -198,7 +201,7 @@
     <div id="hostSettingsModal" class="modal-overlay hidden" style="z-index: 999999;"><div class="modal-content glass-container"><h2 class="neon-text" style="margin-bottom: 25px; color: #00f3ff; text-shadow: 0 0 15px #00f3ff;">إدارة اللاعبين 👥</h2><div id="modalPlayersList" style="max-height:300px; overflow-y:auto;"></div><button id="restartGameBtn" disabled style="width: 100%; margin-top: 15px;">إعادة اللعب 🔄</button><button id="closeModalBtn" style="margin-top: 15px; width: 100%; background: #333; border:none;">إغلاق</button></div></div>
     <div id="invalidRoomModal" class="modal-overlay hidden" style="z-index: 999999;"><div class="modal-content glass-container" style="text-align: center;"><div style="font-size: 4rem; margin-bottom: 15px;">❌</div><h2 class="neon-text" style="color: #ff0055;">عذراً!</h2><p id="errorMsgText" style="color: #ccc; font-size: 1.1rem;">الغرفة دي مش موجودة!</p></div></div>
     <div id="kickedModal" class="modal-overlay hidden" style="z-index: 999999;"><div class="modal-content glass-container" style="text-align: center;"><div style="font-size: 4rem; margin-bottom: 15px;">🚫</div><h2 class="neon-text" style="color: #ff0055;">تم طردك!</h2></div></div>
-    <div id="hostLeftModal" class="modal-overlay hidden" style="z-index: 999999;"><div class="modal-content glass-container" style="text-align: center;"><div style="font-size: 4rem; margin-bottom: 15px;">⚠️</div><h2 class="neon-text" style="color: #ff0055;">توقفت اللعبة!</h2><p id="hostLeftText" style="color: #ccc; margin-bottom: 20px;">الهوست غادر الغرفة</p><button id="closeHostLeftBtn" style="width: 100%;">حسناً</button></div></div>
+    <div id="hostLeftModal" class="modal-overlay hidden" style="z-index: 999999;"><div class="modal-content glass-container" style="text-align: center;"><div style="font-size: 4rem; margin-bottom: 15px;">⚠️</div><h2 class="neon-text" style="color: #ff0055;">توقفت اللعبة!</h2><p id="hostLeftText" style="color: #ccc; margin-bottom: 20px;">الهوست غادر الغرفة</p><button id="closeHostLeftBtn" style="width: 100%;">العودة للرئيسية</button></div></div>
     <div id="tieBreakerModal" class="modal-overlay hidden" style="z-index: 999999;"><div class="modal-content glass-container" style="text-align: center;"><div style="font-size: 4rem; margin-bottom: 15px;">⚖️</div><h2 class="neon-text" style="color: #ff0055;">تعادل!</h2><p style="color: #ccc;">تعادل: <span id="tiedPlayersNames" style="color: #fff; font-weight: bold;"></span></p><div id="tieTimer" style="font-size: 3rem; color: #00ff88; font-weight: bold;">12</div></div></div>
     <div id="votingResultModal" class="modal-overlay hidden" style="z-index: 999999;"><div class="modal-content glass-container" style="text-align: center;"><div id="votingResultIcon" style="font-size: 4rem;">🎭</div><h2 id="votingResultTitle" class="neon-text">النتيجة</h2><p id="votingResultDesc1" style="color: #ccc;"></p><p id="votingResultDesc2" style="color: #ccc; margin-bottom: 25px;"></p><button id="spyProceedBtn" class="hidden" style="width: 100%;">تخمين الكلمة 🧠</button></div></div>
     <div id="finalResultModal" class="modal-overlay hidden" style="z-index: 999999;"><div class="modal-content glass-container" style="text-align: center;"><h2 class="neon-text" style="color: #00f3ff;">نتيجة الجولة 🏁</h2><p id="finalResultText1"></p><p id="finalResultText2" style="font-size: 1.4rem; color: #00f3ff; font-weight: bold;"></p><p id="finalResultText3"></p><p id="finalResultText4" style="font-size: 1.3rem; font-weight: bold;"></p><button id="finalOkBtn" style="width: 100%;">حسناً 👍</button></div></div>
@@ -290,7 +293,11 @@
                 <div class="puzzle-display">
                     <span id="puzzleText" class="puzzle-part">...</span>
                 </div>
-                <p id="rebusTimer" style="color: #ff0055; font-size: 2.5rem; font-weight: bold; margin-bottom: 10px;">30</p>
+                
+                <div class="timer-bar-container">
+                    <div id="rebusTimerBar" class="timer-bar"></div>
+                </div>
+
                 <div class="chat-container">
                     <div id="chatLog"></div>
                     <div class="chat-input-area">

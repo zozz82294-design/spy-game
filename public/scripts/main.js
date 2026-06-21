@@ -102,7 +102,7 @@ function playSound(type) {
 } 
 document.addEventListener('click', (e) => { if(e.target.tagName === 'BUTTON') playSound('click'); });
 
-// 🔥 إصلاح مشكلة أزرار الكمبيوتر والموبايل (الخطأ المطبعي اللي عطل الجافاسكريبت)
+// 🔥 إصلاح مشكلة أزرار الكمبيوتر والموبايل
 const pcViewBtn = document.getElementById('pcViewBtn');
 const mobileViewBtn = document.getElementById('mobileViewBtn');
 
@@ -219,7 +219,6 @@ document.getElementById('confirmHostPasswordBtn')?.addEventListener('click', () 
     document.getElementById('hostSettingsBtn').classList.remove('hidden'); document.getElementById('copyInviteBtn').classList.remove('hidden'); document.getElementById('destroyRoomBtn').classList.remove('hidden');
     
     const newRoomId = Math.random().toString(36).substring(2, 8); 
-    // حفظ الغرفة في الجلسة دي بس عشان متدخلش فيها تلقائي بعدين
     sessionStorage.setItem('hostRoomId', newRoomId);
     
     const savedName = localStorage.getItem('lockedPlayerName') || '𝐒𝐀𝐒𝐔𝐊𝐄';
@@ -248,7 +247,6 @@ socket.on('syncState', (state, mode) => {
     if(state === 'waiting') showScreen('waitingScreen'); 
 });
 
-// 🔥 الاتصال التلقائي النظيف
 socket.on('connect', () => { 
     const hostRoomId = sessionStorage.getItem('hostRoomId'); 
     const guestName = sessionStorage.getItem('guestName'); 
@@ -411,7 +409,6 @@ document.getElementById('chatInput')?.addEventListener('keypress', (e) => { if(e
 
 socket.on('rebusChatMsg', (data) => { document.getElementById('chatLog').innerHTML = `<div class="chat-msg"><span class="sender">${data.playerName}:</span> ${data.msg}</div>` + document.getElementById('chatLog').innerHTML; });
 
-// رسالة تخمين صحيحة (هادية بدون نقاط)
 socket.on('rebusCorrectGuess', (data) => { 
     playSound('win'); 
     document.getElementById('chatLog').innerHTML = `<div class="chat-msg correct">🎉 لقد عرفها ${data.playerName}</div>` + document.getElementById('chatLog').innerHTML; 

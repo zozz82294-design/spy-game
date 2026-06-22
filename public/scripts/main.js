@@ -165,6 +165,7 @@ if (confirmHostPasswordBtn) confirmHostPasswordBtn.addEventListener('click', () 
     showScreen('waitingScreen');
 });
 
+// إخفاء الزراير للضيوف
 if (urlParamsSync.get('room')) {
     if (goToSpyBtn) goToSpyBtn.classList.add('hidden'); if (goToRebusBtn) goToRebusBtn.classList.add('hidden');
     if (playerNameInput) playerNameInput.classList.remove('hidden'); 
@@ -172,20 +173,43 @@ if (urlParamsSync.get('room')) {
     const playJoinAudio = () => { audioJoin.play().catch(e => {}); document.removeEventListener('click', playJoinAudio); }; document.addEventListener('click', playJoinAudio);
 }
 
+// تعديل زرار الانضمام عشان ميخشش غير لما السيرفر يسمح
 const joinRoomBtn = document.getElementById('joinRoomBtn');
 if (joinRoomBtn) joinRoomBtn.addEventListener('click', () => {
     let name = playerNameInput.value.trim() || localStorage.getItem('lockedPlayerName');
     if (!name) return alert("اكتب اسمك الأول يا بطل!");
-    isHost = false; document.getElementById('leaveRoomBtn').classList.remove('hidden'); sessionStorage.setItem('guestName', name);
+    isHost = false; 
+    sessionStorage.setItem('guestName', name);
+    // مجرد بيبعت الطلب ومش بيغير الشاشة لحد ما السيرفر يرد بـ syncState
     socket.emit('joinRoom', { roomId: urlParamsSync.get('room'), name: name, playerId: myPlayerId });
-    showScreen('waitingScreen'); audioWaiting.play().catch(e => {});
 });
 
 let currentGameMode = 'spy'; 
 socket.on('syncState', (state, mode) => { 
     currentGameMode = mode || 'spy';
     document.getElementById('waitingTitle').innerText = currentGameMode === 'spy' ? 'لعبة الجاسوس' : 'تخمين الكلمة';
-    if(state === 'waiting') showScreen('waitingScreen'); 
+    if(state === 'waiting') {
+        showScreen('waitingScreen'); 
+        document.getElementById('leaveRoomBtn').classList.remove('hidden');
+        audioWaiting.play().catch(e => {});
+    }
+});
+
+// 🔥 رسالة الغرفة غير موجودة وزرار العودة للرئيسية
+socket.on('errorMsg', (msg) => { 
+    const invalidModal = document.getElementById('invalidRoomModal');
+    const errorText = document.getElementById('errorMsgText');
+    if(invalidModal && errorText) { 
+        errorText.innerText = msg; 
+        invalidModal.classList.remove('hidden'); 
+    } 
+    sessionStorage.removeItem('hostRoomId');
+    sessionStorage.removeItem('guestName');
+});
+
+const closeInvalidRoomBtn = document.getElementById('closeInvalidRoomBtn');
+if(closeInvalidRoomBtn) closeInvalidRoomBtn.addEventListener('click', () => {
+    window.location.href = window.location.pathname;
 });
 
 socket.on('connect', () => { 
@@ -196,7 +220,7 @@ socket.on('connect', () => {
         socket.emit('createRoom', { roomId: hostRoomId, playerId: myPlayerId, name: savedName, gameMode: 'spy' }); 
     } 
     else if (roomFromUrl && guestName) { 
-        isHost = false; document.getElementById('leaveRoomBtn').classList.remove('hidden'); 
+        isHost = false; 
         socket.emit('joinRoom', { roomId: roomFromUrl, name: guestName, playerId: myPlayerId }); 
     } 
     else { showScreen('welcomeScreen'); } 
@@ -231,17 +255,14 @@ socket.on('updatePlayers', (playersArray) => {
     }
 });
 
-// 🔥 منع الضيف من الرجوع للرئيسية إذا غادر بنفسه
+// منع الضيوف من الوصول للرئيسية عند الخروج
 const leaveRoomBtn = document.getElementById('leaveRoomBtn');
 if (leaveRoomBtn) leaveRoomBtn.addEventListener('click', () => { 
     if (confirm('مغادرة؟')) { 
         socket.emit('leaveRoom'); 
         sessionStorage.clear(); 
-        if (isHost) {
-            window.location.href = window.location.pathname; 
-        } else {
-            window.location.reload(); 
-        }
+        if (isHost) { window.location.href = window.location.pathname; } 
+        else { window.location.reload(); }
     } 
 });
 
@@ -409,7 +430,7 @@ if (finalOkBtn) finalOkBtn.addEventListener('click', () => {
     if (isHost) { document.getElementById('hostSettingsModal').classList.remove('hidden'); } else { document.getElementById('guestWaitingHostModal').classList.remove('hidden'); } 
 });
 
-// 🔥 لعبة التخمين
+// 🔥 لعبة التخمين (التايمر بقى 80 ثانية)
 let rebusTimerInterval;
 socket.on('rebusRoundStarted', (data) => {
     playSound('start'); 
@@ -420,7 +441,8 @@ socket.on('rebusRoundStarted', (data) => {
     document.getElementById('chatLog').innerHTML = ''; 
     document.getElementById('chatInput').value = '';
     
-    let tl = 30; 
+    // شريط التايمر (80 ثانية)
+    let tl = 80; 
     const tBar = document.getElementById('rebusTimerBar'); 
     tBar.style.width = '100%';
     tBar.style.backgroundColor = '#00f3ff';
@@ -428,11 +450,12 @@ socket.on('rebusRoundStarted', (data) => {
     if(rebusTimerInterval) clearInterval(rebusTimerInterval);
     rebusTimerInterval = setInterval(() => { 
         tl--; 
-        let pct = (tl / 30) * 100;
+        let pct = (tl / 80) * 100;
         tBar.style.width = pct + '%';
         
-        if (tl <= 15 && tl > 7) tBar.style.backgroundColor = '#ffe600'; 
-        else if (tl <= 7) tBar.style.backgroundColor = '#ff0055'; 
+        // الألوان تتغير حسب الوقت الباقي
+        if (tl <= 40 && tl > 15) tBar.style.backgroundColor = '#ffe600'; 
+        else if (tl <= 15) tBar.style.backgroundColor = '#ff0055'; 
         
         if(tl <= 0) clearInterval(rebusTimerInterval); 
     }, 1000);
@@ -458,13 +481,11 @@ socket.on('rebusChatMsg', (data) => {
     document.getElementById('chatLog').innerHTML = `<div class="chat-msg"><span class="sender">${data.playerName}:</span> ${data.msg}</div>` + document.getElementById('chatLog').innerHTML; 
 });
 
-// 🔥 الشات الأخضر الصافي
 socket.on('rebusCorrectGuess', (data) => { 
     playSound('vote'); 
     document.getElementById('chatLog').innerHTML = `<div class="chat-msg correct">لقد عرفها ${data.playerName}</div>` + document.getElementById('chatLog').innerHTML; 
 });
 
-// رسالة تخمين قريب
 socket.on('rebusCloseGuess', (data) => {
     playSound('vote');
     document.getElementById('chatLog').innerHTML = `<div class="chat-msg close-guess">⚠️ (كلمة قريبة جداً) أنت: ${data.msg}</div>` + document.getElementById('chatLog').innerHTML; 
@@ -493,7 +514,7 @@ socket.on('rebusGameOver', (players) => {
     }
 });
 
-// 🔥 منع الضيوف يشوفوا الواجهة لو اتطردوا (تحديث الصفحة بس)
+// منع الضيوف من الوصول للرئيسية عند الإغلاق
 socket.on('youAreKickedPermanently', () => { 
     document.getElementById('kickedModal').classList.remove('hidden'); 
     sessionStorage.clear(); 

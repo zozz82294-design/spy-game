@@ -14,43 +14,59 @@ app.get('/health', (req, res) => res.status(200).send('OK'));
 
 let rooms = {};
 
-// 🔥 بنك ألغاز تخمين الكلمة (منوع جداً وبدون تكرار)
+// 🔥 بنك ألغاز تخمين الكلمة العملاق والمعقد (بدون كلمات سهلة)
 const rebusPuzzlesDB = [
-    { category: "اسم بنت", clue: "ع + 🍺", answer: "عبير" },
-    { category: "اسم حيوان", clue: "س + 🕋 + ة", answer: "سمكة" },
-    { category: "مكان", clue: "م + ✈️", answer: "مطار" },
-    { category: "وظيفة", clue: "ب + 🚪", answer: "بواب" },
-    { category: "جماد", clue: "ق + 🌕", answer: "قمر" },
-    { category: "اسم فاكهة", clue: "ر + 👨", answer: "رمان" },
-    { category: "اسم حيوان", clue: "ف + 🐀", answer: "فار" },
-    { category: "خضار", clue: "ب + 🧅 + ة", answer: "بصلة" },
-    { category: "اسم حيوان", clue: "ح + 🐎", answer: "حصان" },
-    { category: "مواصلات", clue: "ط + ✈️ + ة", answer: "طيارة" },
-    { category: "أداة مطبخ", clue: "س + 🔪 + ة", answer: "سكينة" },
-    { category: "اسم دولة", clue: "ق + 💧", answer: "قطر" },
-    { category: "اسم دولة", clue: "ع + 👨", answer: "عمان" },
-    { category: "أداة", clue: "ك + 🏆", answer: "كاس" },
-    { category: "اسم فاكهة", clue: "ت + 🍎 + ة", answer: "تفاحة" },
-    { category: "اسم بنت", clue: "س + 🌙", answer: "سمر" },
-    { category: "اسم ولد", clue: "ع + 🏗️", answer: "عمار" },
-    { category: "مكان", clue: "ب + 🌡️", answer: "بحر" },
-    { category: "جماد", clue: "س + 🚗 + ة", answer: "سيارة" },
-    { category: "اسم حيوان", clue: "أ + 🧱", answer: "أسد" },
+    { category: "أداة", clue: "م + 🪚 + ة", answer: "منشارة" },
+    { category: "حيوان", clue: "س + 🐢", answer: "سلحفاة" },
+    { category: "موقع تواصل", clue: "فيس + 📖", answer: "فيسبوك" },
+    { category: "موقع تواصل", clue: "يو + 🧪", answer: "يوتيوب" },
+    { category: "جهاز", clue: "تلف + 👁️ + ون", answer: "تلفزيون" },
+    { category: "مواصلات", clue: "ميكرو + 🚌", answer: "ميكروباص" },
+    { category: "أكلة", clue: "مكر + 🏃‍♂️ + ة", answer: "مكرونة" },
+    { category: "حيوان", clue: "عنك + 👢", answer: "عنكبوت" },
+    { category: "حيوان", clue: "سن + 🚪", answer: "سنجاب" },
+    { category: "جهاز", clue: "م + 👻 + ة", answer: "مروحة" },
+    { category: "طعام", clue: "كات + 🪵", answer: "كاتشب" },
+    { category: "أداة", clue: "دب + 👩 + ة", answer: "دباسة" },
+    { category: "أداة حمام", clue: "صا + 🦉 + ة", answer: "صابونة" },
+    { category: "ديكور", clue: "نا + 🐀 + ة", answer: "نافورة" },
+    { category: "دولة", clue: "فلس + 🧱", answer: "فلسطين" },
+    { category: "مدينة", clue: "من + 🖼️ + ة", answer: "منصورة" },
+    { category: "شكل هندسي", clue: "مس + 🐘", answer: "مستطيل" },
+    { category: "لعبة", clue: "بلي + 🌍 + و", answer: "بلياردو" },
+    { category: "رياضة", clue: "ك + 🐀 + يه", answer: "كاراتيه" },
+    { category: "جهاز", clue: "كم + 🏠 + تر", answer: "كمبيوتر" },
+    { category: "جهاز", clue: "ميكرو + 📱", answer: "ميكروفون" },
+    { category: "طعام", clue: "بان + 🍰", answer: "بان كيك" },
+    { category: "مستحضرات", clue: "شام + 👻", answer: "شامبو" },
+    { category: "فاكهة", clue: "أنا + 👩", answer: "أناناس" },
+    { category: "ملابس", clue: "بن + 🎨 + ون", answer: "بنطلون" },
+    { category: "شيء", clue: "ش + 🌂", answer: "شمسية" },
+    { category: "مكان", clue: "مس + 🎭", answer: "مسرح" },
+    { category: "مركبة بحرية", clue: "غ + 🏜️ + ة", answer: "غواصة" },
+    { category: "أداة", clue: "ش + 🔨", answer: "شاكوش" },
+    { category: "طعام", clue: "مرب + 🍵", answer: "مربى" },
+    { category: "طعام", clue: "حل + 🏃‍♂️ + ة", answer: "حلاوة" },
+    { category: "حلوى", clue: "بسب + 💋 + ة", answer: "بسبوسة" },
+    { category: "أداة", clue: "م + 👁️ + ة", answer: "مكواة" },
+    { category: "جهاز", clue: "س + ⏰ + ة", answer: "سماعة" },
+    { category: "دولة", clue: "ص + 🐉", answer: "صين" },
+    { category: "دولة", clue: "ي + 🚪 + ن", answer: "يابان" },
+    { category: "دولة", clue: "ألم + 👧 + يا", answer: "ألمانيا" },
+    { category: "مشروب", clue: "نس + ☕", answer: "نسكافيه" },
+    { category: "طعام", clue: "مايو + 👃", answer: "مايونيز" },
+    { category: "تطبيق", clue: "واتس + ⬆️", answer: "واتساب" },
+    { category: "تطبيق", clue: "تيك + 🗣️", answer: "تيكتوك" },
+    { category: "حلوى", clue: "شوكو + ❌ + ة", answer: "شوكولاتة" },
+    { category: "طعام", clue: "سان + 🚿", answer: "ساندوتش" },
+    { category: "مكان", clue: "صي + 🍉 + ة", answer: "صيدلية" },
     { category: "أداة", clue: "م + ✂️", answer: "مقص" },
     { category: "أكل", clue: "ع + 🍯", answer: "عسل" },
     { category: "أثاث", clue: "س + 🛏️", answer: "سرير" },
-    { category: "حيوانات", clue: "ط + 🦅", answer: "طائر" },
-    { category: "حيوانات", clue: "ب + 🦆 + ة", answer: "بطة" },
-    { category: "أداة", clue: "م + 🗝️", answer: "مفتاح" },
-    { category: "طبيعة", clue: "ش + ☀️", answer: "شمس" },
-    { category: "حشرات", clue: "ن + 🐜 + ة", answer: "نملة" },
     { category: "أثاث", clue: "م + 📚", answer: "مكتب" },
-    { category: "فاكهة", clue: "بر + 🍊", answer: "برتقال" },
     { category: "مكان", clue: "مس + 👴", answer: "مسجد" },
-    { category: "حيوان", clue: "تم + 🐊", answer: "تمساح" },
     { category: "مجوهرات", clue: "خ + 💍", answer: "خاتم" },
     { category: "طائر", clue: "ع + 🐦", answer: "عصفور" },
-    { category: "أداة", clue: "س + 🕰️ + ة", answer: "ساعة" },
     { category: "فاكهة", clue: "ف + 🍓 + ة", answer: "فراولة" },
     { category: "مكان", clue: "ب + 🔥 + ي", answer: "بحري" },
     { category: "صفة", clue: "ش + ⛺ + ر", answer: "شاطر" }
@@ -222,7 +238,6 @@ io.on('connection', (socket) => {
     socket.on('changePlayerName', (data) => { let roomId = socket.roomId || data.fallbackRoomId; if(roomId && rooms[roomId] && rooms[roomId].players[data.targetId]) { rooms[roomId].players[data.targetId].name = data.newName; emitUpdatedPlayers(roomId); io.to(rooms[roomId].players[data.targetId].socketId).emit('forceNameLock', data.newName); } });
     socket.on('kickPlayer', (data) => { let tid = data.targetId; let roomId = socket.roomId || data.fallbackRoomId; if(roomId && rooms[roomId] && rooms[roomId].players[tid]) { delete rooms[roomId].players[tid]; emitUpdatedPlayers(roomId); } });
     
-    // 🔥 إصلاح إغلاق الغرفة
     socket.on('destroyRoom', () => {
         const roomId = socket.roomId;
         if (roomId && rooms[roomId] && rooms[roomId].players[socket.playerId] && rooms[roomId].players[socket.playerId].isHost) {
@@ -273,7 +288,14 @@ io.on('connection', (socket) => {
     });
 
     socket.on('spyHoverWord', (word) => { const roomId = socket.roomId; const playerId = socket.playerId; if(roomId && rooms[roomId]) io.to(roomId).emit('spySelectedWord', { word: word, spyName: rooms[roomId].players[playerId].name }); });
-    socket.on('spyConfirmWord', (chosenWord) => { const roomId = socket.roomId; const playerId = socket.playerId; if(roomId && rooms[roomId]) { if (rooms[roomId].gameState !== 'guessing') return; rooms[roomId].gameState = 'waiting'; if(rooms[roomId].guessTimer) clearTimeout(rooms[roomId].guessTimer); io.to(roomId).emit('gameFinalResult', { spyName: rooms[roomId].players[playerId].name, chosenWord: chosenWord, correctWord: rooms[roomId].word, isCorrect: (chosenWord === rooms[roomId].word) }); } });
+    socket.on('spyConfirmWord', (chosenWord) => { 
+        const roomId = socket.roomId; const playerId = socket.playerId; 
+        if(roomId && rooms[roomId]) { 
+            if (rooms[roomId].gameState !== 'guessing') return; 
+            rooms[roomId].gameState = 'waiting'; if(rooms[roomId].guessTimer) clearTimeout(rooms[roomId].guessTimer); 
+            io.to(roomId).emit('gameFinalResult', { spyName: rooms[roomId].players[playerId].name, chosenWord: chosenWord, correctWord: rooms[roomId].word, isCorrect: (chosenWord === rooms[roomId].word) }); 
+        } 
+    });
 
     // 🔥 أوامر لعبة التخمين
     socket.on('startRebusGame', (fallbackRoomId) => {
@@ -285,7 +307,6 @@ io.on('connection', (socket) => {
             Object.keys(rooms[r].players).forEach(pid => rooms[r].scores[pid] = 0);
             emitUpdatedPlayers(r);
             
-            // سحب 10 ألغاز عشوائية بدون تكرار
             let shuffledPuzzles = shuffleArray([...rebusPuzzlesDB]);
             rooms[r].selectedPuzzles = shuffledPuzzles.slice(0, 10);
             
@@ -320,7 +341,6 @@ io.on('connection', (socket) => {
                     endRebusRound(r);
                 }
             } else {
-                // فحص الكلمة القريبة
                 let g = normalizeArabic(guess);
                 let a = normalizeArabic(answer);
                 if (g !== a && Math.abs(g.length - a.length) <= 2) {

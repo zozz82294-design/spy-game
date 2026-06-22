@@ -46,7 +46,6 @@ function playSound(type) {
 } 
 document.addEventListener('click', (e) => { if (e.target.tagName === 'BUTTON') playSound('click'); });
 
-// 🔥 حركة زينة الاحتفال (Confetti) للمركز الأول
 function launchConfetti() {
     const colors = ['#ff0055', '#00f3ff', '#00ff88', '#ffe600', '#b000ff'];
     for(let i=0; i<80; i++) {
@@ -55,12 +54,10 @@ function launchConfetti() {
         conf.style.width = '8px'; conf.style.height = '15px';
         conf.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
         conf.style.zIndex = '9999999';
-        
         let isLeft = Math.random() > 0.5;
         conf.style.left = isLeft ? '-10px' : '100vw';
         conf.style.bottom = '10vh';
         document.body.appendChild(conf);
-        
         let angle = isLeft ? (Math.random() * 45 + 30) : (Math.random() * 45 + 105); 
         let velocity = Math.random() * 20 + 15;
         let vx = Math.cos(angle * Math.PI / 180) * velocity;
@@ -234,22 +231,26 @@ socket.on('updatePlayers', (playersArray) => {
     }
 });
 
-// 🔥 إصلاح الغرفة والإغلاق
+// 🔥 منع الضيف من الرجوع للرئيسية إذا غادر بنفسه
+const leaveRoomBtn = document.getElementById('leaveRoomBtn');
+if (leaveRoomBtn) leaveRoomBtn.addEventListener('click', () => { 
+    if (confirm('مغادرة؟')) { 
+        socket.emit('leaveRoom'); 
+        sessionStorage.clear(); 
+        if (isHost) {
+            window.location.href = window.location.pathname; 
+        } else {
+            window.location.reload(); 
+        }
+    } 
+});
+
 const destroyRoomBtn = document.getElementById('destroyRoomBtn');
 if (destroyRoomBtn) destroyRoomBtn.addEventListener('click', () => { 
     if (confirm('إغلاق الغرفة؟')) { 
         socket.emit('destroyRoom'); 
         sessionStorage.removeItem('hostRoomId'); 
         setTimeout(() => { window.location.href = window.location.pathname; }, 300);
-    } 
-});
-
-const leaveRoomBtn = document.getElementById('leaveRoomBtn');
-if (leaveRoomBtn) leaveRoomBtn.addEventListener('click', () => { 
-    if (confirm('مغادرة؟')) { 
-        socket.emit('leaveRoom'); 
-        sessionStorage.removeItem('guestName'); 
-        window.location.href = window.location.pathname; 
     } 
 });
 
@@ -408,9 +409,7 @@ if (finalOkBtn) finalOkBtn.addEventListener('click', () => {
     if (isHost) { document.getElementById('hostSettingsModal').classList.remove('hidden'); } else { document.getElementById('guestWaitingHostModal').classList.remove('hidden'); } 
 });
 
-// ----------------------------------------------------
-// لعبة تخمين الكلمة (التايمر البار والتخمين القريب)
-// ----------------------------------------------------
+// 🔥 لعبة التخمين
 let rebusTimerInterval;
 socket.on('rebusRoundStarted', (data) => {
     playSound('start'); 
@@ -421,7 +420,6 @@ socket.on('rebusRoundStarted', (data) => {
     document.getElementById('chatLog').innerHTML = ''; 
     document.getElementById('chatInput').value = '';
     
-    // 🔥 شريط التايمر الجديد
     let tl = 30; 
     const tBar = document.getElementById('rebusTimerBar'); 
     tBar.style.width = '100%';
@@ -433,8 +431,8 @@ socket.on('rebusRoundStarted', (data) => {
         let pct = (tl / 30) * 100;
         tBar.style.width = pct + '%';
         
-        if (tl <= 15 && tl > 7) tBar.style.backgroundColor = '#ffe600'; // أصفر
-        else if (tl <= 7) tBar.style.backgroundColor = '#ff0055'; // أحمر
+        if (tl <= 15 && tl > 7) tBar.style.backgroundColor = '#ffe600'; 
+        else if (tl <= 7) tBar.style.backgroundColor = '#ff0055'; 
         
         if(tl <= 0) clearInterval(rebusTimerInterval); 
     }, 1000);
@@ -460,12 +458,13 @@ socket.on('rebusChatMsg', (data) => {
     document.getElementById('chatLog').innerHTML = `<div class="chat-msg"><span class="sender">${data.playerName}:</span> ${data.msg}</div>` + document.getElementById('chatLog').innerHTML; 
 });
 
+// 🔥 الشات الأخضر الصافي
 socket.on('rebusCorrectGuess', (data) => { 
     playSound('vote'); 
-    document.getElementById('chatLog').innerHTML = `<div class="chat-msg correct">🎉 لقد عرفها ${data.playerName}</div>` + document.getElementById('chatLog').innerHTML; 
+    document.getElementById('chatLog').innerHTML = `<div class="chat-msg correct">لقد عرفها ${data.playerName}</div>` + document.getElementById('chatLog').innerHTML; 
 });
 
-// 🔥 الكلمة القريبة جداً
+// رسالة تخمين قريب
 socket.on('rebusCloseGuess', (data) => {
     playSound('vote');
     document.getElementById('chatLog').innerHTML = `<div class="chat-msg close-guess">⚠️ (كلمة قريبة جداً) أنت: ${data.msg}</div>` + document.getElementById('chatLog').innerHTML; 
@@ -480,20 +479,12 @@ socket.on('rebusRoundEnded', (data) => {
 socket.on('rebusGameOver', (players) => {
     playSound('win'); 
     showScreen('podiumScreen');
-    
-    // تشغيل الاحتفال 🎊
     launchConfetti();
     
     const p1 = players[0], p2 = players[1], p3 = players[2];
-    
-    document.getElementById('podiumName1').innerText = p1 ? p1.name : '---'; 
-    document.getElementById('podiumScore1').innerText = p1 ? p1.score : '0';
-    
-    document.getElementById('podiumName2').innerText = p2 ? p2.name : '---'; 
-    document.getElementById('podiumScore2').innerText = p2 ? p2.score : '0';
-    
-    document.getElementById('podiumName3').innerText = p3 ? p3.name : '---'; 
-    document.getElementById('podiumScore3').innerText = p3 ? p3.score : '0';
+    document.getElementById('podiumName1').innerText = p1 ? p1.name : '---'; document.getElementById('podiumScore1').innerText = p1 ? p1.score : '0';
+    document.getElementById('podiumName2').innerText = p2 ? p2.name : '---'; document.getElementById('podiumScore2').innerText = p2 ? p2.score : '0';
+    document.getElementById('podiumName3').innerText = p3 ? p3.name : '---'; document.getElementById('podiumScore3').innerText = p3 ? p3.score : '0';
     
     if(isHost) { 
         const btn = document.getElementById('rebusReturnBtn'); 
@@ -502,84 +493,46 @@ socket.on('rebusGameOver', (players) => {
     }
 });
 
-// ----------------------------------------------------
-// أدوات التحكم 
-// ----------------------------------------------------
-window.editPlayerName = function(tid) { 
-    const n = prompt('الاسم:'); 
-    if(n) socket.emit('changePlayerName', {targetId: tid, newName: n.trim(), fallbackRoomId: sessionStorage.getItem('hostRoomId')}); 
-};
-
-window.kickPlayer = function(tid) { 
-    if(confirm('طرد؟')) socket.emit('kickPlayer', {targetId: tid, fallbackRoomId: sessionStorage.getItem('hostRoomId')}); 
-};
-
-const hostSettingsBtn = document.getElementById('hostSettingsBtn');
-if (hostSettingsBtn) hostSettingsBtn.addEventListener('click', () => { document.getElementById('hostSettingsModal').classList.remove('hidden'); }); 
-
-const closeModalBtn = document.getElementById('closeModalBtn');
-if (closeModalBtn) closeModalBtn.addEventListener('click', () => { document.getElementById('hostSettingsModal').classList.add('hidden'); });
-
-socket.on('gameRestarted', () => { 
-    playSound('start'); 
-    if (guessInterval) clearInterval(guessInterval); 
-    showScreen('waitingScreen'); 
-    
-    document.getElementById('votingResultModal').classList.add('hidden'); 
-    document.getElementById('finalResultModal').classList.add('hidden'); 
-    document.getElementById('tieBreakerModal').classList.add('hidden'); 
-    
-    const startVotingPhaseBtn = document.getElementById('startVotingPhaseBtn');
-    if(startVotingPhaseBtn) startVotingPhaseBtn.classList.add('hidden'); 
-    
-    const confirmGuessBtn = document.getElementById('confirmGuessBtn');
-    if(confirmGuessBtn) confirmGuessBtn.classList.add('hidden'); 
-    
-    const restartGameBtn = document.getElementById('restartGameBtn');
-    const hostSettingsModal = document.getElementById('hostSettingsModal');
-    if (isHost && restartGameBtn && hostSettingsModal) { 
-        restartGameBtn.disabled = true; 
-        hostSettingsModal.classList.add('hidden'); 
-    } 
-    
-    const guestWaitingHostModal = document.getElementById('guestWaitingHostModal');
-    if(guestWaitingHostModal) guestWaitingHostModal.classList.add('hidden'); 
-    
-    const podiumScreen = document.getElementById('podiumScreen');
-    if(podiumScreen) podiumScreen.classList.add('hidden');
-});
-
-const restartGameBtn = document.getElementById('restartGameBtn');
-if (restartGameBtn) restartGameBtn.addEventListener('click', (e) => { 
-    e.target.disabled = true; 
-    if(confirm('إعادة اللعب؟')) socket.emit('restartGame'); 
-    setTimeout(() => e.target.disabled = false, 2000); 
-});
-
-const copyInviteBtn = document.getElementById('copyInviteBtn');
-if (copyInviteBtn) copyInviteBtn.addEventListener('click', () => { 
-    const roomId = sessionStorage.getItem('hostRoomId'); 
-    const inviteLink = window.location.origin + window.location.pathname + '?room=' + roomId; 
-    navigator.clipboard.writeText(inviteLink).then(() => { 
-        const t = document.getElementById('notificationToast'); 
-        t.classList.remove('hidden'); 
-        setTimeout(() => t.classList.add('hidden'), 2500); 
-    }); 
-});
-
-socket.on('hostLeftRoom', () => { 
-    document.getElementById('hostLeftText').innerText = `الهوست غادر الغرفة`; 
-    document.getElementById('hostLeftModal').classList.remove('hidden'); 
-    sessionStorage.clear(); 
-});
-
-const closeHostLeftBtn = document.getElementById('closeHostLeftBtn');
-if (closeHostLeftBtn) closeHostLeftBtn.addEventListener('click', () => { 
-    document.getElementById('hostLeftModal').classList.add('hidden'); 
-    window.location.href = window.location.pathname; 
-});
-
+// 🔥 منع الضيوف يشوفوا الواجهة لو اتطردوا (تحديث الصفحة بس)
 socket.on('youAreKickedPermanently', () => { 
     document.getElementById('kickedModal').classList.remove('hidden'); 
     sessionStorage.clear(); 
 });
+
+socket.on('hostLeftRoom', () => { 
+    document.getElementById('hostLeftText').innerText = `الهوست غادر وأغلق الغرفة.`; 
+    document.getElementById('hostLeftModal').classList.remove('hidden'); 
+    sessionStorage.clear(); 
+    
+    const closeBtn = document.getElementById('closeHostLeftBtn');
+    if (closeBtn) {
+        if (!isHost) {
+            closeBtn.innerText = "تحديث الصفحة";
+            closeBtn.onclick = () => { window.location.reload(); };
+        } else {
+            closeBtn.innerText = "العودة للرئيسية";
+            closeBtn.onclick = () => { window.location.href = window.location.pathname; };
+        }
+    }
+});
+
+window.editPlayerName = function(tid) { const n = prompt('الاسم:'); if(n) socket.emit('changePlayerName', {targetId: tid, newName: n.trim(), fallbackRoomId: sessionStorage.getItem('hostRoomId')}); };
+window.kickPlayer = function(tid) { if(confirm('طرد؟')) socket.emit('kickPlayer', {targetId: tid, fallbackRoomId: sessionStorage.getItem('hostRoomId')}); };
+const hostSettingsBtn = document.getElementById('hostSettingsBtn'); if (hostSettingsBtn) hostSettingsBtn.addEventListener('click', () => { document.getElementById('hostSettingsModal').classList.remove('hidden'); }); 
+const closeModalBtn = document.getElementById('closeModalBtn'); if (closeModalBtn) closeModalBtn.addEventListener('click', () => { document.getElementById('hostSettingsModal').classList.add('hidden'); });
+
+socket.on('gameRestarted', () => { 
+    playSound('start'); if (guessInterval) clearInterval(guessInterval); showScreen('waitingScreen'); 
+    document.getElementById('votingResultModal').classList.add('hidden'); document.getElementById('finalResultModal').classList.add('hidden'); document.getElementById('tieBreakerModal').classList.add('hidden'); 
+    const startVotingPhaseBtn = document.getElementById('startVotingPhaseBtn'); if(startVotingPhaseBtn) startVotingPhaseBtn.classList.add('hidden'); 
+    const confirmGuessBtn = document.getElementById('confirmGuessBtn'); if(confirmGuessBtn) confirmGuessBtn.classList.add('hidden'); 
+    const restartGameBtn = document.getElementById('restartGameBtn'); const hostSettingsModal = document.getElementById('hostSettingsModal');
+    if (isHost && restartGameBtn && hostSettingsModal) { restartGameBtn.disabled = true; hostSettingsModal.classList.add('hidden'); } 
+    const guestWaitingHostModal = document.getElementById('guestWaitingHostModal'); if(guestWaitingHostModal) guestWaitingHostModal.classList.add('hidden'); 
+    const podiumScreen = document.getElementById('podiumScreen'); if(podiumScreen) podiumScreen.classList.add('hidden');
+});
+
+const restartGameBtn = document.getElementById('restartGameBtn');
+if (restartGameBtn) restartGameBtn.addEventListener('click', (e) => { e.target.disabled = true; if(confirm('إعادة اللعب؟')) socket.emit('restartGame'); setTimeout(() => e.target.disabled = false, 2000); });
+const copyInviteBtn = document.getElementById('copyInviteBtn');
+if (copyInviteBtn) copyInviteBtn.addEventListener('click', () => { const roomId = sessionStorage.getItem('hostRoomId'); const inviteLink = window.location.origin + window.location.pathname + '?room=' + roomId; navigator.clipboard.writeText(inviteLink).then(() => { const t = document.getElementById('notificationToast'); t.classList.remove('hidden'); setTimeout(() => t.classList.add('hidden'), 2500); }); });

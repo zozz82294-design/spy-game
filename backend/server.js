@@ -146,18 +146,20 @@ function cleanupRoom(roomId) {
     delete rooms[roomId];
 }
 
+// 🔥 تحديث الترتيب (الأقدم دخولاً في الجاسوس، والأعلى نقاطاً في التخمين)
 function emitUpdatedPlayers(roomId) {
     if (!rooms[roomId]) return;
     
-    // إرسال الكيكد بلايرز عشان المشاهدين
     let playersArray = Object.values(rooms[roomId].players).map(p => ({
         ...p,
         score: rooms[roomId].scores && rooms[roomId].scores[p.id] !== undefined ? rooms[roomId].scores[p.id] : 0
     }));
     
     playersArray.sort((a, b) => {
-        if (b.score !== a.score) return b.score - a.score;
-        return a.id.localeCompare(b.id); 
+        if (rooms[roomId].gameMode === 'rebus') {
+            if (b.score !== a.score) return b.score - a.score;
+        }
+        return a.joinTime - b.joinTime; // الأقدم فوق دايماً
     });
     
     io.to(roomId).emit('updatePlayers', { 
@@ -199,23 +201,20 @@ function checkVotingResult(roomId) {
     const votedPlayer = rooms[roomId].players[topVotedId]; const votedPlayerName = votedPlayer ? votedPlayer.name : "لاعب غادر";
     const spyPlayer = rooms[roomId].players[rooms[roomId].spyId]; const spyName = spyPlayer ? spyPlayer.name : "الجاسوس";
     
-    // 🔥 منطق الجاسوس 2 (طرد المدني وبقاء الجاسوس)
     if (rooms[roomId].gameMode === 'spy2' && !isSpyCaught) {
         if (!rooms[roomId].kickedPlayers) rooms[roomId].kickedPlayers = [];
         rooms[roomId].kickedPlayers.push(topVotedId);
         
-        emitUpdatedPlayers(roomId); // تحديث القايمة عشان يبان إنه مشاهد
+        emitUpdatedPlayers(roomId); 
         
         let aliveCount = Object.keys(rooms[roomId].players).length - rooms[roomId].kickedPlayers.length;
         
-        // لو فاضل 2 بس (الجاسوس + مدني)، الجاسوس بيفوز
         if (aliveCount <= 2) {
             rooms[roomId].gameState = 'waiting';
             io.to(roomId).emit('spyWonSurvival', { spyName: spyName, word: rooms[roomId].word });
             return;
         }
         
-        // لو لسه فيه مدنيين كتير
         rooms[roomId].gameState = 'spy_decision';
         io.to(roomId).emit('votingEnded', { isSpyCaught: false, votedPlayerName: votedPlayerName, spyName: spyName, spyId: rooms[roomId].spyId });
         
@@ -226,7 +225,6 @@ function checkVotingResult(roomId) {
         }, 5000);
         
     } else {
-        // الجاسوس 1 العادي، أو الجاسوس 2 وتم كشفه
         rooms[roomId].gameState = 'voting_result'; 
         io.to(roomId).emit('votingEnded', { isSpyCaught: isSpyCaught, votedPlayerName: votedPlayerName, spyName: spyName, spyId: rooms[roomId].spyId });
     }
@@ -293,7 +291,7 @@ io.on('connection', (socket) => {
             const roomId = data.roomId; const playerId = data.playerId; const hostName = data.name || '𝐒𝐀𝐒𝐔𝐊𝐄';
             socket.join(roomId); socket.roomId = roomId; socket.playerId = playerId;
             
-            if (!rooms[roomId]) { rooms[roomId] = { players: {}, gameState: 'waiting', gameMode: data.gameMode || 'spy', scores: {}, currentRound: 0, guessedPlayers: [], kickedPlayers: [] }; }
+            if (!rooms[roomId]) { rooms[roomId] = { players: {}, gameState: 'waiting', gameMode: data.gameMode || 'spy', scores: {}, currentRound: 0, guessedPlayers: [] }; }
             rooms[roomId].gameMode = data.gameMode || 'spy';
             
             if (!rooms[roomId].scores) rooms[roomId].scores = {};
@@ -302,7 +300,7 @@ io.on('connection', (socket) => {
             if (rooms[roomId].players[playerId] && rooms[roomId].players[playerId].disconnectTimeout) { clearTimeout(rooms[roomId].players[playerId].disconnectTimeout); rooms[roomId].players[playerId].disconnectTimeout = null; }
             
             const existingName = rooms[roomId].players[playerId] ? rooms[roomId].players[playerId].name : hostName;
-            rooms[roomId].players[playerId] = { id: playerId, socketId: socket.id, name: existingName, isHost: true };
+            rooms[roomId].players[playerId] = { id: playerId, socketId: socket.id, name: existingName, isHost: true, joinTime: Date.now() };
             
             emitUpdatedPlayers(roomId);
             socket.emit('syncState', rooms[roomId].gameState, rooms[roomId].gameMode);
@@ -314,7 +312,14 @@ io.on('connection', (socket) => {
             const roomId = data.roomId; const playerId = data.playerId;
             if (rooms[roomId]) {
                 const isExistingPlayer = !!rooms[roomId].players[playerId];
-                if (!isExistingPlayer && rooms[roomId].gameState !== 'waiting') { socket.emit('errorMsg', 'لقد بدأت اللعبة بالفعل! 🚫 لا يمكنك الانضمام الآن.'); return; }
+                
+                // 🔥 التحقق من الحد الأقصى 10 لاعبين
+                if (!isExistingPlayer && Object.keys(rooms[roomId].players).length >= 10) {
+                    socket.emit('errorMsg', 'الغرفة ممتلئة! أقصى عدد هو 10 لاعبين.');
+                    return;
+                }
+                
+                if (!isExistingPlayer && rooms[roomId].gameState !== 'waiting') { socket.emit('errorMsg', 'عذراً! لقد بدأت اللعبة بالفعل، لا يمكنك الانضمام الآن.'); return; }
                 
                 socket.join(roomId); socket.roomId = roomId; socket.playerId = playerId;
                 
@@ -324,14 +329,15 @@ io.on('connection', (socket) => {
                 } else {
                     let finalName = data.name.trim(); let suffix = 1;
                     while(Object.values(rooms[roomId].players).some(p => p.name === finalName)) { finalName = `${data.name.trim()} (${suffix})`; suffix++; }
-                    rooms[roomId].players[playerId] = { id: playerId, socketId: socket.id, name: finalName, isHost: false };
+                    rooms[roomId].players[playerId] = { id: playerId, socketId: socket.id, name: finalName, isHost: false, joinTime: Date.now() };
                     rooms[roomId].scores[playerId] = 0;
                 }
                 
                 emitUpdatedPlayers(roomId);
                 socket.emit('syncState', rooms[roomId].gameState, rooms[roomId].gameMode);
             } else {
-                socket.emit('errorMsg', 'الغرفة دي مش موجودة أو الهوست قفل اللعبة!');
+                // رسالة عدم وجود الغرفة
+                socket.emit('errorMsg', 'الغرفة دي مش موجودة!');
             }
         } catch (e) {}
     });
@@ -359,7 +365,7 @@ io.on('connection', (socket) => {
         let r = socket.roomId || fallbackRoomId;
         if(r && rooms[r]) {
             rooms[r].gameState = 'playing'; 
-            rooms[r].kickedPlayers = []; // ريستارت للمشاهدين
+            rooms[r].kickedPlayers = []; 
             
             const wl = categorizedWords[cat] || categorizedWords["أكل وشرب"];
             const w = wl[Math.floor(Math.random() * wl.length)]; rooms[r].word = w; rooms[r].category = cat; 
@@ -392,7 +398,6 @@ io.on('connection', (socket) => {
         let roomId = socket.roomId || fallbackRoomId; const playerId = socket.playerId;
         
         if(roomId && rooms[roomId] && rooms[roomId].gameState === 'voting') {
-            // الميت مش بيصوت
             if (rooms[roomId].gameMode === 'spy2' && rooms[roomId].kickedPlayers && rooms[roomId].kickedPlayers.includes(playerId)) return;
             
             rooms[roomId].votes[playerId] = targetId; 
@@ -406,7 +411,6 @@ io.on('connection', (socket) => {
         }
     });
 
-    // 🔥 قرار الجاسوس 2
     socket.on('spyMadeDecision', (decision) => {
         const roomId = socket.roomId;
         if(roomId && rooms[roomId] && rooms[roomId].gameState === 'spy_decision' && socket.playerId === rooms[roomId].spyId) {
@@ -515,7 +519,6 @@ io.on('connection', (socket) => {
         let puz = rooms[roomId].selectedPuzzles[rooms[roomId].currentRound - 1];
         rooms[roomId].currentPuzzle = puz;
         
-        // التايمر الدقيق للسيرفر بـ 80 ثانية
         rooms[roomId].rebusEndTime = Date.now() + 80000; 
         
         io.to(roomId).emit('rebusRoundStarted', { 
@@ -544,7 +547,7 @@ io.on('connection', (socket) => {
             if(rooms[r].rebusTimer) clearTimeout(rooms[r].rebusTimer);
             rooms[r].gameState = 'waiting'; 
             rooms[r].votes = {}; 
-            rooms[r].kickedPlayers = []; // ريستارت المشاهدين
+            rooms[r].kickedPlayers = []; 
             io.to(r).emit('gameRestarted'); 
         } 
     });

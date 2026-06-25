@@ -116,7 +116,7 @@
         .wheel-center-dot { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 20px; height: 20px; background: #fff; border-radius: 50%; z-index: 5; box-shadow: 0 0 10px #000; } 
         .wheel-label { position: absolute; top: 50%; left: 50%; width: 50%; margin-top: -12px; transform-origin: 0% 50%; text-align: right; padding-right: 15px; font-weight: 900; font-size: 0.85rem; color: #fff; text-shadow: 1px 1px 3px #000, -1px -1px 3px #000; white-space: nowrap; direction: rtl; line-height: 24px;}
         
-        /* ستايلات التخمين */
+        /* ستايلات التخمين والشات */
         .puzzle-display { background: rgba(0,0,0,0.5); border-radius: 12px; padding: 30px; display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 20px; border: 2px solid #fff; box-shadow: 0 0 20px rgba(255,255,255,0.1); width: 100%; max-width: 400px; margin-left: auto; margin-right: auto;}
         .puzzle-part { font-size: 3.5rem; font-weight: 900; color: #fff; text-shadow: 0 0 15px #00f3ff; direction: ltr; display: inline-block; }
         
@@ -131,6 +131,7 @@
         .chat-msg.correct { color: #00ff88; font-weight: bold; text-align: right; background: transparent; padding: 0; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 5px;}
         .chat-msg.close-guess { color: #ff4444; font-weight: bold; text-align: right; background: transparent; padding: 0; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 5px;}
         
+        /* شريط التايمر */
         .timer-bar-container { width: 100%; max-width: 400px; height: 12px; background: rgba(255,255,255,0.1); border-radius: 10px; margin: 0 auto 20px auto; overflow: hidden; border: 1px solid #333; }
         .timer-bar { height: 100%; width: 100%; background: #00f3ff; transition: width 0.1s linear, background-color 0.5s ease; }
 
@@ -200,11 +201,11 @@
         </div>
     </div>
 
-    <!-- 🔥 مودال الجاسوس 2 للقرار -->
+    <!-- 🔥 شاشة قرار الجاسوس وي بلاي -->
     <div id="spyDecisionModal" class="modal-overlay hidden" style="z-index: 999999;">
         <div class="modal-content glass-container" style="text-align: center;">
-            <h2 class="neon-text" style="color: #ffe600; font-size: 2.2rem; margin-bottom: 15px;" id="spyDecisionTitle">قرار الجاسوس</h2>
-            <p id="spyDecisionText" style="color: #ccc; font-size: 1.2rem; margin-bottom: 25px;">هل تريد تخمين الكلمة الآن أم إكمال اللعب لطرد المزيد؟</p>
+            <h2 class="neon-text" style="color: #ffe600; font-size: 2.2rem; margin-bottom: 25px;" id="spyDecisionTitle">في انتظار قرار الجاسوس...</h2>
+            <p id="spyDecisionText" style="color: #ccc; font-size: 1.2rem; margin-bottom: 25px;"></p>
             <div id="spyDecisionButtons" class="hidden" style="display: flex; gap: 10px; flex-wrap: wrap;">
                 <button id="btnSpyGuess" style="flex:1; border-color:#00f3ff; color:#00f3ff; font-size:1.1rem;">تخمين الكلمة 🧠</button>
                 <button id="btnSpyContinue" style="flex:1; border-color:#00ff88; color:#00ff88; font-size:1.1rem;">إكمال اللعب 🔄</button>
@@ -214,12 +215,13 @@
 
     <div id="hostSettingsModal" class="modal-overlay hidden" style="z-index: 999999;"><div class="modal-content glass-container"><h2 class="neon-text" style="margin-bottom: 25px; color: #00f3ff; text-shadow: 0 0 15px #00f3ff;">إدارة اللاعبين 👥</h2><div id="modalPlayersList" style="max-height:300px; overflow-y:auto;"></div><button id="restartGameBtn" disabled style="width: 100%; margin-top: 15px;">إعادة اللعب 🔄</button><button id="closeModalBtn" style="margin-top: 15px; width: 100%; background: #333; border:none;">إغلاق</button></div></div>
     
+    <!-- 🔥 شاشة الخطأ المعدلة (بدون زرار العودة للرئيسية، زر حسنا بيعمل ريفريش) -->
     <div id="invalidRoomModal" class="modal-overlay hidden" style="z-index: 999999;">
         <div class="modal-content glass-container" style="text-align: center;">
             <div style="font-size: 4rem; margin-bottom: 15px;">❌</div>
-            <h2 class="neon-text" style="color: #ff0055;">عذراً!</h2>
-            <p id="errorMsgText" style="color: #ccc; font-size: 1.1rem;">الغرفة دي مش موجودة!</p>
-            <button id="closeInvalidRoomBtn" style="width: 100%; margin-top: 20px;">العودة للرئيسية</button>
+            <h2 class="neon-text" style="color: #ff0055; margin-bottom: 15px;">عذراً!</h2>
+            <p id="errorMsgText" style="color: #fff; font-size: 1.3rem; margin-bottom: 20px;"></p>
+            <button id="closeInvalidRoomBtn" style="width: 100%;">حسناً</button>
         </div>
     </div>
     
@@ -252,8 +254,8 @@
         </div>
         
         <button id="goToSpyBtn" style="width: 100%; margin-bottom: 10px; border-color: #00f3ff; color: #fff;">لعبة الجاسوس 🕵️‍♂️</button>
-        <!-- 🔥 الزرار الجديد بتاع الجاسوس 2 -->
-        <button id="goToSpy2Btn" style="width: 100%; margin-bottom: 10px; border-color: #ff0055; color: #ff0055; box-shadow: 0 0 10px rgba(255, 0, 85, 0.3);">لعبة الجاسوس 2 🎭</button>
+        <!-- 🔥 الزرار الجديد بالاسم الجديد -->
+        <button id="goToSpy2Btn" style="width: 100%; margin-bottom: 10px; border-color: #ff0055; color: #ff0055; box-shadow: 0 0 10px rgba(255, 0, 85, 0.3);">لعبة الجاسوس وي بلاي 🎭</button>
         
         <button id="goToRebusBtn" style="width: 100%; margin-bottom: 15px; border-color: #ffe600; color: #ffe600; box-shadow: 0 0 10px rgba(255, 230, 0, 0.3);">تخمين الكلمة 🧩</button>
         

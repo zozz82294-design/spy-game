@@ -148,9 +148,7 @@ const closeSuggestionsBtn = document.getElementById('closeSuggestionsBtn'); if (
 
 let isHost = false; let requestedGameMode = 'spy';
 const goToSpyBtn = document.getElementById('goToSpyBtn'); if (goToSpyBtn) goToSpyBtn.addEventListener('click', () => { requestedGameMode = 'spy'; document.getElementById('hostPasswordInput').value = ''; document.getElementById('hostPasswordModal').classList.remove('hidden'); });
-// 🔥 إضافة زرار الجاسوس 2
 const goToSpy2Btn = document.getElementById('goToSpy2Btn'); if (goToSpy2Btn) goToSpy2Btn.addEventListener('click', () => { requestedGameMode = 'spy2'; document.getElementById('hostPasswordInput').value = ''; document.getElementById('hostPasswordModal').classList.remove('hidden'); });
-
 const goToRebusBtn = document.getElementById('goToRebusBtn'); if (goToRebusBtn) goToRebusBtn.addEventListener('click', () => { requestedGameMode = 'rebus'; document.getElementById('hostPasswordInput').value = ''; document.getElementById('hostPasswordModal').classList.remove('hidden'); });
 const cancelHostPasswordBtn = document.getElementById('cancelHostPasswordBtn'); if (cancelHostPasswordBtn) cancelHostPasswordBtn.addEventListener('click', () => { document.getElementById('hostPasswordModal').classList.add('hidden'); });
 const closeWrongPasswordBtn = document.getElementById('closeWrongPasswordBtn'); if (closeWrongPasswordBtn) closeWrongPasswordBtn.addEventListener('click', () => { document.getElementById('wrongPasswordModal').classList.add('hidden'); });
@@ -194,7 +192,7 @@ socket.on('syncState', (state, mode) => {
     currentGameMode = mode || 'spy';
     let titleText = 'لعبة الجاسوس';
     if(currentGameMode === 'rebus') titleText = 'تخمين الكلمة';
-    if(currentGameMode === 'spy2') titleText = 'لعبة الجاسوس 2';
+    if(currentGameMode === 'spy2') titleText = 'لعبة الجاسوس وي بلاي';
     document.getElementById('waitingTitle').innerText = titleText;
     
     if(state === 'waiting') {
@@ -203,6 +201,7 @@ socket.on('syncState', (state, mode) => {
     }
 });
 
+// 🔥 تعديل زرار الإيرور عشان الضيوف ميشوفوش الرئيسية
 socket.on('errorMsg', (msg) => { 
     const invalidModal = document.getElementById('invalidRoomModal');
     const errorText = document.getElementById('errorMsgText');
@@ -216,7 +215,8 @@ socket.on('errorMsg', (msg) => {
 
 const closeInvalidRoomBtn = document.getElementById('closeInvalidRoomBtn');
 if(closeInvalidRoomBtn) closeInvalidRoomBtn.addEventListener('click', () => {
-    window.location.href = window.location.pathname;
+    // ضيف = ريفريش للصفحة بس
+    window.location.reload();
 });
 
 socket.on('connect', () => { 
@@ -228,8 +228,6 @@ socket.on('connect', () => {
         document.getElementById('destroyRoomBtn').classList.remove('hidden');
         document.getElementById('leaveRoomBtn').classList.add('hidden');
         const savedName = localStorage.getItem('lockedPlayerName') || '𝐒𝐀𝐒𝐔𝐊𝐄';
-        // لا نقوم بإنشاء غرفة جديدة، نعتمد على اللي موجودة، أو نصححها لو ضاعت.
-        // السيرفر هيعالج ده
         socket.emit('createRoom', { roomId: hostRoomId, playerId: myPlayerId, name: savedName, gameMode: requestedGameMode || 'spy' }); 
     } 
     else if (roomFromUrl && guestName) { 
@@ -245,12 +243,8 @@ let kickedPlayersGlobal = [];
 
 socket.on('updatePlayers', (data) => {
     let playersArray = [];
-    if(Array.isArray(data)) {
-        playersArray = data; // للنظام القديم أو الريبوس
-    } else {
-        playersArray = data.players;
-        kickedPlayersGlobal = data.kickedPlayers || [];
-    }
+    if(Array.isArray(data)) { playersArray = data; } 
+    else { playersArray = data.players; kickedPlayersGlobal = data.kickedPlayers || []; }
 
     document.getElementById('playerCount').innerText = playersArray.length;
     let listHTML = ''; let modalHTML = '';
@@ -260,8 +254,6 @@ socket.on('updatePlayers', (data) => {
         const hostBadge = p.isHost ? '<span style="color:#00f3ff; font-weight:bold; margin-left:5px;">👑 هوست</span>' : ''; 
         const youBadge = isMe ? '<span style="color:#00ff88; margin-left:5px;">(أنت)</span>' : '';
         const scoreBadge = currentGameMode === 'rebus' ? `<span style="background:rgba(255, 230, 0, 0.2); color:#ffe600; padding:2px 8px; border-radius:10px; font-weight:bold; font-size:0.9rem; margin-right:auto; border:1px solid #ffe600;">${p.score || 0} نقطة</span>` : '';
-        
-        // وضع المشاهدة (الجاسوس 2)
         const isSpectator = kickedPlayersGlobal.includes(p.id) ? '<span style="color:#ff0055; font-size:0.8rem; margin-right:5px;">(مُشاهد 👁️)</span>' : '';
         
         listHTML += `<div class="player-item ${kickedPlayersGlobal.includes(p.id) ? 'kicked' : ''}"><div class="player-avatar">👤</div><div class="player-info" style="width:100%;"><div class="player-name">${p.name}</div><div class="player-status" style="display:flex; align-items:center;">${hostBadge}${youBadge}${isSpectator}${scoreBadge}</div></div></div>`; 
@@ -287,7 +279,7 @@ socket.on('updatePlayers', (data) => {
 
 const leaveRoomBtn = document.getElementById('leaveRoomBtn');
 if (leaveRoomBtn) leaveRoomBtn.addEventListener('click', () => { 
-    if (confirm('م مغادرة؟')) { 
+    if (confirm('مغادرة؟')) { 
         socket.emit('leaveRoom'); 
         sessionStorage.clear(); 
         if (isHost) { window.location.href = window.location.pathname; } 
@@ -420,7 +412,7 @@ socket.on('youAlreadyVoted', (targetId) => { const allCards = document.querySele
 socket.on('playerRemovedFromVoting', (playerId) => { const card = document.querySelector(`.vote-card[data-player-id="${playerId}"]`); if (card) card.remove(); });
 
 window.castVote = function(targetId, cardElement) { 
-    if (kickedPlayersGlobal.includes(myPlayerId)) return; // الميت مش بيصوت
+    if (kickedPlayersGlobal.includes(myPlayerId)) return; 
     const fRoom = sessionStorage.getItem('hostRoomId') || new URLSearchParams(window.location.search).get('room');
     socket.emit('submitVote', { targetId: targetId, fallbackRoomId: fRoom }); 
     const allCards = document.querySelectorAll('.vote-card'); allCards.forEach(c => { if(!c.classList.contains('kicked')) c.classList.add('disabled'); }); cardElement.classList.remove('disabled'); cardElement.classList.add('voted'); 
@@ -436,7 +428,7 @@ socket.on('voteRegistered', (data) => {
 socket.on('votingEnded', (data) => { 
     const vTitle = document.getElementById('votingResultTitle'); const vDesc1 = document.getElementById('votingResultDesc1'); const vDesc2 = document.getElementById('votingResultDesc2'); const spyProceedBtn = document.getElementById('spyProceedBtn');
     
-    spyProceedBtn.classList.add('hidden'); // إخفاء الزرار كإفتراضي
+    spyProceedBtn.classList.add('hidden');
 
     if (currentGameMode === 'spy2') {
         if (data.isSpyCaught) {
@@ -453,10 +445,8 @@ socket.on('votingEnded', (data) => {
             playSound('lose'); vTitle.innerText = "اختيار خاطئ! ❌"; vTitle.style.color = "#ff0055"; 
             vDesc1.innerText = `لم يكن ${data.votedPlayerName} الجاسوس. تم طرد مدني!`; 
             vDesc2.innerText = "";
-            // السيرفر هيبعت إيفنت spyDecisionPhase بعد 5 ثواني
         }
     } else {
-        // اللعبة الكلاسيكية
         if (!myRoleData.isSpy) { 
             if (data.isSpyCaught) { playSound('win'); vTitle.innerText = "عمل جيد! 👏"; vTitle.style.color = "#00ff88"; vDesc1.innerText = `لقد كان ${data.votedPlayerName} الجاسوس فعلاً، أحسنتم.`; vDesc2.innerText = "في انتظار تخمينه للكلمة..."; } 
             else { playSound('lose'); vTitle.innerText = "اختيار خاطئ! ❌"; vTitle.style.color = "#ff0055"; vDesc1.innerText = `لم يكن ${data.votedPlayerName} الجاسوس. لقد كان ${data.spyName}.`; vDesc2.innerText = "في انتظار تخمينه للكلمة..."; } 
@@ -466,11 +456,10 @@ socket.on('votingEnded', (data) => {
             else { playSound('win'); vTitle.innerText = "نجاح باهر! 🕵️‍♂️"; vTitle.style.color = "#00ff88"; vDesc1.innerText = `لقد اختاروا شخصاً خاطئاً، نجحت في التخفي يا ${data.spyName}.`; vDesc2.innerText = ""; spyProceedBtn.innerText = "تخمين الكلمة"; } 
         } 
     }
-    
     document.getElementById('votingResultModal').classList.remove('hidden'); 
 });
 
-// 🔥 إضافة أوامر لعبة الجاسوس 2 (قرار الجاسوس وفوز البقاء)
+// 🔥 تعديل واجهة القرار للجاسوس وي بلاي
 socket.on('spyDecisionPhase', () => {
     document.getElementById('votingResultModal').classList.add('hidden');
     document.getElementById('spyDecisionModal').classList.remove('hidden');
@@ -480,12 +469,12 @@ socket.on('spyDecisionPhase', () => {
     const buttons = document.getElementById('spyDecisionButtons');
     
     if (myRoleData.isSpy) {
-        title.innerText = "أنت في أمان! 🕵️‍♂️";
+        title.innerText = "في انتظار قرار الجاسوس...";
         text.innerText = "لقد طردوا مدنياً بالخطأ، هل تريد تخمين الكلمة الآن والفوز؟ أم إكمال اللعب لطرد المزيد؟";
         buttons.classList.remove('hidden');
     } else {
-        title.innerText = "صدمة! 😱";
-        text.innerText = "في انتظار قرار الجاسوس...";
+        title.innerText = "في انتظار قرار الجاسوس...";
+        text.innerText = ""; 
         buttons.classList.add('hidden');
     }
 });
@@ -583,7 +572,7 @@ socket.on('rebusRoundStarted', (data) => {
     document.getElementById('chatLog').innerHTML = ''; 
     document.getElementById('chatInput').value = '';
     
-    let totalDuration = data.duration * 1000;
+    let totalDuration = 80000;
     let endTime = data.endTime;
     const tBar = document.getElementById('rebusTimerBar'); 
     

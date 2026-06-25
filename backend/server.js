@@ -146,22 +146,18 @@ function cleanupRoom(roomId) {
     delete rooms[roomId];
 }
 
-// 🔥 تحديث الترتيب (الأقدم دخولاً في الجاسوس، والأعلى نقاطاً في التخمين)
 function emitUpdatedPlayers(roomId) {
     if (!rooms[roomId]) return;
-    
     let playersArray = Object.values(rooms[roomId].players).map(p => ({
         ...p,
         score: rooms[roomId].scores && rooms[roomId].scores[p.id] !== undefined ? rooms[roomId].scores[p.id] : 0
     }));
-    
     playersArray.sort((a, b) => {
         if (rooms[roomId].gameMode === 'rebus') {
             if (b.score !== a.score) return b.score - a.score;
         }
-        return a.joinTime - b.joinTime; // الأقدم فوق دايماً
+        return a.joinTime - b.joinTime; 
     });
-    
     io.to(roomId).emit('updatePlayers', { 
         players: playersArray, 
         kickedPlayers: rooms[roomId].kickedPlayers || [] 
@@ -313,7 +309,6 @@ io.on('connection', (socket) => {
             if (rooms[roomId]) {
                 const isExistingPlayer = !!rooms[roomId].players[playerId];
                 
-                // 🔥 التحقق من الحد الأقصى 10 لاعبين
                 if (!isExistingPlayer && Object.keys(rooms[roomId].players).length >= 10) {
                     socket.emit('errorMsg', 'الغرفة ممتلئة! أقصى عدد هو 10 لاعبين.');
                     return;
@@ -336,8 +331,7 @@ io.on('connection', (socket) => {
                 emitUpdatedPlayers(roomId);
                 socket.emit('syncState', rooms[roomId].gameState, rooms[roomId].gameMode);
             } else {
-                // رسالة عدم وجود الغرفة
-                socket.emit('errorMsg', 'الغرفة دي مش موجودة!');
+                socket.emit('errorMsg', 'الغرفة دي مش موجودة أو الهوست قفل اللعبة!');
             }
         } catch (e) {}
     });
@@ -542,13 +536,8 @@ io.on('connection', (socket) => {
     socket.on('restartGame', () => { 
         let r = socket.roomId; if (!r) { for (const rm in rooms) { if (rooms[rm].players[socket.playerId]) { r = rm; break; } } }
         if(r && rooms[r]) { 
-            if(rooms[r].guessTimer) clearTimeout(rooms[r].guessTimer); 
-            if(rooms[r].tieTimer) clearTimeout(rooms[r].tieTimer); 
-            if(rooms[r].rebusTimer) clearTimeout(rooms[r].rebusTimer);
-            rooms[r].gameState = 'waiting'; 
-            rooms[r].votes = {}; 
-            rooms[r].kickedPlayers = []; 
-            io.to(r).emit('gameRestarted'); 
+            if(rooms[r].guessTimer) clearTimeout(rooms[r].guessTimer); if(rooms[r].tieTimer) clearTimeout(rooms[r].tieTimer); if(rooms[r].rebusTimer) clearTimeout(rooms[r].rebusTimer);
+            rooms[r].gameState = 'waiting'; rooms[r].votes = {}; rooms[r].kickedPlayers = []; io.to(r).emit('gameRestarted'); 
         } 
     });
 

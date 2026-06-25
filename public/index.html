@@ -170,16 +170,6 @@
         </div>
     </div>
 
-    <div id="suggestionsModal" class="modal-overlay hidden" style="z-index: 9999999;">
-        <div class="modal-content glass-container" style="max-height: 85vh; display: flex; flex-direction: column;">
-            <h2 id="suggestionsTitle" class="neon-text" style="margin-bottom: 15px; text-align: center;">💡 اقتراحات</h2>
-            <div style="flex: 1; overflow-y: auto; padding-right: 5px; text-align: right;">
-                <ul id="suggestionsList" style="list-style: none; padding: 0; margin: 0; color: #ccc; font-size: 1.1rem;"></ul>
-            </div>
-            <button id="closeSuggestionsBtn" style="width: 100%; margin-top: 15px; background: rgba(255, 0, 85, 0.2); border-color: #ff0055;">إغلاق ❌</button>
-        </div>
-    </div>
-
     <div id="realWheelModal" class="modal-overlay hidden" style="z-index: 9999999;">
         <div class="modal-content glass-container" style="text-align: center; max-width: 350px;">
             <h2 class="neon-text" style="color: #ffe600; text-shadow: 0 0 15px #ffe600; margin-bottom: 10px;">عجلة الحظ 🎡</h2>
@@ -215,7 +205,6 @@
 
     <div id="hostSettingsModal" class="modal-overlay hidden" style="z-index: 999999;"><div class="modal-content glass-container"><h2 class="neon-text" style="margin-bottom: 25px; color: #00f3ff; text-shadow: 0 0 15px #00f3ff;">إدارة اللاعبين 👥</h2><div id="modalPlayersList" style="max-height:300px; overflow-y:auto;"></div><button id="restartGameBtn" disabled style="width: 100%; margin-top: 15px;">إعادة اللعب 🔄</button><button id="closeModalBtn" style="margin-top: 15px; width: 100%; background: #333; border:none;">إغلاق</button></div></div>
     
-    <!-- 🔥 شاشة الخطأ المعدلة (بدون زرار العودة للرئيسية، زر حسنا بيعمل ريفريش) -->
     <div id="invalidRoomModal" class="modal-overlay hidden" style="z-index: 999999;">
         <div class="modal-content glass-container" style="text-align: center;">
             <div style="font-size: 4rem; margin-bottom: 15px;">❌</div>
@@ -254,9 +243,7 @@
         </div>
         
         <button id="goToSpyBtn" style="width: 100%; margin-bottom: 10px; border-color: #00f3ff; color: #fff;">لعبة الجاسوس 🕵️‍♂️</button>
-        <!-- 🔥 الزرار الجديد بالاسم الجديد -->
         <button id="goToSpy2Btn" style="width: 100%; margin-bottom: 10px; border-color: #ff0055; color: #ff0055; box-shadow: 0 0 10px rgba(255, 0, 85, 0.3);">لعبة الجاسوس وي بلاي 🎭</button>
-        
         <button id="goToRebusBtn" style="width: 100%; margin-bottom: 15px; border-color: #ffe600; color: #ffe600; box-shadow: 0 0 10px rgba(255, 230, 0, 0.3);">تخمين الكلمة 🧩</button>
         
         <button id="joinRoomBtn" class="hidden" style="width: 100%;">انـــضـــمـــام 🚀</button>
@@ -298,11 +285,6 @@
                 <div style="background: rgba(0,0,0,0.5); padding: 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 25px;">
                     <p style="color: #ccc; font-size: 1.1rem; margin-bottom: 12px;">ابحثوا عن الجاسوس!</p>
                     <p style="color: #64748b; font-size: 0.9rem; line-height: 1.5;">تناقشوا الآن عبر الصوت واكتشفوا من لا يعرف الكلمة.</p>
-                    
-                    <div id="helperButtons" class="hidden" style="margin-top: 20px; display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
-                        <button id="btnSuggestHints" style="background: rgba(0, 243, 255, 0.1); border-color: #00f3ff; color: #00f3ff; padding: 12px 25px; font-size: 1.1rem; flex: 1; max-width: 250px;">اقتراح هينتات 💡</button>
-                        <button id="btnSuggestQuestions" style="background: rgba(0, 255, 136, 0.1); border-color: #00ff88; color: #00ff88; padding: 12px 25px; font-size: 1.1rem; flex: 1; max-width: 250px;">اقتراح أسئلة ❓</button>
-                    </div>
                 </div>
 
                 <button id="startVotingPhaseBtn" class="hidden" style="width: 80%; font-size: 1.2rem;">بدء التصويت 🗳️</button>

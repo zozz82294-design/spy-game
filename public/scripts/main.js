@@ -10,12 +10,6 @@ if (navEntries.length > 0 && navEntries[0].type !== "reload") {
 
 const socket = io({ transports: ['websocket'], upgrade: false });
 
-const cleverQuestions = ["متى كانت آخر مرة استخدمت فيها الحاجة دي؟", "هل الحجم بيفرق في جودته أو سعره؟", "موجود في كل بيت ولا بيوت معينة؟", "سعره غالي ولا في متناول الجميع؟", "هل الأطفال بيحبوه ولا للكبار بس؟", "لونه بيأثر على اختيارك ليه؟", "بتفضل تستخدمه لوحدك ولا مع حد؟", "هل ممكن نستغنى عنه بسهولة في حياتنا؟", "بيتأثر بالحرارة أو الجو؟", "بيفضل معاك فترة طويلة ولا بيستهلك/بيبوظ بسرعة؟", "ممكن تلاقيه في الشارع عادي؟", "هل ليه ريحة أو صوت مميز؟", "ينفع نهديه لحد في مناسبة؟", "طريقة استخدامه محتاجة مجهود بدني؟", "مصنوع من مواد طبيعية ولا صناعية؟", "هل هو حاجة أساسية ولا رفاهية؟", "حجمه أكبر من كف الإيد؟", "ينفع تحطه في جيبك؟", "هل بيحتاج كهربا أو طاقة عشان يشتغل؟", "لو ضاع منك هتزعل عليه أو تدور عليه كتير؟", "بتشوفه كل يوم بعينك؟", "ممكن تشتريه من السوبر ماركت؟", "هل بيعتبر اختراع قديم ولا حديث؟", "بيستخدم في الشتاء أكتر ولا الصيف؟", "تقدر تعمله بنفسك في البيت؟"];
-const cleverHints = ["حاجة مألوفة جداً وبنشوفها كتير.", "استخدامه معروف للكل ومفيش حد ميعرفوش.", "ممكن ييجي بألوان وأشكال مختلفة.", "مش كل الناس بتهتم بيه بنفس الدرجة.", "موجود من زمان جداً وتطور مع الوقت.", "ليه أكتر من نوع وماركة.", "صعب تتلخبط فيه أو تديه اسم تاني.", "وزنه غالباً مش بيكون مشكلة.", "بيعبر عن حاجة في الروتين اليومي.", "ممكن يخلص أو يتغير مع الاستخدام المستمر.", "مفيش غنى عنه في أوقات معينة.", "بيدي طابع خاص أو بيسهل خطوة مهمة.", "الناس بتختلف في تفضيلها ليه.", "ممكن يكون غالي وممكن يكون رخيص جداً.", "موجود حوالينا أكتر مما بنتخيل.", "بيحتاج مكان معين عشان نحتفظ بيه.", "طريقة تصنيعه بقت أسهل من زمان.", "بيكون مفيد جداً وقت الزنقة.", "ممكن تلاقيه في شنطتك أو درج مكتبك.", "بيعتبر من الأساسيات عند بعض الناس.", "لو مش موجود بنحس بنقص بسيط.", "ممكن تتشاركه مع حد وممكن لأ.", "مش بيحتاج مهارة خاصة عشان تستخدمه.", "في منه أحجام تناسب كل الاحتياجات.", "بنشتريه وإحنا متأكدين إحنا عايزينه ليه."];
-const shortHints = { "حاجات جوا وبرا البيت": ["خشب", "يومي", "أساسي", "راحة", "تنظيف", "معدن"], "أكل وشرب": ["مزاج", "ريحة", "مسكر", "حادق", "طاقة", "دايت"], "أدوات وأشياء": ["معدن", "بلاستيك", "صغير", "حادة", "عملي"], "أماكن ومواصلات": ["تذكرة", "مشوار", "زحمة", "فلوس", "هواء"], "حيوانات ونباتات": ["طبيعة", "لون", "شجر", "ريحة", "أليف"], "مهن ووظائف": ["شغل", "بدلة", "فلوس", "شهادة", "مهارة"], "رياضة وهوايات": ["صحة", "تسلية", "مجهود", "عرق", "تحدي"], "أجهزة وتكنولوجيا": ["شاشة", "كهربا", "إنترنت", "شاحن", "بطارية"] };
-const shortQuestions = { "حاجات جوا وبرا البيت": ["في كل أوضة؟", "بنلمسه كل يوم؟"], "أكل وشرب": ["فيه سكر؟", "بناكله كل يوم؟"], "أدوات وأشياء": ["في الجيب؟", "بلاستيك ولا معدن؟"], "أماكن ومواصلات": ["تذكرة؟", "بنزين؟"], "حيوانات ونباتات": ["أليف ولا شرس؟", "أخضر؟"], "مهن ووظائف": ["في مكتب؟", "في الشارع؟"], "رياضة وهوايات": ["بكرة؟", "فردي ولا فريق؟"], "أجهزة وتكنولوجيا": ["فيها شاشة؟", "بطارية ولا فيشة؟"] };
-const specificWordHints = { "كاميرا": ["استديو", "إنترنت", "ذكريات"], "اكس بوكس": ["دراع", "شاشة", "أونلاين"], "بلايستيشن": ["دراع", "شاشة", "أونلاين"] };
-
 function createStars() { 
     const container = document.getElementById('starsContainer'); container.innerHTML = ''; 
     for (let i = 0; i < 75; i++) {
@@ -120,32 +114,6 @@ function showScreen(screenName) {
     else { document.getElementById('welcomeScreen').classList.remove('hidden'); document.getElementById('gameLayout').classList.add('hidden'); }
 }
 
-function showSuggestions(type) {
-    if(!myRoleData || myRoleData.isSpy) return; 
-    const list = document.getElementById('suggestionsList'); list.innerHTML = '';
-    const title = document.getElementById('suggestionsTitle');
-    title.innerText = type === 'hints' ? "💡 هينتات احترافية" : "❓ أسئلة ذكية";
-    title.style.color = type === 'hints' ? "#00f3ff" : "#00ff88";
-    
-    const categoryPrefixes = { "حاجات جوا وبرا البيت": "بخصوص (الشيء ده اللي في البيت) 👈", "أكل وشرب": "بخصوص (الأكلة أو المشروب ده) 👈", "أدوات وأشياء": "بخصوص (الأداة أو الشيء ده) 👈", "أماكن ومواصلات": "بخصوص (المكان أو المواصلة دي) 👈", "حيوانات ونباتات": "بخصوص (الحيوان أو النبات ده) 👈", "مهن ووظائف": "بخصوص (المهنة أو الوظيفة دي) 👈", "رياضة وهوايات": "بخصوص (الرياضة أو الهواية دي) 👈", "أجهزة وتكنولوجيا": "بخصوص (الجهاز أو الاختراع ده) 👈" };
-    const prefix = categoryPrefixes[myRoleData.category] || "بخصوص (الشيء ده) 👈";
-    
-    let pool = type === 'hints' ? [...(shortHints[myRoleData.category] || shortHints["أدوات وأشياء"])] : [...(shortQuestions[myRoleData.category] || shortQuestions["أدوات وأشياء"])];
-    if (type === 'hints' && specificWordHints[myRoleData.word]) { pool = [...specificWordHints[myRoleData.word], ...pool]; }
-    pool = [...new Set(pool)].sort(() => 0.5 - Math.random()).slice(0, 10);
-    
-    pool.forEach(item => {
-        const li = document.createElement('li'); li.className = "suggestion-item"; li.style.cssText = "margin-bottom: 10px; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;";
-        li.innerHTML = `<span style="color: ${type === 'hints' ? '#00f3ff' : '#00ff88'}; font-weight: bold; font-size: 0.9rem;">${prefix}</span><br><span style="font-size: 1.3rem; font-weight: bold; color: #fff;">${item}</span>`;
-        list.appendChild(li);
-    });
-    document.getElementById('suggestionsModal').classList.remove('hidden'); playSound('click');
-}
-
-const btnSuggestHints = document.getElementById('btnSuggestHints'); if (btnSuggestHints) btnSuggestHints.addEventListener('click', () => showSuggestions('hints'));
-const btnSuggestQuestions = document.getElementById('btnSuggestQuestions'); if (btnSuggestQuestions) btnSuggestQuestions.addEventListener('click', () => showSuggestions('questions'));
-const closeSuggestionsBtn = document.getElementById('closeSuggestionsBtn'); if (closeSuggestionsBtn) closeSuggestionsBtn.addEventListener('click', () => document.getElementById('suggestionsModal').classList.add('hidden'));
-
 let isHost = false; let requestedGameMode = 'spy';
 const goToSpyBtn = document.getElementById('goToSpyBtn'); if (goToSpyBtn) goToSpyBtn.addEventListener('click', () => { requestedGameMode = 'spy'; document.getElementById('hostPasswordInput').value = ''; document.getElementById('hostPasswordModal').classList.remove('hidden'); });
 const goToSpy2Btn = document.getElementById('goToSpy2Btn'); if (goToSpy2Btn) goToSpy2Btn.addEventListener('click', () => { requestedGameMode = 'spy2'; document.getElementById('hostPasswordInput').value = ''; document.getElementById('hostPasswordModal').classList.remove('hidden'); });
@@ -201,7 +169,6 @@ socket.on('syncState', (state, mode) => {
     }
 });
 
-// 🔥 تعديل زرار الإيرور عشان الضيوف ميشوفوش الرئيسية
 socket.on('errorMsg', (msg) => { 
     const invalidModal = document.getElementById('invalidRoomModal');
     const errorText = document.getElementById('errorMsgText');
@@ -215,7 +182,6 @@ socket.on('errorMsg', (msg) => {
 
 const closeInvalidRoomBtn = document.getElementById('closeInvalidRoomBtn');
 if(closeInvalidRoomBtn) closeInvalidRoomBtn.addEventListener('click', () => {
-    // ضيف = ريفريش للصفحة بس
     window.location.reload();
 });
 
@@ -358,10 +324,8 @@ socket.on('gameStarted', (data) => {
     
     if (kickedPlayersGlobal.includes(myPlayerId)) {
         document.getElementById('roleTitle').innerHTML = `<span style="color:#ff0055">أنت في وضع المشاهدة 👁️</span>`;
-        document.getElementById('helperButtons').className = 'hidden';
     } else {
         document.getElementById('roleTitle').innerHTML = `<span>${data.isSpy ? "أنت الجاسوس!" : data.word}</span>`;
-        document.getElementById('helperButtons').className = data.isSpy ? 'hidden' : 'display:flex; gap:15px; justify-content:center; flex-wrap:wrap;';
     }
     
     document.getElementById('categoryTitle').innerText = `التصنيف: ${data.category}`; document.getElementById('categoryTitle').classList.remove('hidden');
@@ -459,7 +423,6 @@ socket.on('votingEnded', (data) => {
     document.getElementById('votingResultModal').classList.remove('hidden'); 
 });
 
-// 🔥 تعديل واجهة القرار للجاسوس وي بلاي
 socket.on('spyDecisionPhase', () => {
     document.getElementById('votingResultModal').classList.add('hidden');
     document.getElementById('spyDecisionModal').classList.remove('hidden');
@@ -572,7 +535,7 @@ socket.on('rebusRoundStarted', (data) => {
     document.getElementById('chatLog').innerHTML = ''; 
     document.getElementById('chatInput').value = '';
     
-    let totalDuration = 80000;
+    let totalDuration = data.duration * 1000;
     let endTime = data.endTime;
     const tBar = document.getElementById('rebusTimerBar'); 
     

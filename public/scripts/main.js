@@ -158,6 +158,7 @@ if (confirmHostPasswordBtn) confirmHostPasswordBtn.addEventListener('click', () 
     if (hostPass !== '098') { document.getElementById('hostPasswordModal').classList.add('hidden'); document.getElementById('wrongPasswordModal').classList.remove('hidden'); return; }
     document.getElementById('hostPasswordModal').classList.add('hidden'); isHost = true;
     document.getElementById('hostSettingsBtn').classList.remove('hidden'); document.getElementById('copyInviteBtn').classList.remove('hidden'); document.getElementById('destroyRoomBtn').classList.remove('hidden');
+    document.getElementById('leaveRoomBtn').classList.add('hidden');
     
     const newRoomId = Math.random().toString(36).substring(2, 8); sessionStorage.setItem('hostRoomId', newRoomId);
     const savedName = localStorage.getItem('lockedPlayerName') || '𝐒𝐀𝐒𝐔𝐊𝐄';
@@ -173,14 +174,14 @@ if (urlParamsSync.get('room')) {
     const playJoinAudio = () => { audioJoin.play().catch(e => {}); document.removeEventListener('click', playJoinAudio); }; document.addEventListener('click', playJoinAudio);
 }
 
-// تعديل زرار الانضمام عشان ميخشش غير لما السيرفر يسمح
 const joinRoomBtn = document.getElementById('joinRoomBtn');
 if (joinRoomBtn) joinRoomBtn.addEventListener('click', () => {
     let name = playerNameInput.value.trim() || localStorage.getItem('lockedPlayerName');
     if (!name) return alert("اكتب اسمك الأول يا بطل!");
     isHost = false; 
     sessionStorage.setItem('guestName', name);
-    // مجرد بيبعت الطلب ومش بيغير الشاشة لحد ما السيرفر يرد بـ syncState
+    document.getElementById('leaveRoomBtn').classList.remove('hidden'); 
+    document.getElementById('destroyRoomBtn').classList.add('hidden');
     socket.emit('joinRoom', { roomId: urlParamsSync.get('room'), name: name, playerId: myPlayerId });
 });
 
@@ -190,12 +191,10 @@ socket.on('syncState', (state, mode) => {
     document.getElementById('waitingTitle').innerText = currentGameMode === 'spy' ? 'لعبة الجاسوس' : 'تخمين الكلمة';
     if(state === 'waiting') {
         showScreen('waitingScreen'); 
-        document.getElementById('leaveRoomBtn').classList.remove('hidden');
         audioWaiting.play().catch(e => {});
     }
 });
 
-// 🔥 رسالة الغرفة غير موجودة وزرار العودة للرئيسية
 socket.on('errorMsg', (msg) => { 
     const invalidModal = document.getElementById('invalidRoomModal');
     const errorText = document.getElementById('errorMsgText');
@@ -215,12 +214,18 @@ if(closeInvalidRoomBtn) closeInvalidRoomBtn.addEventListener('click', () => {
 socket.on('connect', () => { 
     const hostRoomId = sessionStorage.getItem('hostRoomId'); const guestName = sessionStorage.getItem('guestName'); const roomFromUrl = urlParamsSync.get('room');
     if (hostRoomId) { 
-        isHost = true; document.getElementById('hostSettingsBtn').classList.remove('hidden'); document.getElementById('copyInviteBtn').classList.remove('hidden'); document.getElementById('destroyRoomBtn').classList.remove('hidden');
+        isHost = true; 
+        document.getElementById('hostSettingsBtn').classList.remove('hidden'); 
+        document.getElementById('copyInviteBtn').classList.remove('hidden'); 
+        document.getElementById('destroyRoomBtn').classList.remove('hidden');
+        document.getElementById('leaveRoomBtn').classList.add('hidden');
         const savedName = localStorage.getItem('lockedPlayerName') || '𝐒𝐀𝐒𝐔𝐊𝐄';
         socket.emit('createRoom', { roomId: hostRoomId, playerId: myPlayerId, name: savedName, gameMode: 'spy' }); 
     } 
     else if (roomFromUrl && guestName) { 
         isHost = false; 
+        document.getElementById('leaveRoomBtn').classList.remove('hidden'); 
+        document.getElementById('destroyRoomBtn').classList.add('hidden');
         socket.emit('joinRoom', { roomId: roomFromUrl, name: guestName, playerId: myPlayerId }); 
     } 
     else { showScreen('welcomeScreen'); } 
@@ -255,7 +260,6 @@ socket.on('updatePlayers', (playersArray) => {
     }
 });
 
-// منع الضيوف من الوصول للرئيسية عند الخروج
 const leaveRoomBtn = document.getElementById('leaveRoomBtn');
 if (leaveRoomBtn) leaveRoomBtn.addEventListener('click', () => { 
     if (confirm('مغادرة؟')) { 
@@ -430,7 +434,7 @@ if (finalOkBtn) finalOkBtn.addEventListener('click', () => {
     if (isHost) { document.getElementById('hostSettingsModal').classList.remove('hidden'); } else { document.getElementById('guestWaitingHostModal').classList.remove('hidden'); } 
 });
 
-// 🔥 لعبة التخمين (التايمر بقى 80 ثانية)
+// 🔥 لعبة التخمين
 let rebusTimerInterval;
 socket.on('rebusRoundStarted', (data) => {
     playSound('start'); 
@@ -441,24 +445,26 @@ socket.on('rebusRoundStarted', (data) => {
     document.getElementById('chatLog').innerHTML = ''; 
     document.getElementById('chatInput').value = '';
     
-    // شريط التايمر (80 ثانية)
-    let tl = 80; 
+    // التايمر السلس المتزامن مع السيرفر
+    let totalDuration = 80000;
+    let endTime = data.endTime;
     const tBar = document.getElementById('rebusTimerBar'); 
-    tBar.style.width = '100%';
-    tBar.style.backgroundColor = '#00f3ff';
     
     if(rebusTimerInterval) clearInterval(rebusTimerInterval);
     rebusTimerInterval = setInterval(() => { 
-        tl--; 
-        let pct = (tl / 80) * 100;
+        let remaining = endTime - Date.now();
+        if (remaining < 0) remaining = 0;
+        
+        let pct = (remaining / totalDuration) * 100;
         tBar.style.width = pct + '%';
         
-        // الألوان تتغير حسب الوقت الباقي
-        if (tl <= 40 && tl > 15) tBar.style.backgroundColor = '#ffe600'; 
-        else if (tl <= 15) tBar.style.backgroundColor = '#ff0055'; 
+        let tlSec = remaining / 1000;
+        if (tlSec <= 40 && tlSec > 15) tBar.style.backgroundColor = '#ffe600'; 
+        else if (tlSec <= 15) tBar.style.backgroundColor = '#ff0055'; 
+        else tBar.style.backgroundColor = '#00f3ff';
         
-        if(tl <= 0) clearInterval(rebusTimerInterval); 
-    }, 1000);
+        if(remaining <= 0) clearInterval(rebusTimerInterval); 
+    }, 100);
 });
 
 function sendRebusGuess() {
@@ -514,12 +520,12 @@ socket.on('rebusGameOver', (players) => {
     }
 });
 
-// منع الضيوف من الوصول للرئيسية عند الإغلاق
 socket.on('youAreKickedPermanently', () => { 
     document.getElementById('kickedModal').classList.remove('hidden'); 
     sessionStorage.clear(); 
 });
 
+// إغلاق الغرفة بدون الرجوع للرئيسية للضيوف
 socket.on('hostLeftRoom', () => { 
     document.getElementById('hostLeftText').innerText = `الهوست غادر وأغلق الغرفة.`; 
     document.getElementById('hostLeftModal').classList.remove('hidden'); 

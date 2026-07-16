@@ -94,7 +94,7 @@ const rebusPuzzlesDB = [
     { category: "حيوان", clue: "ق + 🐒", answer: "قرد", answerEn: ["monkey"] },
     { category: "حيوان", clue: "ذ + 🐺", answer: "ذئب", answerEn: ["wolf"] },
     { category: "طائر", clue: "ن + 🦅", answer: "نسر", answerEn: ["eagle"] },
-    { category: "طائر", clue: "ح + 🕊️", حمامة: ["pigeon", "dove"] },
+    { category: "طائر", clue: "ح + 🕊️", answer: "حمامة", answerEn: ["pigeon", "dove"] },
     { category: "حشرة", clue: "ف + 🦋", answer: "فراشة", answerEn: ["butterfly"] },
     { category: "حشرة", clue: "ن + 🐝", answer: "نحلة", answerEn: ["bee"] },
     { category: "مكان", clue: "س + 🛒", answer: "سوق", answerEn: ["market", "souq"] },
@@ -545,7 +545,7 @@ io.on('connection', (socket) => {
         
         if(rooms[roomId].currentRound > 10) {
             rooms[roomId].gameState = 'waiting';
-            let sorted = Object.keys(rooms[roomId].scores).map(pid => ({ name: rooms[roomId].players[pid] ? rooms[roomId].players[pid].name : 'غادر', score: rooms[roomId].scores[pid] })).sort((a,b) => b.score - a.score);
+            let sorted = Object.keys(rooms[roomId].scores).map(pid => ({ name: rooms[roomId].players[pid] ? rooms[roomId].players[pid].name : "لاعب غادر", score: rooms[roomId].scores[pid] })).sort((a,b) => b.score - a.score);
             io.to(roomId).emit('rebusGameOver', sorted); return;
         }
         

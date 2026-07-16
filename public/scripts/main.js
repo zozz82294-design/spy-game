@@ -1,5 +1,5 @@
 // --- Version System ---
-const APP_VERSION = "1.1";
+const APP_VERSION = "1.2";
 
 // --- Localization System ---
 let currentLang = localStorage.getItem('gameLang') || 'ar';
@@ -32,13 +32,18 @@ const translationDict = {
     "إلغاء": "Cancel",
     "حفظ": "Save",
     "رجوع": "Back",
+    "إغلاق": "Close",
     "تحديث الصفحة": "Refresh Page",
     "العودة للرئيسية": "Back to Home",
     "إعادة اللعب؟": "Restart Game?",
+    "إعادة اللعب": "Restart Game",
     "اختيار عشوائي 🎡": "Random Spin 🎡",
     "إعدادات الهوست": "Host Settings",
+    "إدارة اللاعبين": "Manage Players",
     "تدمير الغرفة": "Destroy Room",
+    "إغلاق الغرفة": "Close Room",
     "مغادرة الغرفة": "Leave Room",
+    "نسخ رابط الدعوة": "Copy Invite Link",
     "نسخ الرابط": "Copy Link",
 
     // الجاسوس والأدوار
@@ -50,6 +55,7 @@ const translationDict = {
     "أنت": "You",
     "نقطة": "pts",
     "لاعب غادر": "Player left",
+    "الجاسوس": "The Spy",
     "صوت على": "voted for",
     "النظام": "System",
 
@@ -196,7 +202,6 @@ document.addEventListener("DOMContentLoaded", () => {
         localStorage.setItem('gameLang', currentLang);
         langBtn.innerText = currentLang === 'ar' ? 'English' : 'عربي';
         translateDOM();
-        // إجبار زرار الكمبيوتر/موبايل على التحديث لأنهم بيتعدلوا بالسكربت تحت
         detectDevice();
     };
     document.body.appendChild(langBtn);
@@ -440,11 +445,11 @@ socket.on('updatePlayers', (data) => {
         const youBadge = isMe ? `<span style="color:#00ff88; margin-left:5px;">(${tr("أنت")})</span>` : '';
         const scoreBadge = currentGameMode === 'rebus' ? `<span style="background:rgba(255, 230, 0, 0.2); color:#ffe600; padding:2px 8px; border-radius:10px; font-weight:bold; font-size:0.9rem; margin-right:auto; border:1px solid #ffe600;">${p.score || 0} ${tr("نقطة")}</span>` : '';
         const isSpectator = kickedPlayersGlobal.includes(p.id) ? `<span style="color:#ff0055; font-size:0.8rem; margin-right:5px;">(${tr("مُشاهد 👁️")})</span>` : '';
-        
-        listHTML += `<div class="player-item ${kickedPlayersGlobal.includes(p.id) ? 'kicked' : ''}"><div class="player-avatar">👤</div><div class="player-info" style="width:100%;"><div class="player-name">${p.name}</div><div class="player-status" style="display:flex; align-items:center;">${hostBadge}${youBadge}${isSpectator}${scoreBadge}</div></div></div>`; 
+        // لا نترجم اسم اللاعب لأنه اسم شخص
+        listHTML += `<div class="player-item ${kickedPlayersGlobal.includes(p.id) ? 'kicked' : ''}"><div class="player-avatar">👤</div><div class="player-info" style="width:100%;"><div class="player-name">${tr(p.name)}</div><div class="player-status" style="display:flex; align-items:center;">${hostBadge}${youBadge}${isSpectator}${scoreBadge}</div></div></div>`; 
         
         const actionBtn = p.isHost ? `<button class="btn-sidebar edit" style="width: auto; padding: 5px 10px; margin: 0;" onclick="editPlayerName('${p.id}')">✏️</button>` : `<button class="btn-sidebar edit" style="width: auto; padding: 5px 10px; margin: 0; margin-left: 5px;" onclick="editPlayerName('${p.id}')">✏️</button><button class="btn-sidebar btn-danger" style="width: auto; padding: 5px 10px; margin: 0;" onclick="kickPlayer('${p.id}')">❌</button>`;
-        modalHTML += `<div class="modal-player-item" style="display:flex; justify-content:space-between; align-items: center; margin-bottom:10px; background:rgba(255,255,255,0.1); padding:10px; border-radius:5px;"><span style="font-weight:bold;">${p.name} ${p.isHost?'👑':''} ${isSpectator}</span><div style="display:flex;">${actionBtn}</div></div>`;
+        modalHTML += `<div class="modal-player-item" style="display:flex; justify-content:space-between; align-items: center; margin-bottom:10px; background:rgba(255,255,255,0.1); padding:10px; border-radius:5px;"><span style="font-weight:bold;">${tr(p.name)} ${p.isHost?'👑':''} ${isSpectator}</span><div style="display:flex;">${actionBtn}</div></div>`;
     });
     
     document.getElementById('playersList').innerHTML = listHTML; document.getElementById('modalPlayersList').innerHTML = modalHTML;
@@ -574,7 +579,7 @@ socket.on('votingStarted', (data) => {
     data.players.forEach(p => { 
         if (p.id !== myPlayerId) {
             let isKicked = data.kickedPlayers.includes(p.id);
-            gridHTML += `<div class="vote-card ${isKicked ? 'kicked' : ''}" ${isKicked ? '' : `onclick="castVote('${p.id}', this)"`} data-player-id="${p.id}"><div style="font-size: 2rem; margin-bottom:10px;">${p.isHost ? '👑' : '👤'}</div><div style="font-weight:bold; color:#fff;">${p.name}</div></div>`; 
+            gridHTML += `<div class="vote-card ${isKicked ? 'kicked' : ''}" ${isKicked ? '' : `onclick="castVote('${p.id}', this)"`} data-player-id="${p.id}"><div style="font-size: 2rem; margin-bottom:10px;">${p.isHost ? '👑' : '👤'}</div><div style="font-weight:bold; color:#fff;">${tr(p.name)}</div></div>`; 
         }
     }); 
     
@@ -587,7 +592,11 @@ socket.on('votingStarted', (data) => {
 
 let tieInterval;
 socket.on('votingTied', (data) => { 
-    playSound('lose'); document.getElementById('tiedPlayersNames').innerText = data.tiedNames; document.getElementById('tieBreakerModal').classList.remove('hidden'); let timeLeft = 12; document.getElementById('tieTimer').innerText = timeLeft; 
+    playSound('lose'); 
+    let names = data.tiedNames;
+    if (currentLang === 'en') names = names.replace(/ و /g, ' and ');
+    document.getElementById('tiedPlayersNames').innerText = names; 
+    document.getElementById('tieBreakerModal').classList.remove('hidden'); let timeLeft = 12; document.getElementById('tieTimer').innerText = timeLeft; 
     if (tieInterval) clearInterval(tieInterval); tieInterval = setInterval(() => { timeLeft--; document.getElementById('tieTimer').innerText = timeLeft; if (timeLeft <= 0) { clearInterval(tieInterval); document.getElementById('tieBreakerModal').classList.add('hidden'); } }, 1000); 
 });
 
@@ -605,7 +614,7 @@ socket.on('voteRegistered', (data) => {
     if (data.voterName !== "النظام") playSound('vote'); 
     document.getElementById('voteCounter').innerText = `${data.currentVotes}/${data.totalRequired}`; 
     if (data.currentVotes >= data.totalRequired) { document.getElementById('voteCounter').style.color = "#00ff88"; document.getElementById('voteCounter').style.textShadow = "0 0 10px #00ff88"; } 
-    if (data.voterName !== "النظام") { const logP = document.createElement('div'); logP.className = 'log-entry'; logP.innerHTML = `${data.voterName} ${tr("صوت على")} <span class="target-name">${data.targetName}</span>`; document.getElementById('liveVoteLog').prepend(logP); } 
+    if (data.voterName !== "النظام") { const logP = document.createElement('div'); logP.className = 'log-entry'; logP.innerHTML = `${tr(data.voterName)} ${tr("صوت على")} <span class="target-name">${tr(data.targetName)}</span>`; document.getElementById('liveVoteLog').prepend(logP); } 
 });
 
 socket.on('votingEnded', (data) => { 
@@ -616,7 +625,7 @@ socket.on('votingEnded', (data) => {
     if (currentGameMode === 'spy2') {
         if (data.isSpyCaught) {
             playSound('win'); vTitle.innerText = tr("عمل جيد! 👏"); vTitle.style.color = "#00ff88"; 
-            vDesc1.innerText = `${tr("لقد كان")} ${data.votedPlayerName} ${tr("الجاسوس بالفعل.")}`; 
+            vDesc1.innerText = `${tr("لقد كان")} ${tr(data.votedPlayerName)} ${tr("الجاسوس بالفعل.")}`; 
             if (myRoleData.isSpy) {
                 vDesc2.innerText = tr("أمامك فرصة أخيرة لتخمين الكلمة!");
                 spyProceedBtn.classList.remove('hidden');
@@ -626,17 +635,17 @@ socket.on('votingEnded', (data) => {
             }
         } else {
             playSound('lose'); vTitle.innerText = tr("اختيار خاطئ! ❌"); vTitle.style.color = "#ff0055"; 
-            vDesc1.innerText = `${tr("لم يكن")} ${data.votedPlayerName} ${tr("الجاسوس.")} ${tr("تم طرد مدني!")}`; 
+            vDesc1.innerText = `${tr("لم يكن")} ${tr(data.votedPlayerName)} ${tr("الجاسوس.")} ${tr("تم طرد مدني!")}`; 
             vDesc2.innerText = "";
         }
     } else {
         if (!myRoleData.isSpy) { 
-            if (data.isSpyCaught) { playSound('win'); vTitle.innerText = tr("عمل جيد! 👏"); vTitle.style.color = "#00ff88"; vDesc1.innerText = `${tr("لقد كان")} ${data.votedPlayerName} ${tr("الجاسوس فعلاً، أحسنتم.")}`; vDesc2.innerText = tr("في انتظار تخمينه للكلمة..."); } 
-            else { playSound('lose'); vTitle.innerText = tr("اختيار خاطئ! ❌"); vTitle.style.color = "#ff0055"; vDesc1.innerText = `${tr("لم يكن")} ${data.votedPlayerName} ${tr("الجاسوس.")} ${tr("لقد كان")} ${data.spyName}.`; vDesc2.innerText = tr("في انتظار تخمينه للكلمة..."); } 
+            if (data.isSpyCaught) { playSound('win'); vTitle.innerText = tr("عمل جيد! 👏"); vTitle.style.color = "#00ff88"; vDesc1.innerText = `${tr("لقد كان")} ${tr(data.votedPlayerName)} ${tr("الجاسوس فعلاً، أحسنتم.")}`; vDesc2.innerText = tr("في انتظار تخمينه للكلمة..."); } 
+            else { playSound('lose'); vTitle.innerText = tr("اختيار خاطئ! ❌"); vTitle.style.color = "#ff0055"; vDesc1.innerText = `${tr("لم يكن")} ${tr(data.votedPlayerName)} ${tr("الجاسوس.")} ${tr("لقد كان")} ${tr(data.spyName)}.`; vDesc2.innerText = tr("في انتظار تخمينه للكلمة..."); } 
         } else { 
             spyProceedBtn.classList.remove('hidden'); 
-            if (data.isSpyCaught) { playSound('lose'); vTitle.innerText = tr("تم كشفك! 🚨"); vTitle.style.color = "#ff0055"; vDesc1.innerText = `${tr("لقد تم كشفك يا")} ${data.spyName}.`; vDesc2.innerText = tr("ابذل قصارى جهدك المرة القادمة!"); spyProceedBtn.innerText = tr("تخمين الكلمة"); } 
-            else { playSound('win'); vTitle.innerText = tr("نجاح باهر! 🕵️‍♂️"); vTitle.style.color = "#00ff88"; vDesc1.innerText = `${tr("لقد اختاروا شخصاً خاطئاً، نجحت في التخفي يا")} ${data.spyName}.`; vDesc2.innerText = ""; spyProceedBtn.innerText = tr("تخمين الكلمة"); } 
+            if (data.isSpyCaught) { playSound('lose'); vTitle.innerText = tr("تم كشفك! 🚨"); vTitle.style.color = "#ff0055"; vDesc1.innerText = `${tr("لقد تم كشفك يا")} ${tr(data.spyName)}.`; vDesc2.innerText = tr("ابذل قصارى جهدك المرة القادمة!"); spyProceedBtn.innerText = tr("تخمين الكلمة"); } 
+            else { playSound('win'); vTitle.innerText = tr("نجاح باهر! 🕵️‍♂️"); vTitle.style.color = "#00ff88"; vDesc1.innerText = `${tr("لقد اختاروا شخصاً خاطئاً، نجحت في التخفي يا")} ${tr(data.spyName)}.`; vDesc2.innerText = ""; spyProceedBtn.innerText = tr("تخمين الكلمة"); } 
         } 
     }
     document.getElementById('votingResultModal').classList.remove('hidden'); 
@@ -688,7 +697,7 @@ socket.on('spyWonSurvival', (data) => {
     const t1 = document.getElementById('finalResultText1'); const t2 = document.getElementById('finalResultText2'); const t3 = document.getElementById('finalResultText3'); const t4 = document.getElementById('finalResultText4');
     
     t1.innerText = tr("نهاية مأساوية للمدنيين! ☠️");
-    t2.innerText = `${tr("لقد فاز الجاسوس")} ${data.spyName} ${tr("بالبقاء")}`;
+    t2.innerText = `${tr("لقد فاز الجاسوس")} ${tr(data.spyName)} ${tr("بالبقاء")}`;
     t2.style.color = "#ff0055";
     t3.innerText = tr("تم طرد جميع المدنيين!");
     t3.style.color = "#ff0055";
@@ -724,7 +733,7 @@ window.selectSpyWord = function(word) { if (!myRoleData.isSpy) return; selectedS
 
 socket.on('spySelectedWord', (data) => { 
     playSound('vote'); document.querySelectorAll('.word-card').forEach(c => { c.classList.remove('spy-active'); const tag = c.querySelector('.spy-tag'); if (tag) tag.remove(); }); 
-    const activeCard = document.getElementById(`word-${data.word}`); if (activeCard) { activeCard.classList.add('spy-active'); activeCard.innerHTML += `<div class="spy-tag">${tr("اختارها")} ${data.spyName}</div>`; } 
+    const activeCard = document.getElementById(`word-${data.word}`); if (activeCard) { activeCard.classList.add('spy-active'); activeCard.innerHTML += `<div class="spy-tag">${tr("اختارها")} ${tr(data.spyName)}</div>`; } 
 });
 
 const confirmGuessBtn = document.getElementById('confirmGuessBtn');
@@ -732,7 +741,7 @@ if (confirmGuessBtn) confirmGuessBtn.addEventListener('click', (e) => { e.target
 
 socket.on('gameFinalResult', (data) => { 
     if (guessInterval) clearInterval(guessInterval); document.getElementById('wordsGrid').style.pointerEvents = 'none'; if (data.isCorrect) playSound('win'); else playSound('lose'); 
-    document.getElementById('finalResultText1').innerText = `${tr("لقد خمن الجاسوس")} ${data.spyName} ${tr("الكلمة")}`; document.getElementById('finalResultText2').innerText = data.chosenWord; 
+    document.getElementById('finalResultText1').innerText = `${tr("لقد خمن الجاسوس")} ${tr(data.spyName)} ${tr("الكلمة")}`; document.getElementById('finalResultText2').innerText = data.chosenWord; 
     if (data.isCorrect) { document.getElementById('finalResultText3').innerText = tr("وكانت الإجابة صحيحة! ✅"); document.getElementById('finalResultText3').style.color = "#00ff88"; document.getElementById('finalResultText4').innerText = ""; } 
     else { document.getElementById('finalResultText3').innerText = tr("وكانت الإجابة خاطئة! ❌"); document.getElementById('finalResultText3').style.color = "#ff0055"; document.getElementById('finalResultText4').innerText = `${tr("والكلمة الصحيحة كانت:")} ${data.correctWord}`; } 
     document.getElementById('finalResultModal').classList.remove('hidden'); 
@@ -845,12 +854,12 @@ if (chatInput) chatInput.addEventListener('keypress', (e) => {
 });
 
 socket.on('rebusChatMsg', (data) => { 
-    document.getElementById('chatLog').innerHTML = `<div class="chat-msg"><span class="sender">${data.playerName}:</span> ${data.msg}</div>` + document.getElementById('chatLog').innerHTML; 
+    document.getElementById('chatLog').innerHTML = `<div class="chat-msg"><span class="sender">${tr(data.playerName)}:</span> ${data.msg}</div>` + document.getElementById('chatLog').innerHTML; 
 });
 
 socket.on('rebusCorrectGuess', (data) => { 
     playSound('vote'); 
-    document.getElementById('chatLog').innerHTML = `<div class="chat-msg correct">${tr("لقد عرفها")} ${data.playerName}</div>` + document.getElementById('chatLog').innerHTML; 
+    document.getElementById('chatLog').innerHTML = `<div class="chat-msg correct">${tr("لقد عرفها")} ${tr(data.playerName)}</div>` + document.getElementById('chatLog').innerHTML; 
 });
 
 socket.on('rebusCloseGuess', (data) => {
@@ -871,9 +880,9 @@ socket.on('rebusGameOver', (players) => {
     launchConfetti();
     
     const p1 = players[0], p2 = players[1], p3 = players[2];
-    document.getElementById('podiumName1').innerText = p1 ? p1.name : '---'; document.getElementById('podiumScore1').innerText = p1 ? p1.score : '0';
-    document.getElementById('podiumName2').innerText = p2 ? p2.name : '---'; document.getElementById('podiumScore2').innerText = p2 ? p2.score : '0';
-    document.getElementById('podiumName3').innerText = p3 ? p3.name : '---'; document.getElementById('podiumScore3').innerText = p3 ? p3.score : '0';
+    document.getElementById('podiumName1').innerText = p1 ? tr(p1.name) : '---'; document.getElementById('podiumScore1').innerText = p1 ? p1.score : '0';
+    document.getElementById('podiumName2').innerText = p2 ? tr(p2.name) : '---'; document.getElementById('podiumScore2').innerText = p2 ? p2.score : '0';
+    document.getElementById('podiumName3').innerText = p3 ? tr(p3.name) : '---'; document.getElementById('podiumScore3').innerText = p3 ? p3.score : '0';
     
     if(isHost) { 
         const btn = document.getElementById('rebusReturnBtn'); 
@@ -919,7 +928,7 @@ socket.on('gameRestarted', () => {
     const guestWaitingHostModal = document.getElementById('guestWaitingHostModal'); if(guestWaitingHostModal) guestWaitingHostModal.classList.add('hidden'); 
     const podiumScreen = document.getElementById('podiumScreen'); if(podiumScreen) podiumScreen.classList.add('hidden');
     
-    kickedPlayersGlobal = [];
+    kickedPlayersGlobal = []; 
 });
 
 const restartGameBtn = document.getElementById('restartGameBtn');

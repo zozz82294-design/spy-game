@@ -557,40 +557,63 @@ socket.on('rebusRoundStarted', (data) => {
     document.getElementById('chatLog').innerHTML = ''; 
     document.getElementById('chatInput').value = '';
     
-    let endTime = data.endTime;
     const tBar = document.getElementById('rebusTimerBar'); 
+    const tParent = tBar.parentElement;
     
-    // --- تعديل لتحويل الشريط إلى تايمر أرقام (دقائق وثواني) ---
+    // --- إصلاح مشكلة اختفاء التايمر وتوسيطه ---
+    if(tParent) {
+        tParent.style.height = 'auto'; // السماح للحاوية بالتمدد
+        tParent.style.background = 'transparent'; // إزالة المربع الغامق اللي كان ورا الشريط
+        tParent.style.border = 'none'; // مسح أي حواف
+        tParent.style.boxShadow = 'none';
+    }
+    
+    // إعطاء ستايل للأرقام عشان تكون كبيرة وواضحة في النص
     tBar.style.width = '100%'; 
     tBar.style.backgroundColor = 'transparent'; 
     tBar.style.textAlign = 'center';
-    tBar.style.fontSize = '2rem';
+    tBar.style.fontSize = '2.5rem';
     tBar.style.fontWeight = 'bold';
     tBar.style.transition = 'none'; 
+    tBar.style.height = 'auto';
+    tBar.style.lineHeight = '1';
+    tBar.style.padding = '10px 0';
+    
+    // عداد محلي ثابت بيبدأ مع لحظة استلام الحدث (يمنع التعليق تماماً أو اختلاف الوقت بين اللاعبين)
+    let durationInSeconds = 120; 
+    
+    function updateRebusTimer() {
+        let minutes = Math.floor(durationInSeconds / 60);
+        let seconds = durationInSeconds % 60;
+        tBar.innerText = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+        
+        // تغيير ألوان الإضاءة حسب الوقت المتبقي
+        if (durationInSeconds <= 40 && durationInSeconds > 15) {
+            tBar.style.color = '#ffe600'; 
+            tBar.style.textShadow = '0 0 10px #ffe600';
+        } else if (durationInSeconds <= 15) {
+            tBar.style.color = '#ff0055'; 
+            tBar.style.textShadow = '0 0 10px #ff0055';
+        } else {
+            tBar.style.color = '#00f3ff'; 
+            tBar.style.textShadow = '0 0 10px #00f3ff';
+        }
+    }
+    
+    updateRebusTimer(); // عشان الرقم يظهر في اللحظة الأولى وميستناش ثانية
     
     if(rebusTimerInterval) clearInterval(rebusTimerInterval);
     rebusTimerInterval = setInterval(() => { 
-        let remaining = endTime - Date.now();
-        if (remaining < 0) remaining = 0;
+        durationInSeconds--;
+        if (durationInSeconds < 0) durationInSeconds = 0;
         
-        let secondsLeft = Math.ceil(remaining / 1000);
-        let minutes = Math.floor(secondsLeft / 60);
-        let seconds = secondsLeft % 60;
+        updateRebusTimer();
         
-        // عرض التايمر بشكل 02:00
-        tBar.innerText = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-        
-        // تغيير لون الأرقام حسب الوقت المتبقي
-        if (secondsLeft <= 40 && secondsLeft > 15) tBar.style.color = '#ffe600'; 
-        else if (secondsLeft <= 15) tBar.style.color = '#ff0055'; 
-        else tBar.style.color = '#00f3ff'; 
-        
-        if(remaining <= 0) {
-            tBar.innerText = "0:00";
+        if(durationInSeconds <= 0) {
             clearInterval(rebusTimerInterval); 
         }
     }, 1000); 
-    // --- نهاية تعديل التايمر ---
+    // --- نهاية التعديل ---
 });
 
 function sendRebusGuess() {

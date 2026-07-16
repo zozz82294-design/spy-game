@@ -519,7 +519,8 @@ io.on('connection', (socket) => {
             round: rooms[roomId].currentRound, 
             clue: puz.clue, 
             category: puz.category,
-            endTime: rooms[roomId].rebusEndTime
+            endTime: rooms[roomId].rebusEndTime,
+            duration: 120
         });
 
         if(rooms[roomId].rebusTimer) clearTimeout(rooms[roomId].rebusTimer);

@@ -1,5 +1,5 @@
 // --- Version System ---
-const APP_VERSION = "1.0";
+const APP_VERSION = "1.1";
 
 // --- Localization System ---
 let currentLang = localStorage.getItem('gameLang') || 'ar';
@@ -27,16 +27,26 @@ const translationDict = {
     "إغلاق الغرفة؟": "Close Room?",
     "طرد؟": "Kick?",
     "الاسم:": "Name:",
+    "كلمة المرور:": "Password:",
+    "تأكيد": "Confirm",
+    "إلغاء": "Cancel",
+    "حفظ": "Save",
+    "رجوع": "Back",
     "تحديث الصفحة": "Refresh Page",
     "العودة للرئيسية": "Back to Home",
     "إعادة اللعب؟": "Restart Game?",
     "اختيار عشوائي 🎡": "Random Spin 🎡",
+    "إعدادات الهوست": "Host Settings",
+    "تدمير الغرفة": "Destroy Room",
+    "مغادرة الغرفة": "Leave Room",
+    "نسخ الرابط": "Copy Link",
 
     // الجاسوس والأدوار
     "أنت في وضع المشاهدة 👁️": "You are a spectator 👁️",
     "مُشاهد 👁️": "Spectator 👁️",
     "أنت الجاسوس!": "You are the Spy!",
     "هوست": "Host",
+    "اللاعبين": "Players",
     "أنت": "You",
     "نقطة": "pts",
     "لاعب غادر": "Player left",
@@ -64,6 +74,22 @@ const translationDict = {
     "تم طرد مدني!": "A civilian was kicked!",
     "أمامك فرصة أخيرة لتخمين الكلمة!": "You have one last chance to guess the word!",
     "ابذل قصارى جهدك المرة القادمة!": "Do your best next time!",
+    "اختارها": "Chosen by",
+    "لقد كان": "It was",
+    "الجاسوس بالفعل.": "the Spy indeed.",
+    "لم يكن": "It wasn't",
+    "الجاسوس فعلاً، أحسنتم.": "the Spy indeed, well done.",
+    "الجاسوس.": "the Spy.",
+    "لقد تم كشفك يا": "You have been exposed",
+    "لقد اختاروا شخصاً خاطئاً، نجحت في التخفي يا": "They chose wrong, you hid successfully",
+    "لقد فاز الجاسوس": "The Spy won",
+    "بالبقاء": "by surviving",
+    "لقد انتهت اللعبه لعدم اختيار الجاسوس الإجابة": "Game ended as Spy didn't choose",
+    "لقد خسر الجاسوس!": "The Spy lost!",
+    "الغرفة:": "Room:",
+    "الغرفة دي مش موجودة أو الهوست قفل اللعبة!": "Room not found or closed by host!",
+    "الغرفة ممتلئة! أقصى عدد هو 10 لاعبين.": "Room full! Max 10 players.",
+    "عذراً! لقد بدأت اللعبة بالفعل، لا يمكنك الانضمام الآن.": "Sorry! Game already started.",
 
     // الشات ولعبة التخمين
     "لقد عرفها": "Guessed by",
@@ -79,15 +105,7 @@ const translationDict = {
     "حيوانات ونباتات": "Animals & Plants",
     "مهن ووظائف": "Jobs & Professions",
     "رياضة وهوايات": "Sports & Hobbies",
-    "أجهزة وتكنولوجيا": "Tech & Devices",
-    "أداة": "Tool", "حيوان": "Animal", "موقع تواصل": "Social Media", "جهاز": "Device",
-    "مواصلات": "Transport", "أكلة": "Food", "ديكور": "Decor", "دولة": "Country",
-    "مدينة": "City", "شكل هندسي": "Shape", "لعبة": "Game", "رياضة": "Sport",
-    "مستحضرات": "Cosmetics", "فاكهة": "Fruit", "ملابس": "Clothes", "شيء": "Object",
-    "مكان": "Place", "مركبة بحرية": "Watercraft", "حلوى": "Dessert", "مشروب": "Drink",
-    "تطبيق": "App", "طائر": "Bird", "جسم الإنسان": "Human Body", "أثاث": "Furniture",
-    "خضار": "Vegetable", "حشرة": "Insect", "مهنة": "Profession", "آلة موسيقية": "Instrument",
-    "أداة حمام": "Bath Tool"
+    "أجهزة وتكنولوجيا": "Tech & Devices"
 };
 
 function tr(text) {
@@ -95,38 +113,52 @@ function tr(text) {
     return translationDict[text] || text;
 }
 
+// دالة الترجمة الجديدة المحدثة لحل مشكلة التكرار
 function translateDOM() {
-    document.querySelectorAll('button, span, div, h1, h2, h3, a, p').forEach(el => {
-        el.childNodes.forEach(child => {
-            if (child.nodeType === 3 && child.nodeValue.trim() !== '') {
-                let original = child.parentElement.getAttribute('data-ar-text');
-                if (!original) {
-                    original = child.nodeValue.trim();
-                    child.parentElement.setAttribute('data-ar-text', original);
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
+    let n;
+    while(n = walker.nextNode()) {
+        if(n.parentElement && !['SCRIPT','STYLE'].includes(n.parentElement.tagName)) {
+            // حفظ النص الأصلي للحرف لمنع تلفه
+            if (n._originalText === undefined) {
+                n._originalText = n.nodeValue;
+            }
+            
+            let newText = n._originalText;
+            if (currentLang === 'en') {
+                let trimmed = newText.trim();
+                // تطابق كامل
+                if (translationDict[trimmed]) {
+                    newText = newText.replace(trimmed, translationDict[trimmed]);
+                } else {
+                    // تطابق جزئي دقيق لمنع التكرار
+                    let keys = Object.keys(translationDict).sort((a,b) => b.length - a.length);
+                    for(let key of keys) {
+                        if (newText.includes(key)) {
+                            newText = newText.split(key).join(translationDict[key]);
+                        }
+                    }
                 }
-                if (currentLang === 'en' && translationDict[original]) {
-                    child.nodeValue = child.nodeValue.replace(original, translationDict[original]);
-                } else if (currentLang === 'ar') {
-                    child.nodeValue = child.nodeValue.replace(child.nodeValue.trim(), original);
-                }
             }
-        });
-        if (el.placeholder) {
-            let original = el.getAttribute('data-ar-placeholder');
-            if(!original) {
-                original = el.placeholder;
-                el.setAttribute('data-ar-placeholder', original);
-            }
-            if(currentLang === 'en' && translationDict[original]) {
-                el.placeholder = translationDict[original];
-            } else if (currentLang === 'ar') {
-                el.placeholder = original;
-            }
+            n.nodeValue = newText;
+        }
+    }
+    
+    // ترجمة الـ Placeholders
+    document.querySelectorAll('[placeholder]').forEach(el => {
+        if (el._originalPlaceholder === undefined) {
+            el._originalPlaceholder = el.placeholder;
+        }
+        let origTrimmed = el._originalPlaceholder.trim();
+        if (currentLang === 'en' && translationDict[origTrimmed]) {
+            el.placeholder = translationDict[origTrimmed];
+        } else if (currentLang === 'ar') {
+            el.placeholder = el._originalPlaceholder;
         }
     });
 }
 
-// Add Version and Language Toggle to DOM
+// إنشاء علامة الإصدار وزر اللغة
 document.addEventListener("DOMContentLoaded", () => {
     const versionLabel = document.createElement('div');
     versionLabel.id = 'appVersionLabel';
@@ -164,6 +196,8 @@ document.addEventListener("DOMContentLoaded", () => {
         localStorage.setItem('gameLang', currentLang);
         langBtn.innerText = currentLang === 'ar' ? 'English' : 'عربي';
         translateDOM();
+        // إجبار زرار الكمبيوتر/موبايل على التحديث لأنهم بيتعدلوا بالسكربت تحت
+        detectDevice();
     };
     document.body.appendChild(langBtn);
 
@@ -248,12 +282,24 @@ const mobileViewBtn = document.getElementById('mobileViewBtn');
 function detectDevice() {
     if (window.innerWidth > 768) { 
         document.body.className = 'pc-mode'; 
-        if(pcViewBtn) pcViewBtn.classList.add('active-view'); 
-        if(mobileViewBtn) mobileViewBtn.classList.remove('active-view'); 
+        if(pcViewBtn) {
+            pcViewBtn.classList.add('active-view');
+            pcViewBtn.innerText = currentLang === 'ar' ? 'كمبيوتر 💻' : 'PC 💻';
+        }
+        if(mobileViewBtn) {
+            mobileViewBtn.classList.remove('active-view');
+            mobileViewBtn.innerText = currentLang === 'ar' ? 'موبايل 📱' : 'Mobile 📱';
+        }
     } else { 
         document.body.className = 'mobile-mode'; 
-        if(mobileViewBtn) mobileViewBtn.classList.add('active-view'); 
-        if(pcViewBtn) pcViewBtn.classList.remove('active-view'); 
+        if(mobileViewBtn) {
+            mobileViewBtn.classList.add('active-view');
+            mobileViewBtn.innerText = currentLang === 'ar' ? 'موبايل 📱' : 'Mobile 📱';
+        }
+        if(pcViewBtn) {
+            pcViewBtn.classList.remove('active-view');
+            pcViewBtn.innerText = currentLang === 'ar' ? 'كمبيوتر 💻' : 'PC 💻';
+        }
     }
 }
 detectDevice();
@@ -284,7 +330,7 @@ function showScreen(screenName) {
     
     if (screenName !== 'welcomeScreen') { document.getElementById('welcomeScreen').classList.add('hidden'); } 
     else { document.getElementById('welcomeScreen').classList.remove('hidden'); document.getElementById('gameLayout').classList.add('hidden'); }
-    setTimeout(translateDOM, 50); // Translate after screen change
+    setTimeout(translateDOM, 50); 
 }
 
 let isHost = false; let requestedGameMode = 'spy';
@@ -346,7 +392,7 @@ socket.on('errorMsg', (msg) => {
     const invalidModal = document.getElementById('invalidRoomModal');
     const errorText = document.getElementById('errorMsgText');
     if(invalidModal && errorText) { 
-        errorText.innerText = msg; 
+        errorText.innerText = tr(msg); 
         invalidModal.classList.remove('hidden'); 
     } 
     sessionStorage.removeItem('hostRoomId');
@@ -873,7 +919,7 @@ socket.on('gameRestarted', () => {
     const guestWaitingHostModal = document.getElementById('guestWaitingHostModal'); if(guestWaitingHostModal) guestWaitingHostModal.classList.add('hidden'); 
     const podiumScreen = document.getElementById('podiumScreen'); if(podiumScreen) podiumScreen.classList.add('hidden');
     
-    kickedPlayersGlobal = []; // تصفير دائم لضمان مسح كلمة مشاهد
+    kickedPlayersGlobal = [];
 });
 
 const restartGameBtn = document.getElementById('restartGameBtn');

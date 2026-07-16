@@ -513,7 +513,7 @@ io.on('connection', (socket) => {
         let puz = rooms[roomId].selectedPuzzles[rooms[roomId].currentRound - 1];
         rooms[roomId].currentPuzzle = puz;
         
-        rooms[roomId].rebusEndTime = Date.now() + 80000; 
+        rooms[roomId].rebusEndTime = Date.now() + 120000; 
         
         io.to(roomId).emit('rebusRoundStarted', { 
             round: rooms[roomId].currentRound, 
@@ -523,7 +523,7 @@ io.on('connection', (socket) => {
         });
 
         if(rooms[roomId].rebusTimer) clearTimeout(rooms[roomId].rebusTimer);
-        rooms[roomId].rebusTimer = setTimeout(() => { endRebusRound(roomId); }, 80000);
+        rooms[roomId].rebusTimer = setTimeout(() => { endRebusRound(roomId); }, 120000);
     }
 
     function endRebusRound(roomId) {

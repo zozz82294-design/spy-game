@@ -530,30 +530,67 @@ socket.on('rebusRoundStarted', (data) => {
     playSound('start'); 
     showScreen('rebusGameScreen');
     document.getElementById('rebusRoundNum').innerText = data.round;
-    document.getElementById('puzzleText').innerText = data.clue;
+
+    // --- تعديل لضبط ترتيب الحرف في اليمين والصورة في الشمال ---
+    const puzzleContainer = document.getElementById('puzzleText');
+    puzzleContainer.innerHTML = ''; 
+    puzzleContainer.style.display = 'flex';
+    puzzleContainer.style.direction = 'rtl'; // إجبار الترتيب من اليمين لليسار
+    puzzleContainer.style.justifyContent = 'center';
+    puzzleContainer.style.alignItems = 'center';
+    puzzleContainer.style.gap = '10px';
+
+    const clueParts = data.clue.split('+');
+    clueParts.forEach((part, idx) => {
+        let span = document.createElement('span');
+        span.innerText = part.trim();
+        puzzleContainer.appendChild(span);
+        if (idx < clueParts.length - 1) {
+            let plusSpan = document.createElement('span');
+            plusSpan.innerText = '+';
+            puzzleContainer.appendChild(plusSpan);
+        }
+    });
+    // --- نهاية تعديل الترتيب ---
+
     document.getElementById('rebusCategoryDisplay').innerText = "تصنيف: " + data.category;
     document.getElementById('chatLog').innerHTML = ''; 
     document.getElementById('chatInput').value = '';
     
-    let totalDuration = data.duration * 1000;
     let endTime = data.endTime;
     const tBar = document.getElementById('rebusTimerBar'); 
+    
+    // --- تعديل لتحويل الشريط إلى تايمر أرقام (دقائق وثواني) ---
+    tBar.style.width = '100%'; 
+    tBar.style.backgroundColor = 'transparent'; 
+    tBar.style.textAlign = 'center';
+    tBar.style.fontSize = '2rem';
+    tBar.style.fontWeight = 'bold';
+    tBar.style.transition = 'none'; 
     
     if(rebusTimerInterval) clearInterval(rebusTimerInterval);
     rebusTimerInterval = setInterval(() => { 
         let remaining = endTime - Date.now();
         if (remaining < 0) remaining = 0;
         
-        let pct = (remaining / totalDuration) * 100;
-        tBar.style.width = pct + '%';
+        let secondsLeft = Math.ceil(remaining / 1000);
+        let minutes = Math.floor(secondsLeft / 60);
+        let seconds = secondsLeft % 60;
         
-        let tlSec = remaining / 1000;
-        if (tlSec <= 40 && tlSec > 15) tBar.style.backgroundColor = '#ffe600'; 
-        else if (tlSec <= 15) tBar.style.backgroundColor = '#ff0055'; 
-        else tBar.style.backgroundColor = '#00f3ff';
+        // عرض التايمر بشكل 02:00
+        tBar.innerText = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
         
-        if(remaining <= 0) clearInterval(rebusTimerInterval); 
-    }, 100);
+        // تغيير لون الأرقام حسب الوقت المتبقي
+        if (secondsLeft <= 40 && secondsLeft > 15) tBar.style.color = '#ffe600'; 
+        else if (secondsLeft <= 15) tBar.style.color = '#ff0055'; 
+        else tBar.style.color = '#00f3ff'; 
+        
+        if(remaining <= 0) {
+            tBar.innerText = "0:00";
+            clearInterval(rebusTimerInterval); 
+        }
+    }, 1000); 
+    // --- نهاية تعديل التايمر ---
 });
 
 function sendRebusGuess() {

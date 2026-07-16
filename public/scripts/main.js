@@ -1,3 +1,175 @@
+// --- Version System ---
+const APP_VERSION = "1.0";
+
+// --- Localization System ---
+let currentLang = localStorage.getItem('gameLang') || 'ar';
+
+const translationDict = {
+    // الواجهة الرئيسية والقوائم
+    "لعبة الجاسوس": "Spy Game",
+    "لعبة الجاسوس وي بلاي": "WePlay Spy",
+    "تخمين الكلمة": "Word Guess",
+    "موبايل": "Mobile",
+    "كمبيوتر": "PC",
+    "انضمام": "Join",
+    "اكتب اسمك الأول يا بطل!": "Enter your name first, hero!",
+    "اكتب تخمينك هنا...": "Type your guess here...",
+    "إرسال": "Send",
+    "تصنيف:": "Category:",
+    "جولة": "Round",
+    
+    // الانتظار والأزرار
+    "في انتظار الهوست ⏳": "Waiting for host ⏳",
+    "في انتظار باقي اللاعبين... ⏳": "Waiting for other players... ⏳",
+    "بدء الجولة الأولى 🚀": "Start First Round 🚀",
+    "اختيار التصنيف 🚀": "Choose Category 🚀",
+    "مغادرة؟": "Leave?",
+    "إغلاق الغرفة؟": "Close Room?",
+    "طرد؟": "Kick?",
+    "الاسم:": "Name:",
+    "تحديث الصفحة": "Refresh Page",
+    "العودة للرئيسية": "Back to Home",
+    "إعادة اللعب؟": "Restart Game?",
+    "اختيار عشوائي 🎡": "Random Spin 🎡",
+
+    // الجاسوس والأدوار
+    "أنت في وضع المشاهدة 👁️": "You are a spectator 👁️",
+    "مُشاهد 👁️": "Spectator 👁️",
+    "أنت الجاسوس!": "You are the Spy!",
+    "هوست": "Host",
+    "أنت": "You",
+    "نقطة": "pts",
+    "لاعب غادر": "Player left",
+    "صوت على": "voted for",
+    "النظام": "System",
+
+    // الإشعارات والنتائج
+    "عمل جيد! 👏": "Good job! 👏",
+    "اختيار خاطئ! ❌": "Wrong choice! ❌",
+    "في انتظار قرار الجاسوس...": "Waiting for Spy's decision...",
+    "نفد الوقت! ⏳": "Time's up! ⏳",
+    "الجاسوس يختار الكلمة الآن...": "Spy is choosing the word...",
+    "اختر الكلمة التي تعتقد أنها صحيحة!": "Choose the correct word!",
+    "تم كشفك! 🚨": "You're busted! 🚨",
+    "نجاح باهر! 🕵️‍♂️": "Great Success! 🕵️‍♂️",
+    "نهاية مأساوية للمدنيين! ☠️": "Tragic end for civilians! ☠️",
+    "تم طرد جميع المدنيين!": "All civilians were kicked!",
+    "والكلمة الصحيحة كانت:": "And the correct word was:",
+    "لقد خمن الجاسوس": "The Spy guessed",
+    "الكلمة": "the word",
+    "وكانت الإجابة صحيحة! ✅": "And it was correct! ✅",
+    "وكانت الإجابة خاطئة! ❌": "And it was wrong! ❌",
+    "الهوست غادر وأغلق الغرفة.": "Host left and closed the room.",
+    "في انتظار الجاسوس لتخمين الكلمة...": "Waiting for Spy to guess the word...",
+    "تم طرد مدني!": "A civilian was kicked!",
+    "أمامك فرصة أخيرة لتخمين الكلمة!": "You have one last chance to guess the word!",
+    "ابذل قصارى جهدك المرة القادمة!": "Do your best next time!",
+
+    // الشات ولعبة التخمين
+    "لقد عرفها": "Guessed by",
+    "كلمة قريبة جداً": "Very close word",
+    "أنت:": "You:",
+    "الحل:": "Answer:",
+
+    // تصنيفات التخمين
+    "حاجات جوا وبرا البيت": "Inside & Outside Home",
+    "أكل وشرب": "Food & Drinks",
+    "أدوات وأشياء": "Tools & Objects",
+    "أماكن ومواصلات": "Places & Transport",
+    "حيوانات ونباتات": "Animals & Plants",
+    "مهن ووظائف": "Jobs & Professions",
+    "رياضة وهوايات": "Sports & Hobbies",
+    "أجهزة وتكنولوجيا": "Tech & Devices",
+    "أداة": "Tool", "حيوان": "Animal", "موقع تواصل": "Social Media", "جهاز": "Device",
+    "مواصلات": "Transport", "أكلة": "Food", "ديكور": "Decor", "دولة": "Country",
+    "مدينة": "City", "شكل هندسي": "Shape", "لعبة": "Game", "رياضة": "Sport",
+    "مستحضرات": "Cosmetics", "فاكهة": "Fruit", "ملابس": "Clothes", "شيء": "Object",
+    "مكان": "Place", "مركبة بحرية": "Watercraft", "حلوى": "Dessert", "مشروب": "Drink",
+    "تطبيق": "App", "طائر": "Bird", "جسم الإنسان": "Human Body", "أثاث": "Furniture",
+    "خضار": "Vegetable", "حشرة": "Insect", "مهنة": "Profession", "آلة موسيقية": "Instrument",
+    "أداة حمام": "Bath Tool"
+};
+
+function tr(text) {
+    if (currentLang === 'ar') return text;
+    return translationDict[text] || text;
+}
+
+function translateDOM() {
+    document.querySelectorAll('button, span, div, h1, h2, h3, a, p').forEach(el => {
+        el.childNodes.forEach(child => {
+            if (child.nodeType === 3 && child.nodeValue.trim() !== '') {
+                let original = child.parentElement.getAttribute('data-ar-text');
+                if (!original) {
+                    original = child.nodeValue.trim();
+                    child.parentElement.setAttribute('data-ar-text', original);
+                }
+                if (currentLang === 'en' && translationDict[original]) {
+                    child.nodeValue = child.nodeValue.replace(original, translationDict[original]);
+                } else if (currentLang === 'ar') {
+                    child.nodeValue = child.nodeValue.replace(child.nodeValue.trim(), original);
+                }
+            }
+        });
+        if (el.placeholder) {
+            let original = el.getAttribute('data-ar-placeholder');
+            if(!original) {
+                original = el.placeholder;
+                el.setAttribute('data-ar-placeholder', original);
+            }
+            if(currentLang === 'en' && translationDict[original]) {
+                el.placeholder = translationDict[original];
+            } else if (currentLang === 'ar') {
+                el.placeholder = original;
+            }
+        }
+    });
+}
+
+// Add Version and Language Toggle to DOM
+document.addEventListener("DOMContentLoaded", () => {
+    const versionLabel = document.createElement('div');
+    versionLabel.id = 'appVersionLabel';
+    versionLabel.innerText = `v${APP_VERSION}`;
+    versionLabel.style.position = 'fixed';
+    versionLabel.style.top = '15px';
+    versionLabel.style.left = '15px';
+    versionLabel.style.color = '#00f3ff';
+    versionLabel.style.zIndex = '999999';
+    versionLabel.style.fontWeight = 'bold';
+    versionLabel.style.fontFamily = 'monospace';
+    versionLabel.style.textShadow = '0 0 5px #00f3ff';
+    document.body.appendChild(versionLabel);
+
+    const langBtn = document.createElement('button');
+    langBtn.id = 'globalLangToggle';
+    langBtn.innerText = currentLang === 'ar' ? 'English' : 'عربي';
+    langBtn.style.position = 'fixed';
+    langBtn.style.top = '10px';
+    langBtn.style.right = '10px';
+    langBtn.style.zIndex = '999999';
+    langBtn.style.padding = '8px 16px';
+    langBtn.style.background = 'rgba(0, 243, 255, 0.1)';
+    langBtn.style.color = '#00f3ff';
+    langBtn.style.border = '1px solid #00f3ff';
+    langBtn.style.borderRadius = '20px';
+    langBtn.style.cursor = 'pointer';
+    langBtn.style.fontWeight = 'bold';
+    langBtn.style.transition = '0.3s';
+    langBtn.onmouseover = () => langBtn.style.background = 'rgba(0, 243, 255, 0.3)';
+    langBtn.onmouseout = () => langBtn.style.background = 'rgba(0, 243, 255, 0.1)';
+    
+    langBtn.onclick = () => {
+        currentLang = currentLang === 'ar' ? 'en' : 'ar';
+        localStorage.setItem('gameLang', currentLang);
+        langBtn.innerText = currentLang === 'ar' ? 'English' : 'عربي';
+        translateDOM();
+    };
+    document.body.appendChild(langBtn);
+
+    setTimeout(translateDOM, 500); 
+});
+
 const urlParamsSync = new URLSearchParams(window.location.search);
 
 const navEntries = performance.getEntriesByType("navigation");
@@ -112,6 +284,7 @@ function showScreen(screenName) {
     
     if (screenName !== 'welcomeScreen') { document.getElementById('welcomeScreen').classList.add('hidden'); } 
     else { document.getElementById('welcomeScreen').classList.remove('hidden'); document.getElementById('gameLayout').classList.add('hidden'); }
+    setTimeout(translateDOM, 50); // Translate after screen change
 }
 
 let isHost = false; let requestedGameMode = 'spy';
@@ -147,7 +320,7 @@ if (urlParamsSync.get('room')) {
 const joinRoomBtn = document.getElementById('joinRoomBtn');
 if (joinRoomBtn) joinRoomBtn.addEventListener('click', () => {
     let name = playerNameInput.value.trim() || localStorage.getItem('lockedPlayerName');
-    if (!name) return alert("اكتب اسمك الأول يا بطل!");
+    if (!name) return alert(tr("اكتب اسمك الأول يا بطل!"));
     isHost = false; 
     sessionStorage.setItem('guestName', name);
     document.getElementById('leaveRoomBtn').classList.remove('hidden'); 
@@ -158,9 +331,9 @@ if (joinRoomBtn) joinRoomBtn.addEventListener('click', () => {
 let currentGameMode = 'spy'; 
 socket.on('syncState', (state, mode) => { 
     currentGameMode = mode || 'spy';
-    let titleText = 'لعبة الجاسوس';
-    if(currentGameMode === 'rebus') titleText = 'تخمين الكلمة';
-    if(currentGameMode === 'spy2') titleText = 'لعبة الجاسوس وي بلاي';
+    let titleText = tr('لعبة الجاسوس');
+    if(currentGameMode === 'rebus') titleText = tr('تخمين الكلمة');
+    if(currentGameMode === 'spy2') titleText = tr('لعبة الجاسوس وي بلاي');
     document.getElementById('waitingTitle').innerText = titleText;
     
     if(state === 'waiting') {
@@ -217,10 +390,10 @@ socket.on('updatePlayers', (data) => {
     
     playersArray.forEach(p => {
         const isMe = p.id === myPlayerId; 
-        const hostBadge = p.isHost ? '<span style="color:#00f3ff; font-weight:bold; margin-left:5px;">👑 هوست</span>' : ''; 
-        const youBadge = isMe ? '<span style="color:#00ff88; margin-left:5px;">(أنت)</span>' : '';
-        const scoreBadge = currentGameMode === 'rebus' ? `<span style="background:rgba(255, 230, 0, 0.2); color:#ffe600; padding:2px 8px; border-radius:10px; font-weight:bold; font-size:0.9rem; margin-right:auto; border:1px solid #ffe600;">${p.score || 0} نقطة</span>` : '';
-        const isSpectator = kickedPlayersGlobal.includes(p.id) ? '<span style="color:#ff0055; font-size:0.8rem; margin-right:5px;">(مُشاهد 👁️)</span>' : '';
+        const hostBadge = p.isHost ? `<span style="color:#00f3ff; font-weight:bold; margin-left:5px;">👑 ${tr("هوست")}</span>` : ''; 
+        const youBadge = isMe ? `<span style="color:#00ff88; margin-left:5px;">(${tr("أنت")})</span>` : '';
+        const scoreBadge = currentGameMode === 'rebus' ? `<span style="background:rgba(255, 230, 0, 0.2); color:#ffe600; padding:2px 8px; border-radius:10px; font-weight:bold; font-size:0.9rem; margin-right:auto; border:1px solid #ffe600;">${p.score || 0} ${tr("نقطة")}</span>` : '';
+        const isSpectator = kickedPlayersGlobal.includes(p.id) ? `<span style="color:#ff0055; font-size:0.8rem; margin-right:5px;">(${tr("مُشاهد 👁️")})</span>` : '';
         
         listHTML += `<div class="player-item ${kickedPlayersGlobal.includes(p.id) ? 'kicked' : ''}"><div class="player-avatar">👤</div><div class="player-info" style="width:100%;"><div class="player-name">${p.name}</div><div class="player-status" style="display:flex; align-items:center;">${hostBadge}${youBadge}${isSpectator}${scoreBadge}</div></div></div>`; 
         
@@ -234,18 +407,18 @@ socket.on('updatePlayers', (data) => {
     if (isHost) {
         if (playersArray.length >= 2) { 
             startBtn.classList.add('hidden'); actualBtn.classList.remove('hidden');
-            actualBtn.innerText = currentGameMode === 'rebus' ? "بدء الجولة الأولى 🚀" : "اختيار التصنيف 🚀";
+            actualBtn.innerText = currentGameMode === 'rebus' ? tr("بدء الجولة الأولى 🚀") : tr("اختيار التصنيف 🚀");
         } else {
-            startBtn.classList.remove('hidden'); actualBtn.classList.add('hidden'); startBtn.innerText = "في انتظار باقي اللاعبين... ⏳";
+            startBtn.classList.remove('hidden'); actualBtn.classList.add('hidden'); startBtn.innerText = tr("في انتظار باقي اللاعبين... ⏳");
         }
     } else {
-        startBtn.classList.remove('hidden'); actualBtn.classList.add('hidden'); startBtn.innerText = "في انتظار الهوست ⏳";
+        startBtn.classList.remove('hidden'); actualBtn.classList.add('hidden'); startBtn.innerText = tr("في انتظار الهوست ⏳");
     }
 });
 
 const leaveRoomBtn = document.getElementById('leaveRoomBtn');
 if (leaveRoomBtn) leaveRoomBtn.addEventListener('click', () => { 
-    if (confirm('مغادرة؟')) { 
+    if (confirm(tr("مغادرة؟"))) { 
         socket.emit('leaveRoom'); 
         sessionStorage.clear(); 
         if (isHost) { window.location.href = window.location.pathname; } 
@@ -255,7 +428,7 @@ if (leaveRoomBtn) leaveRoomBtn.addEventListener('click', () => {
 
 const destroyRoomBtn = document.getElementById('destroyRoomBtn');
 if (destroyRoomBtn) destroyRoomBtn.addEventListener('click', () => { 
-    if (confirm('إغلاق الغرفة؟')) { 
+    if (confirm(tr("إغلاق الغرفة؟"))) { 
         socket.emit('destroyRoom'); 
         sessionStorage.removeItem('hostRoomId'); 
         setTimeout(() => { window.location.href = window.location.pathname; }, 300);
@@ -278,11 +451,11 @@ socket.on('showModeSelection', () => { showScreen('modeSelectionScreen'); render
 function renderCategories() {
     const grid = document.getElementById('categoriesGrid'); grid.innerHTML = '';
     availableCategories.forEach((cat, index) => {
-        let d = document.createElement('div'); d.className = 'category-card'; d.id = `cat-idx-${index}`; d.innerText = cat;
+        let d = document.createElement('div'); d.className = 'category-card'; d.id = `cat-idx-${index}`; d.innerText = tr(cat);
         d.onclick = () => { if (!isHost || isWheelSpinning) return; playSound('click'); socket.emit('selectCategory', cat, sessionStorage.getItem('hostRoomId')); };
         grid.appendChild(d);
     });
-    let r = document.createElement('div'); r.className = 'category-card random-card'; r.id = 'cat-random'; r.innerText = 'اختيار عشوائي 🎡';
+    let r = document.createElement('div'); r.className = 'category-card random-card'; r.id = 'cat-random'; r.innerText = tr('اختيار عشوائي 🎡');
     r.onclick = () => { if (!isHost || isWheelSpinning) return; playSound('start'); const targetCat = availableCategories[Math.floor(Math.random() * availableCategories.length)]; socket.emit('spinWheel', targetCat, sessionStorage.getItem('hostRoomId')); };
     grid.appendChild(r);
 }
@@ -323,12 +496,12 @@ socket.on('gameStarted', (data) => {
     document.getElementById('roleIcon').innerText = data.isSpy ? "🕵️‍♂️" : "🎯";
     
     if (kickedPlayersGlobal.includes(myPlayerId)) {
-        document.getElementById('roleTitle').innerHTML = `<span style="color:#ff0055">أنت في وضع المشاهدة 👁️</span>`;
+        document.getElementById('roleTitle').innerHTML = `<span style="color:#ff0055">${tr("أنت في وضع المشاهدة 👁️")}</span>`;
     } else {
-        document.getElementById('roleTitle').innerHTML = `<span>${data.isSpy ? "أنت الجاسوس!" : data.word}</span>`;
+        document.getElementById('roleTitle').innerHTML = `<span>${data.isSpy ? tr("أنت الجاسوس!") : data.word}</span>`;
     }
     
-    document.getElementById('categoryTitle').innerText = `التصنيف: ${data.category}`; document.getElementById('categoryTitle').classList.remove('hidden');
+    document.getElementById('categoryTitle').innerText = `${tr("تصنيف:")} ${tr(data.category)}`; document.getElementById('categoryTitle').classList.remove('hidden');
     showScreen('gameScreen'); 
     
     const startVotingPhaseBtn = document.getElementById('startVotingPhaseBtn'); 
@@ -360,7 +533,7 @@ socket.on('votingStarted', (data) => {
     }); 
     
     if (data.kickedPlayers.includes(myPlayerId)) {
-        document.getElementById('votingGrid').innerHTML = '<h3 style="color:#ff0055; text-align:center; width:100%;">أنت في وضع المشاهدة لا يمكنك التصويت 👁️</h3>';
+        document.getElementById('votingGrid').innerHTML = `<h3 style="color:#ff0055; text-align:center; width:100%;">${tr("أنت في وضع المشاهدة 👁️")}</h3>`;
     } else {
         document.getElementById('votingGrid').innerHTML = gridHTML; 
     }
@@ -386,7 +559,7 @@ socket.on('voteRegistered', (data) => {
     if (data.voterName !== "النظام") playSound('vote'); 
     document.getElementById('voteCounter').innerText = `${data.currentVotes}/${data.totalRequired}`; 
     if (data.currentVotes >= data.totalRequired) { document.getElementById('voteCounter').style.color = "#00ff88"; document.getElementById('voteCounter').style.textShadow = "0 0 10px #00ff88"; } 
-    if (data.voterName !== "النظام") { const logP = document.createElement('div'); logP.className = 'log-entry'; logP.innerHTML = `${data.voterName} صوت على <span class="target-name">${data.targetName}</span>`; document.getElementById('liveVoteLog').prepend(logP); } 
+    if (data.voterName !== "النظام") { const logP = document.createElement('div'); logP.className = 'log-entry'; logP.innerHTML = `${data.voterName} ${tr("صوت على")} <span class="target-name">${data.targetName}</span>`; document.getElementById('liveVoteLog').prepend(logP); } 
 });
 
 socket.on('votingEnded', (data) => { 
@@ -396,28 +569,28 @@ socket.on('votingEnded', (data) => {
 
     if (currentGameMode === 'spy2') {
         if (data.isSpyCaught) {
-            playSound('win'); vTitle.innerText = "عمل جيد! 👏"; vTitle.style.color = "#00ff88"; 
-            vDesc1.innerText = `لقد كان ${data.votedPlayerName} الجاسوس بالفعل.`; 
+            playSound('win'); vTitle.innerText = tr("عمل جيد! 👏"); vTitle.style.color = "#00ff88"; 
+            vDesc1.innerText = `${tr("لقد كان")} ${data.votedPlayerName} ${tr("الجاسوس بالفعل.")}`; 
             if (myRoleData.isSpy) {
-                vDesc2.innerText = "أمامك فرصة أخيرة لتخمين الكلمة!";
+                vDesc2.innerText = tr("أمامك فرصة أخيرة لتخمين الكلمة!");
                 spyProceedBtn.classList.remove('hidden');
-                spyProceedBtn.innerText = "تخمين الكلمة";
+                spyProceedBtn.innerText = tr("تخمين الكلمة");
             } else {
-                vDesc2.innerText = "في انتظار الجاسوس لتخمين الكلمة...";
+                vDesc2.innerText = tr("في انتظار الجاسوس لتخمين الكلمة...");
             }
         } else {
-            playSound('lose'); vTitle.innerText = "اختيار خاطئ! ❌"; vTitle.style.color = "#ff0055"; 
-            vDesc1.innerText = `لم يكن ${data.votedPlayerName} الجاسوس. تم طرد مدني!`; 
+            playSound('lose'); vTitle.innerText = tr("اختيار خاطئ! ❌"); vTitle.style.color = "#ff0055"; 
+            vDesc1.innerText = `${tr("لم يكن")} ${data.votedPlayerName} ${tr("الجاسوس.")} ${tr("تم طرد مدني!")}`; 
             vDesc2.innerText = "";
         }
     } else {
         if (!myRoleData.isSpy) { 
-            if (data.isSpyCaught) { playSound('win'); vTitle.innerText = "عمل جيد! 👏"; vTitle.style.color = "#00ff88"; vDesc1.innerText = `لقد كان ${data.votedPlayerName} الجاسوس فعلاً، أحسنتم.`; vDesc2.innerText = "في انتظار تخمينه للكلمة..."; } 
-            else { playSound('lose'); vTitle.innerText = "اختيار خاطئ! ❌"; vTitle.style.color = "#ff0055"; vDesc1.innerText = `لم يكن ${data.votedPlayerName} الجاسوس. لقد كان ${data.spyName}.`; vDesc2.innerText = "في انتظار تخمينه للكلمة..."; } 
+            if (data.isSpyCaught) { playSound('win'); vTitle.innerText = tr("عمل جيد! 👏"); vTitle.style.color = "#00ff88"; vDesc1.innerText = `${tr("لقد كان")} ${data.votedPlayerName} ${tr("الجاسوس فعلاً، أحسنتم.")}`; vDesc2.innerText = tr("في انتظار تخمينه للكلمة..."); } 
+            else { playSound('lose'); vTitle.innerText = tr("اختيار خاطئ! ❌"); vTitle.style.color = "#ff0055"; vDesc1.innerText = `${tr("لم يكن")} ${data.votedPlayerName} ${tr("الجاسوس.")} ${tr("لقد كان")} ${data.spyName}.`; vDesc2.innerText = tr("في انتظار تخمينه للكلمة..."); } 
         } else { 
             spyProceedBtn.classList.remove('hidden'); 
-            if (data.isSpyCaught) { playSound('lose'); vTitle.innerText = "تم كشفك! 🚨"; vTitle.style.color = "#ff0055"; vDesc1.innerText = `لقد تم كشفك يا ${data.spyName}.`; vDesc2.innerText = "ابذل قصارى جهدك المرة القادمة!"; spyProceedBtn.innerText = "خمن الكلمة"; } 
-            else { playSound('win'); vTitle.innerText = "نجاح باهر! 🕵️‍♂️"; vTitle.style.color = "#00ff88"; vDesc1.innerText = `لقد اختاروا شخصاً خاطئاً، نجحت في التخفي يا ${data.spyName}.`; vDesc2.innerText = ""; spyProceedBtn.innerText = "تخمين الكلمة"; } 
+            if (data.isSpyCaught) { playSound('lose'); vTitle.innerText = tr("تم كشفك! 🚨"); vTitle.style.color = "#ff0055"; vDesc1.innerText = `${tr("لقد تم كشفك يا")} ${data.spyName}.`; vDesc2.innerText = tr("ابذل قصارى جهدك المرة القادمة!"); spyProceedBtn.innerText = tr("تخمين الكلمة"); } 
+            else { playSound('win'); vTitle.innerText = tr("نجاح باهر! 🕵️‍♂️"); vTitle.style.color = "#00ff88"; vDesc1.innerText = `${tr("لقد اختاروا شخصاً خاطئاً، نجحت في التخفي يا")} ${data.spyName}.`; vDesc2.innerText = ""; spyProceedBtn.innerText = tr("تخمين الكلمة"); } 
         } 
     }
     document.getElementById('votingResultModal').classList.remove('hidden'); 
@@ -432,11 +605,11 @@ socket.on('spyDecisionPhase', () => {
     const buttons = document.getElementById('spyDecisionButtons');
     
     if (myRoleData.isSpy) {
-        title.innerText = "في انتظار قرار الجاسوس...";
-        text.innerText = "لقد طردوا مدنياً بالخطأ، هل تريد تخمين الكلمة الآن والفوز؟ أم إكمال اللعب لطرد المزيد؟";
+        title.innerText = tr("في انتظار قرار الجاسوس...");
+        text.innerText = tr("لقد طردوا مدنياً بالخطأ، هل تريد تخمين الكلمة الآن والفوز؟ أم إكمال اللعب لطرد المزيد؟");
         buttons.classList.remove('hidden');
     } else {
-        title.innerText = "في انتظار قرار الجاسوس...";
+        title.innerText = tr("في انتظار قرار الجاسوس...");
         text.innerText = ""; 
         buttons.classList.add('hidden');
     }
@@ -468,12 +641,12 @@ socket.on('spyWonSurvival', (data) => {
     
     const t1 = document.getElementById('finalResultText1'); const t2 = document.getElementById('finalResultText2'); const t3 = document.getElementById('finalResultText3'); const t4 = document.getElementById('finalResultText4');
     
-    t1.innerText = "نهاية مأساوية للمدنيين! ☠️";
-    t2.innerText = `لقد فاز الجاسوس ${data.spyName} بالبقاء`;
+    t1.innerText = tr("نهاية مأساوية للمدنيين! ☠️");
+    t2.innerText = `${tr("لقد فاز الجاسوس")} ${data.spyName} ${tr("بالبقاء")}`;
     t2.style.color = "#ff0055";
-    t3.innerText = "تم طرد جميع المدنيين!";
+    t3.innerText = tr("تم طرد جميع المدنيين!");
     t3.style.color = "#ff0055";
-    t4.innerText = `والكلمة الصحيحة كانت: ${data.word}`;
+    t4.innerText = `${tr("والكلمة الصحيحة كانت:")} ${data.word}`;
     
     document.getElementById('finalResultModal').classList.remove('hidden'); 
 });
@@ -488,7 +661,7 @@ socket.on('guessingPhaseStarted', (data) => {
     document.getElementById('votingResultModal').classList.add('hidden'); 
     document.getElementById('spyDecisionModal').classList.add('hidden'); 
     showScreen('guessingScreen'); document.getElementById('wordsGrid').style.pointerEvents = 'auto'; 
-    if (!myRoleData.isSpy) { document.getElementById('guessingSubtitle').innerText = "الجاسوس يختار الكلمة الآن..."; } else { document.getElementById('guessingSubtitle').innerText = "اختر الكلمة التي تعتقد أنها صحيحة!"; } 
+    if (!myRoleData.isSpy) { document.getElementById('guessingSubtitle').innerText = tr("الجاسوس يختار الكلمة الآن..."); } else { document.getElementById('guessingSubtitle').innerText = tr("اختر الكلمة التي تعتقد أنها صحيحة!"); } 
     let wordsHTML = ''; data.words.forEach(w => { const onClickAttr = myRoleData.isSpy ? `onclick="selectSpyWord('${w}')"` : ''; wordsHTML += `<div class="word-card" id="word-${w}" ${onClickAttr}>${w}</div>`; }); document.getElementById('wordsGrid').innerHTML = wordsHTML; 
     let timeLeft = data.duration; const spyTimerEl = document.getElementById('spyTimer'); 
     if (spyTimerEl) { spyTimerEl.innerText = timeLeft; spyTimerEl.style.color = "#00ff88"; spyTimerEl.style.textShadow = "0 0 10px #00ff88"; } 
@@ -498,14 +671,14 @@ socket.on('guessingPhaseStarted', (data) => {
 
 socket.on('spyTimeOut', () => { 
     playSound('lose'); if (guessInterval) clearInterval(guessInterval); document.getElementById('wordsGrid').style.pointerEvents = 'none'; 
-    document.getElementById('finalResultText1').innerText = "نفد الوقت! ⏳"; document.getElementById('finalResultText2').innerText = "لقد انتهت اللعبه لعدم اختيار الجاسوس الإجابة"; document.getElementById('finalResultText2').style.color = "#ff0055"; document.getElementById('finalResultText3').innerText = "لقد خسر الجاسوس!"; document.getElementById('finalResultText3').style.color = "#ff0055"; document.getElementById('finalResultText4').innerText = ""; document.getElementById('finalResultModal').classList.remove('hidden'); 
+    document.getElementById('finalResultText1').innerText = tr("نفد الوقت! ⏳"); document.getElementById('finalResultText2').innerText = tr("لقد انتهت اللعبه لعدم اختيار الجاسوس الإجابة"); document.getElementById('finalResultText2').style.color = "#ff0055"; document.getElementById('finalResultText3').innerText = tr("لقد خسر الجاسوس!"); document.getElementById('finalResultText3').style.color = "#ff0055"; document.getElementById('finalResultText4').innerText = ""; document.getElementById('finalResultModal').classList.remove('hidden'); 
 });
 
 window.selectSpyWord = function(word) { if (!myRoleData.isSpy) return; selectedSpyWord = word; document.getElementById('confirmGuessBtn').classList.remove('hidden'); socket.emit('spyHoverWord', word); };
 
 socket.on('spySelectedWord', (data) => { 
     playSound('vote'); document.querySelectorAll('.word-card').forEach(c => { c.classList.remove('spy-active'); const tag = c.querySelector('.spy-tag'); if (tag) tag.remove(); }); 
-    const activeCard = document.getElementById(`word-${data.word}`); if (activeCard) { activeCard.classList.add('spy-active'); activeCard.innerHTML += `<div class="spy-tag">اختارها ${data.spyName}</div>`; } 
+    const activeCard = document.getElementById(`word-${data.word}`); if (activeCard) { activeCard.classList.add('spy-active'); activeCard.innerHTML += `<div class="spy-tag">${tr("اختارها")} ${data.spyName}</div>`; } 
 });
 
 const confirmGuessBtn = document.getElementById('confirmGuessBtn');
@@ -513,9 +686,9 @@ if (confirmGuessBtn) confirmGuessBtn.addEventListener('click', (e) => { e.target
 
 socket.on('gameFinalResult', (data) => { 
     if (guessInterval) clearInterval(guessInterval); document.getElementById('wordsGrid').style.pointerEvents = 'none'; if (data.isCorrect) playSound('win'); else playSound('lose'); 
-    document.getElementById('finalResultText1').innerText = `لقد خمن الجاسوس ${data.spyName} الكلمة`; document.getElementById('finalResultText2').innerText = data.chosenWord; 
-    if (data.isCorrect) { document.getElementById('finalResultText3').innerText = "وكانت الإجابة صحيحة! ✅"; document.getElementById('finalResultText3').style.color = "#00ff88"; document.getElementById('finalResultText4').innerText = ""; } 
-    else { document.getElementById('finalResultText3').innerText = "وكانت الإجابة خاطئة! ❌"; document.getElementById('finalResultText3').style.color = "#ff0055"; document.getElementById('finalResultText4').innerText = `والكلمة الصحيحة كانت: ${data.correctWord}`; } 
+    document.getElementById('finalResultText1').innerText = `${tr("لقد خمن الجاسوس")} ${data.spyName} ${tr("الكلمة")}`; document.getElementById('finalResultText2').innerText = data.chosenWord; 
+    if (data.isCorrect) { document.getElementById('finalResultText3').innerText = tr("وكانت الإجابة صحيحة! ✅"); document.getElementById('finalResultText3').style.color = "#00ff88"; document.getElementById('finalResultText4').innerText = ""; } 
+    else { document.getElementById('finalResultText3').innerText = tr("وكانت الإجابة خاطئة! ❌"); document.getElementById('finalResultText3').style.color = "#ff0055"; document.getElementById('finalResultText4').innerText = `${tr("والكلمة الصحيحة كانت:")} ${data.correctWord}`; } 
     document.getElementById('finalResultModal').classList.remove('hidden'); 
 });
 
@@ -551,7 +724,7 @@ socket.on('rebusRoundStarted', (data) => {
         }
     });
 
-    document.getElementById('rebusCategoryDisplay').innerText = "تصنيف: " + data.category;
+    document.getElementById('rebusCategoryDisplay').innerText = `${tr("تصنيف:")} ${tr(data.category)}`;
     document.getElementById('chatLog').innerHTML = ''; 
     document.getElementById('chatInput').value = '';
     
@@ -575,7 +748,6 @@ socket.on('rebusRoundStarted', (data) => {
     tBar.style.lineHeight = '1';
     tBar.style.padding = '10px 0';
     
-    // ربط التايمر بالمدة اللي بتيجي من السيرفر (واللي خليناها 60 ثانية)
     let durationInSeconds = data.duration || 60; 
     
     function updateRebusTimer() {
@@ -632,18 +804,19 @@ socket.on('rebusChatMsg', (data) => {
 
 socket.on('rebusCorrectGuess', (data) => { 
     playSound('vote'); 
-    document.getElementById('chatLog').innerHTML = `<div class="chat-msg correct">لقد عرفها ${data.playerName}</div>` + document.getElementById('chatLog').innerHTML; 
+    document.getElementById('chatLog').innerHTML = `<div class="chat-msg correct">${tr("لقد عرفها")} ${data.playerName}</div>` + document.getElementById('chatLog').innerHTML; 
 });
 
 socket.on('rebusCloseGuess', (data) => {
     playSound('vote');
-    document.getElementById('chatLog').innerHTML = `<div class="chat-msg close-guess">⚠️ (كلمة قريبة جداً) أنت: ${data.msg}</div>` + document.getElementById('chatLog').innerHTML; 
+    document.getElementById('chatLog').innerHTML = `<div class="chat-msg close-guess">⚠️ (${tr("كلمة قريبة جداً")}) ${tr("أنت:")} ${data.msg}</div>` + document.getElementById('chatLog').innerHTML; 
 });
 
 socket.on('rebusRoundEnded', (data) => { 
     if (data.winners === 0) { playSound('lose'); } else { playSound('start'); }
     clearInterval(rebusTimerInterval); 
-    document.getElementById('puzzleText').innerText = `الحل: ${data.answer}`; 
+    let finalAnswer = currentLang === 'en' && data.answerEn ? data.answerEn : data.answer;
+    document.getElementById('puzzleText').innerText = `${tr("الحل:")} ${finalAnswer}`; 
 });
 
 socket.on('rebusGameOver', (players) => {
@@ -669,24 +842,24 @@ socket.on('youAreKickedPermanently', () => {
 });
 
 socket.on('hostLeftRoom', () => { 
-    document.getElementById('hostLeftText').innerText = `الهوست غادر وأغلق الغرفة.`; 
+    document.getElementById('hostLeftText').innerText = tr("الهوست غادر وأغلق الغرفة."); 
     document.getElementById('hostLeftModal').classList.remove('hidden'); 
     sessionStorage.clear(); 
     
     const closeBtn = document.getElementById('closeHostLeftBtn');
     if (closeBtn) {
         if (!isHost) {
-            closeBtn.innerText = "تحديث الصفحة";
+            closeBtn.innerText = tr("تحديث الصفحة");
             closeBtn.onclick = () => { window.location.reload(); };
         } else {
-            closeBtn.innerText = "العودة للرئيسية";
+            closeBtn.innerText = tr("العودة للرئيسية");
             closeBtn.onclick = () => { window.location.href = window.location.pathname; };
         }
     }
 });
 
-window.editPlayerName = function(tid) { const n = prompt('الاسم:'); if(n) socket.emit('changePlayerName', {targetId: tid, newName: n.trim(), fallbackRoomId: sessionStorage.getItem('hostRoomId')}); };
-window.kickPlayer = function(tid) { if(confirm('طرد؟')) socket.emit('kickPlayer', {targetId: tid, fallbackRoomId: sessionStorage.getItem('hostRoomId')}); };
+window.editPlayerName = function(tid) { const n = prompt(tr("الاسم:")); if(n) socket.emit('changePlayerName', {targetId: tid, newName: n.trim(), fallbackRoomId: sessionStorage.getItem('hostRoomId')}); };
+window.kickPlayer = function(tid) { if(confirm(tr("طرد؟"))) socket.emit('kickPlayer', {targetId: tid, fallbackRoomId: sessionStorage.getItem('hostRoomId')}); };
 const hostSettingsBtn = document.getElementById('hostSettingsBtn'); if (hostSettingsBtn) hostSettingsBtn.addEventListener('click', () => { document.getElementById('hostSettingsModal').classList.remove('hidden'); }); 
 const closeModalBtn = document.getElementById('closeModalBtn'); if (closeModalBtn) closeModalBtn.addEventListener('click', () => { document.getElementById('hostSettingsModal').classList.add('hidden'); });
 
@@ -699,11 +872,11 @@ socket.on('gameRestarted', () => {
     if (isHost && restartGameBtn && hostSettingsModal) { restartGameBtn.disabled = true; hostSettingsModal.classList.add('hidden'); } 
     const guestWaitingHostModal = document.getElementById('guestWaitingHostModal'); if(guestWaitingHostModal) guestWaitingHostModal.classList.add('hidden'); 
     const podiumScreen = document.getElementById('podiumScreen'); if(podiumScreen) podiumScreen.classList.add('hidden');
-    // تنظيف قائمة المطرودين من الـ Front-End كمان كزيادة تأكيد
-    kickedPlayersGlobal = [];
+    
+    kickedPlayersGlobal = []; // تصفير دائم لضمان مسح كلمة مشاهد
 });
 
 const restartGameBtn = document.getElementById('restartGameBtn');
-if (restartGameBtn) restartGameBtn.addEventListener('click', (e) => { e.target.disabled = true; if(confirm('إعادة اللعب؟')) socket.emit('restartGame'); setTimeout(() => e.target.disabled = false, 2000); });
+if (restartGameBtn) restartGameBtn.addEventListener('click', (e) => { e.target.disabled = true; if(confirm(tr("إعادة اللعب؟"))) socket.emit('restartGame'); setTimeout(() => e.target.disabled = false, 2000); });
 const copyInviteBtn = document.getElementById('copyInviteBtn');
 if (copyInviteBtn) copyInviteBtn.addEventListener('click', () => { const roomId = sessionStorage.getItem('hostRoomId'); const inviteLink = window.location.origin + window.location.pathname + '?room=' + roomId; navigator.clipboard.writeText(inviteLink).then(() => { const t = document.getElementById('notificationToast'); t.classList.remove('hidden'); setTimeout(() => t.classList.add('hidden'), 2500); }); });

@@ -15,127 +15,123 @@ app.get('/health', (req, res) => res.status(200).send('OK'));
 let rooms = {};
 
 const rebusPuzzlesDB = [
-    // الألغاز القديمة
-    { category: "أداة", clue: "م + 🪚 + ة", answer: "منشارة" },
-    { category: "حيوان", clue: "س + 🐢", answer: "سلحفاة" },
-    { category: "موقع تواصل", clue: "فيس + 📖", answer: "فيسبوك" },
-    { category: "موقع تواصل", clue: "يو + 🧪", answer: "يوتيوب" },
-    { category: "جهاز", clue: "تلف + 👁️ + ون", answer: "تلفزيون" },
-    { category: "مواصلات", clue: "ميكرو + 🚌", answer: "ميكروباص" },
-    { category: "أكلة", clue: "مكر + 🏃‍♂️ + ة", answer: "مكرونة" },
-    { category: "حيوان", clue: "عنك + 👢", answer: "عنكبوت" },
-    { category: "حيوان", clue: "سن + 🚪", answer: "سنجاب" },
-    { category: "جهاز", clue: "م + 👻 + ة", answer: "مروحة" },
-    { category: "طعام", clue: "كات + 🪵", answer: "كاتشب" },
-    { category: "أداة", clue: "دب + 👩 + ة", answer: "دباسة" },
-    { category: "أداة حمام", clue: "صا + 🦉 + ة", answer: "صابونة" },
-    { category: "ديكور", clue: "نا + 🐀 + ة", answer: "نافورة" },
-    { category: "دولة", clue: "فلس + 🧱", answer: "فلسطين" },
-    { category: "مدينة", clue: "من + 🖼️ + ة", answer: "منصورة" },
-    { category: "شكل هندسي", clue: "مس + 🐘", answer: "مستطيل" },
-    { category: "لعبة", clue: "بلي + 🌍 + و", answer: "بلياردو" },
-    { category: "رياضة", clue: "ك + 🐀 + يه", answer: "كاراتيه" },
-    { category: "جهاز", clue: "كم + 🏠 + تر", answer: "كمبيوتر" },
-    { category: "جهاز", clue: "ميكرو + 📱", answer: "ميكروفون" },
-    { category: "طعام", clue: "بان + 🍰", answer: "بان كيك" },
-    { category: "مستحضرات", clue: "شام + 👻", answer: "شامبو" },
-    { category: "فاكهة", clue: "أنا + 👩", answer: "أناناس" },
-    { category: "ملابس", clue: "بن + 🎨 + ون", answer: "بنطلون" },
-    { category: "شيء", clue: "ش + 🌂", answer: "شمسية" },
-    { category: "مكان", clue: "مس + 🎭", answer: "مسرح" },
-    { category: "مركبة بحرية", clue: "غ + 🏜️ + ة", answer: "غواصة" },
-    { category: "أداة", clue: "ش + 🔨", answer: "شاكوش" },
-    { category: "طعام", clue: "مرب + 🍵", answer: "مربى" },
-    { category: "طعام", clue: "حل + 🏃‍♂️ + ة", answer: "حلاوة" },
-    { category: "حلوى", clue: "بسب + 💋 + ة", answer: "بسبوسة" },
-    { category: "أداة", clue: "م + 👁️ + ة", answer: "مكواة" },
-    { category: "جهاز", clue: "س + ⏰ + ة", answer: "سماعة" },
-    { category: "دولة", clue: "ص + 🐉", answer: "صين" },
-    { category: "دولة", clue: "ي + 🚪 + ن", answer: "يابان" },
-    { category: "دولة", clue: "ألم + 👧 + يا", answer: "ألمانيا" },
-    { category: "مشروب", clue: "نس + ☕", answer: "نسكافيه" },
-    { category: "طعام", clue: "مايو + 👃", answer: "مايونيز" },
-    { category: "تطبيق", clue: "واتس + ⬆️", answer: "واتساب" },
-    { category: "تطبيق", clue: "تيك + 🗣️", answer: "تيكتوك" },
-    { category: "حلوى", clue: "شوكو + ❌ + ة", answer: "شوكولاتة" },
-    { category: "طعام", clue: "سان + 🚿", answer: "ساندوتش" },
-    { category: "مكان", clue: "صي + 🍉 + ة", answer: "صيدلية" },
-    { category: "طائر", clue: "عص + 💡", answer: "عصفور" },
-    { category: "أداة", clue: "م + 🗝️", answer: "مفتاح" },
-    { category: "فاكهة", clue: "بر + 🍊", answer: "برتقال" },
-    { category: "مكان", clue: "م + 🏫", answer: "مدرسة" },
-    { category: "رياضة", clue: "ك + ⚽", answer: "كورة" },
-    { category: "شيء", clue: "ق + ✏️", answer: "قلم" },
-    { category: "شيء", clue: "ك + 📖", answer: "كتاب" },
-    { category: "جسم الإنسان", clue: "ر + 👤", answer: "رأس" },
-    { category: "جسم الإنسان", clue: "ق + 🦶", answer: "قدم" },
-    { category: "وسيلة نقل", clue: "ق + 🚂", answer: "قطار" },
-    { category: "مكان", clue: "م + 🏥", answer: "مستشفى" },
-    { category: "أثاث", clue: "ك + 🪑", answer: "كرسي" },
-    { category: "مكان", clue: "ح + 🏞️", answer: "حديقة" },
-    { category: "حيوان", clue: "ز + 🦒", answer: "زرافة" },
-    { category: "ملابس", clue: "ق + 👔", answer: "قميص" },
-    { category: "أداة", clue: "ن + 👓", answer: "نظارة" },
-    { category: "مكان", clue: "ب + 🏦", answer: "بنك" },
-    { category: "طعام", clue: "ج + 🧀", answer: "جبنة" },
-    { category: "شيء", clue: "س + ⏰", answer: "ساعة" },
-    { category: "طائر", clue: "ب + 🦉", answer: "بومة" },
-    { category: "أداة", clue: "م + ☂️", answer: "مظلة" },
-    { category: "مشروب", clue: "ش + 🍵", answer: "شاي" },
-    { category: "طعام", clue: "خ + 🍞", answer: "خبز" },
-    { category: "مكان", clue: "م + 🥖", answer: "مخبز" },
-    { category: "فاكهة", clue: "ع + 🍇", answer: "عنب" },
-    { category: "خضار", clue: "ج + 🥕", answer: "جزر" },
-    { category: "طعام", clue: "ب + 🥚", answer: "بيض" },
-    { category: "شيء", clue: "و + 🌹", answer: "وردة" },
-    { category: "أثاث", clue: "ط + 🛋️", answer: "طاولة" },
-    { category: "أداة", clue: "م + 🧹", answer: "مقشة" },
-    { category: "أداة", clue: "م + 🪞", answer: "مراية" },
-    { category: "أداة", clue: "س + 🧺", answer: "سلة" },
-    { category: "حيوان", clue: "ق + 🐒", answer: "قرد" },
-    { category: "حيوان", clue: "ذ + 🐺", answer: "ذئب" },
-    { category: "طائر", clue: "ن + 🦅", answer: "نسر" },
-    { category: "طائر", clue: "ح + 🕊️", answer: "حمامة" },
-    { category: "حشرة", clue: "ف + 🦋", answer: "فراشة" },
-    { category: "حشرة", clue: "ن + 🐝", answer: "نحلة" },
-    { category: "مكان", clue: "س + 🛒", answer: "سوق" },
-    { category: "مكان", clue: "م + 🏭", answer: "مصنع" },
-    { category: "مهنة", clue: "ط + 👨‍🍳", answer: "طباخ" },
-    { category: "مهنة", clue: "م + 👨‍🏫", answer: "مدرس" },
-    { category: "مهنة", clue: "م + 👨‍🔧", answer: "ميكانيكي" },
-    { category: "وسيلة نقل", clue: "س + 🚢", answer: "سفينة" },
-    { category: "شيء", clue: "ع + 🏁", answer: "علم" },
-    { category: "شيء", clue: "خ + 🗺️", answer: "خريطة" },
-    { category: "أداة", clue: "م + 🔬", answer: "ميكروسكوب" },
-    { category: "أداة", clue: "ت + 🔭", answer: "تلسكوب" },
-    { category: "آلة موسيقية", clue: "ج + 🎸", answer: "جيتار" },
-    { category: "آلة موسيقية", clue: "ب + 🎹", answer: "بيانو" },
-    { category: "أداة", clue: "ب + 🧭", answer: "بوصلة" },
-    { category: "شيء", clue: "ص + 🚀", answer: "صاروخ" },
-    { category: "لعبة", clue: "ط + 🪁", answer: "طيارة ورق" },
-    { category: "أداة", clue: "م + 🔫", answer: "مسدس ميه" },
-    { category: "شيء", clue: "ب + 🎈", answer: "بالونة" },
-    // الألغاز الجديدة بأفكار متنوعة (حرف وصورة وحرف)
-    { category: "حيوان", clue: "ق + 🐈", answer: "قطة" },
-    { category: "فاكهة", clue: "ب + 🍉 + خ", answer: "بطيخ" },
-    { category: "مكان", clue: "م + 🕌 + د", answer: "مسجد" },
-    { category: "شيء", clue: "س + 🚗 + ة", answer: "سيارة" },
-    { category: "طعام", clue: "ب + 🧅", answer: "بصل" },
-    { category: "أداة", clue: "س + 🔪 + ن", answer: "سكين" },
-    { category: "مكان", clue: "م + 📚 + ة", answer: "مكتبة" },
-    { category: "أداة", clue: "م + 🧲 + يس", answer: "مغناطيس" },
-    { category: "حيوان", clue: "ت + 🐊 + اح", answer: "تمساح" },
-    { category: "طائر", clue: "د + 🐓 + ة", answer: "دجاجة" },
-    { category: "مواصلات", clue: "ط + ✈️ + رة", answer: "طيارة" },
-    { category: "أداة", clue: "ش + 🕯️ + ة", answer: "شمعة" },
-    { category: "خضار", clue: "ط + 🍅 + طم", answer: "طماطم" },
-    { category: "مكان", clue: "م + 🍞 + ز", answer: "مخبز" },
-    { category: "شيء", clue: "س + 🛏️ + ر", answer: "سرير" },
-    { category: "رياضة", clue: "م + 🥊 + مة", answer: "ملاكمة" },
-    { category: "أداة", clue: "ص + 🚀 + وخ", answer: "صاروخ" },
-    { category: "شيء", clue: "ت + 👑 + ج", answer: "تاج" },
-    { category: "أداة", clue: "ق + ✂️ + ص", answer: "مقص" },
-    { category: "حيوان", clue: "ث + 🦊 + ب", answer: "ثعلب" }
+    { category: "أداة", clue: "م + 🪚 + ة", answer: "منشارة", answerEn: ["saw", "handsaw"] },
+    { category: "حيوان", clue: "س + 🐢", answer: "سلحفاة", answerEn: ["turtle", "tortoise"] },
+    { category: "موقع تواصل", clue: "فيس + 📖", answer: "فيسبوك", answerEn: ["facebook", "fb"] },
+    { category: "موقع تواصل", clue: "يو + 🧪", answer: "يوتيوب", answerEn: ["youtube", "yt"] },
+    { category: "جهاز", clue: "تلف + 👁️ + ون", answer: "تلفزيون", answerEn: ["television", "tv"] },
+    { category: "مواصلات", clue: "ميكرو + 🚌", answer: "ميكروباص", answerEn: ["microbus", "bus", "minibus"] },
+    { category: "أكلة", clue: "مكر + 🏃‍♂️ + ة", answer: "مكرونة", answerEn: ["pasta", "macaroni"] },
+    { category: "حيوان", clue: "عنك + 👢", answer: "عنكبوت", answerEn: ["spider"] },
+    { category: "حيوان", clue: "سن + 🚪", answer: "سنجاب", answerEn: ["squirrel"] },
+    { category: "جهاز", clue: "م + 👻 + ة", answer: "مروحة", answerEn: ["fan", "ventilator"] },
+    { category: "طعام", clue: "كات + 🪵", answer: "كاتشب", answerEn: ["ketchup"] },
+    { category: "أداة", clue: "دب + 👩 + ة", answer: "دباسة", answerEn: ["stapler"] },
+    { category: "أداة حمام", clue: "صا + 🦉 + ة", answer: "صابونة", answerEn: ["soap"] },
+    { category: "ديكور", clue: "نا + 🐀 + ة", answer: "نافورة", answerEn: ["fountain"] },
+    { category: "دولة", clue: "فلس + 🧱", answer: "فلسطين", answerEn: ["palestine"] },
+    { category: "مدينة", clue: "من + 🖼️ + ة", answer: "منصورة", answerEn: ["mansoura"] },
+    { category: "شكل هندسي", clue: "مس + 🐘", answer: "مستطيل", answerEn: ["rectangle"] },
+    { category: "لعبة", clue: "بلي + 🌍 + و", answer: "بلياردو", answerEn: ["billiards", "pool"] },
+    { category: "رياضة", clue: "ك + 🐀 + يه", answer: "كاراتيه", answerEn: ["karate"] },
+    { category: "جهاز", clue: "كم + 🏠 + تر", answer: "كمبيوتر", answerEn: ["computer", "pc"] },
+    { category: "جهاز", clue: "ميكرو + 📱", answer: "ميكروفون", answerEn: ["microphone", "mic"] },
+    { category: "طعام", clue: "بان + 🍰", answer: "بان كيك", answerEn: ["pancake", "pancakes"] },
+    { category: "مستحضرات", clue: "شام + 👻", answer: "شامبو", answerEn: ["shampoo"] },
+    { category: "فاكهة", clue: "أنا + 👩", answer: "أناناس", answerEn: ["pineapple"] },
+    { category: "ملابس", clue: "بن + 🎨 + ون", answer: "بنطلون", answerEn: ["pants", "trousers"] },
+    { category: "شيء", clue: "ش + 🌂", answer: "شمسية", answerEn: ["umbrella"] },
+    { category: "مكان", clue: "مس + 🎭", answer: "مسرح", answerEn: ["theater", "theatre"] },
+    { category: "مركبة بحرية", clue: "غ + 🏜️ + ة", answer: "غواصة", answerEn: ["submarine"] },
+    { category: "أداة", clue: "ش + 🔨", answer: "شاكوش", answerEn: ["hammer"] },
+    { category: "طعام", clue: "مرب + 🍵", answer: "مربى", answerEn: ["jam"] },
+    { category: "طعام", clue: "حل + 🏃‍♂️ + ة", answer: "حلاوة", answerEn: ["halawa", "candy", "sweet"] },
+    { category: "حلوى", clue: "بسب + 💋 + ة", answer: "بسبوسة", answerEn: ["basbousa"] },
+    { category: "أداة", clue: "م + 👁️ + ة", answer: "مكواة", answerEn: ["iron"] },
+    { category: "جهاز", clue: "س + ⏰ + ة", answer: "سماعة", answerEn: ["headphone", "speaker", "earphone"] },
+    { category: "دولة", clue: "ص + 🐉", answer: "صين", answerEn: ["china"] },
+    { category: "دولة", clue: "ي + 🚪 + ن", answer: "يابان", answerEn: ["japan"] },
+    { category: "دولة", clue: "ألم + 👧 + يا", answer: "ألمانيا", answerEn: ["germany"] },
+    { category: "مشروب", clue: "نس + ☕", answer: "نسكافيه", answerEn: ["nescafe", "coffee"] },
+    { category: "طعام", clue: "مايو + 👃", answer: "مايونيز", answerEn: ["mayonnaise", "mayo"] },
+    { category: "تطبيق", clue: "واتس + ⬆️", answer: "واتساب", answerEn: ["whatsapp"] },
+    { category: "تطبيق", clue: "تيك + 🗣️", answer: "تيكتوك", answerEn: ["tiktok"] },
+    { category: "حلوى", clue: "شوكو + ❌ + ة", answer: "شوكولاتة", answerEn: ["chocolate"] },
+    { category: "طعام", clue: "سان + 🚿", answer: "ساندوتش", answerEn: ["sandwich"] },
+    { category: "مكان", clue: "صي + 🍉 + ة", answer: "صيدلية", answerEn: ["pharmacy", "clinic"] },
+    { category: "طائر", clue: "عص + 💡", answer: "عصفور", answerEn: ["bird", "sparrow"] },
+    { category: "أداة", clue: "م + 🗝️", answer: "مفتاح", answerEn: ["key"] },
+    { category: "فاكهة", clue: "بر + 🍊", answer: "برتقال", answerEn: ["orange"] },
+    { category: "مكان", clue: "م + 🏫", answer: "مدرسة", answerEn: ["school"] },
+    { category: "رياضة", clue: "ك + ⚽", answer: "كورة", answerEn: ["ball", "football"] },
+    { category: "شيء", clue: "ق + ✏️", answer: "قلم", answerEn: ["pen", "pencil"] },
+    { category: "شيء", clue: "ك + 📖", answer: "كتاب", answerEn: ["book"] },
+    { category: "جسم الإنسان", clue: "ر + 👤", answer: "رأس", answerEn: ["head"] },
+    { category: "جسم الإنسان", clue: "ق + 🦶", answer: "قدم", answerEn: ["foot", "leg"] },
+    { category: "وسيلة نقل", clue: "ق + 🚂", answer: "قطار", answerEn: ["train"] },
+    { category: "مكان", clue: "م + 🏥", answer: "مستشفى", answerEn: ["hospital"] },
+    { category: "أثاث", clue: "ك + 🪑", answer: "كرسي", answerEn: ["chair"] },
+    { category: "مكان", clue: "ح + 🏞️", answer: "حديقة", answerEn: ["garden", "park"] },
+    { category: "حيوان", clue: "ز + 🦒", answer: "زرافة", answerEn: ["giraffe"] },
+    { category: "ملابس", clue: "ق + 👔", answer: "قميص", answerEn: ["shirt"] },
+    { category: "أداة", clue: "ن + 👓", answer: "نظارة", answerEn: ["glasses", "sunglasses"] },
+    { category: "مكان", clue: "ب + 🏦", answer: "بنك", answerEn: ["bank"] },
+    { category: "طعام", clue: "ج + 🧀", answer: "جبنة", answerEn: ["cheese"] },
+    { category: "شيء", clue: "س + ⏰", answer: "ساعة", answerEn: ["watch", "clock"] },
+    { category: "طائر", clue: "ب + 🦉", answer: "بومة", answerEn: ["owl"] },
+    { category: "أداة", clue: "م + ☂️", answer: "مظلة", answerEn: ["umbrella"] },
+    { category: "مشروب", clue: "ش + 🍵", answer: "شاي", answerEn: ["tea"] },
+    { category: "طعام", clue: "خ + 🍞", answer: "خبز", answerEn: ["bread"] },
+    { category: "مكان", clue: "م + 🥖", answer: "مخبز", answerEn: ["bakery"] },
+    { category: "فاكهة", clue: "ع + 🍇", answer: "عنب", answerEn: ["grapes", "grape"] },
+    { category: "خضار", clue: "ج + 🥕", answer: "جزر", answerEn: ["carrot", "carrots"] },
+    { category: "طعام", clue: "ب + 🥚", answer: "بيض", answerEn: ["egg", "eggs"] },
+    { category: "شيء", clue: "و + 🌹", answer: "وردة", answerEn: ["flower", "rose"] },
+    { category: "أثاث", clue: "ط + 🛋️", answer: "طاولة", answerEn: ["table"] },
+    { category: "أداة", clue: "م + 🧹", answer: "مقشة", answerEn: ["broom"] },
+    { category: "أداة", clue: "م + 🪞", answer: "مراية", answerEn: ["mirror"] },
+    { category: "أداة", clue: "س + 🧺", answer: "سلة", answerEn: ["basket"] },
+    { category: "حيوان", clue: "ق + 🐒", answer: "قرد", answerEn: ["monkey"] },
+    { category: "حيوان", clue: "ذ + 🐺", answer: "ذئب", answerEn: ["wolf"] },
+    { category: "طائر", clue: "ن + 🦅", answer: "نسر", answerEn: ["eagle"] },
+    { category: "طائر", clue: "ح + 🕊️", answer: "حمامة", answerEn: ["pigeon", "dove"] },
+    { category: "حشرة", clue: "ف + 🦋", answer: "فراشة", answerEn: ["butterfly"] },
+    { category: "حشرة", clue: "ن + 🐝", answer: "نحلة", answerEn: ["bee"] },
+    { category: "مكان", clue: "س + 🛒", answer: "سوق", answerEn: ["market", "souq"] },
+    { category: "مكان", clue: "م + 🏭", answer: "مصنع", answerEn: ["factory"] },
+    { category: "مهنة", clue: "ط + 👨‍🍳", answer: "طباخ", answerEn: ["chef", "cook"] },
+    { category: "مهنة", clue: "م + 👨‍🏫", answer: "مدرس", answerEn: ["teacher"] },
+    { category: "مهنة", clue: "م + 👨‍🔧", answer: "ميكانيكي", answerEn: ["mechanic"] },
+    { category: "وسيلة نقل", clue: "س + 🚢", answer: "سفينة", answerEn: ["ship", "boat"] },
+    { category: "شيء", clue: "ع + 🏁", answer: "علم", answerEn: ["flag"] },
+    { category: "شيء", clue: "خ + 🗺️", answer: "خريطة", answerEn: ["map"] },
+    { category: "أداة", clue: "م + 🔬", answer: "ميكروسكوب", answerEn: ["microscope"] },
+    { category: "أداة", clue: "ت + 🔭", answer: "تلسكوب", answerEn: ["telescope"] },
+    { category: "آلة موسيقية", clue: "ج + 🎸", answer: "جيتار", answerEn: ["guitar"] },
+    { category: "آلة موسيقية", clue: "ب + 🎹", answer: "بيانو", answerEn: ["piano"] },
+    { category: "أداة", clue: "ب + 🧭", answer: "بوصلة", answerEn: ["compass"] },
+    { category: "شيء", clue: "ص + 🚀", answer: "صاروخ", answerEn: ["rocket"] },
+    { category: "لعبة", clue: "ط + 🪁", answer: "طيارة ورق", answerEn: ["kite"] },
+    { category: "أداة", clue: "م + 🔫", answer: "مسدس ميه", answerEn: ["water gun"] },
+    { category: "شيء", clue: "ب + 🎈", answer: "بالونة", answerEn: ["balloon"] },
+    { category: "حيوان", clue: "ق + 🐈", answer: "قطة", answerEn: ["cat"] },
+    { category: "فاكهة", clue: "ب + 🍉 + خ", answer: "بطيخ", answerEn: ["watermelon"] },
+    { category: "مكان", clue: "م + 🕌 + د", answer: "مسجد", answerEn: ["mosque"] },
+    { category: "شيء", clue: "س + 🚗 + ة", answer: "سيارة", answerEn: ["car"] },
+    { category: "طعام", clue: "ب + 🧅", answer: "بصل", answerEn: ["onion"] },
+    { category: "أداة", clue: "س + 🔪 + ن", answer: "سكين", answerEn: ["knife"] },
+    { category: "مكان", clue: "م + 📚 + ة", answer: "مكتبة", answerEn: ["library"] },
+    { category: "أداة", clue: "م + 🧲 + يس", answer: "مغناطيس", answerEn: ["magnet"] },
+    { category: "حيوان", clue: "ت + 🐊 + اح", answer: "تمساح", answerEn: ["crocodile", "alligator"] },
+    { category: "طائر", clue: "د + 🐓 + ة", answer: "دجاجة", answerEn: ["chicken", "hen"] },
+    { category: "مواصلات", clue: "ط + ✈️ + رة", answer: "طيارة", answerEn: ["airplane", "plane"] },
+    { category: "أداة", clue: "ش + 🕯️ + ة", answer: "شمعة", answerEn: ["candle"] },
+    { category: "خضار", clue: "ط + 🍅 + طم", answer: "طماطم", answerEn: ["tomato", "tomatoes"] },
+    { category: "شيء", clue: "س + 🛏️ + ر", answer: "سرير", answerEn: ["bed"] },
+    { category: "رياضة", clue: "م + 🥊 + مة", answer: "ملاكمة", answerEn: ["boxing"] },
+    { category: "شيء", clue: "ت + 👑 + ج", answer: "تاج", answerEn: ["crown"] },
+    { category: "أداة", clue: "ق + ✂️ + ص", answer: "مقص", answerEn: ["scissors"] },
+    { category: "حيوان", clue: "ث + 🦊 + ب", answer: "ثعلب", answerEn: ["fox"] }
 ];
 
 const categorizedWords = { "حاجات جوا وبرا البيت": ["سرير", "مخدة", "بطانية", "دولاب", "شماعة", "مراية", "سجادة", "ستارة", "نجفة", "لمبة", "فيشة", "مفتاح كهرباء", "باب", "شباك", "بلكونة", "ريموت", "تلفزيون", "كنبة", "كرسي", "طاولة", "مكتب", "ساعة حائط", "فازة", "وردة", "صورة", "مروحة", "تكييف", "دفاية", "غسالة", "ثلاجة", "بوتاجاز", "فرن", "ميكروويف", "خلاط", "كاتل", "حنفية", "حوض", "صابونة", "فوطة", "ليفة", "شامبو", "معجون أسنان", "فرشاة أسنان", "مشط", "مقص أظافر", "استشوار", "مكواة", "مكنسة", "ممسحة", "مقشة", "جاروف", "زبالة", "كيس", "علبة", "صندوق", "درج", "قفل", "شنطة", "محفظة", "نظارة", "شاحن", "سماعة", "لاب توب", "تابلت", "كيبورد", "ماوس", "سلك", "كرتونة", "مسمار", "شاكوش", "مفك", "بنسة", "غراء", "شريط لحام", "بطارية", "ولاعة", "شمعة", "كبريت", "مبخرة", "سبحة", "سجادة صلاة", "مصحف", "قلم", "ورقة", "دباسة", "استيكة", "براية", "مسطرة", "لون", "لوحة", "ملف", "تقويم", "نوتة", "منبه", "حصالة", "ميزان", "طفاية حريق", "عمود نور", "إشارة مرور", "رصيف", "يافطة", "صندوق زبالة", "كشك", "نافورة", "تمثال", "سور", "بوابة", "عتبة", "بلاط", "أسفلت", "طوبة", "زلطة", "يافطة محل", "كابينة تليفون", "مطب", "كوبري مشاة", "نفق", "جراج", "بدروم", "روف", "خزان مياه", "دش", "بانيو", "بيديه", "سخان", "شفاط", "انبوبة", "ولاعة غاز", "فنجان", "طبق", "معلقة", "شوكة", "سكينة", "كوباية", "دورق", "براد", "صينية", "مطبقية", "قطاعة", "مصفاة", "طشت", "جردل", "خرطوم", "بوابة عمارة", "يافطة دكتور", "يافطة صيدلية", "شجرة في الشارع", "عربية راكنة", "موتوسيكل راكن", "توكتوك", "ميكروباص", "كشك سجاير", "فرشة فاكهة", "عربية فول", "عربية كبدة", "فرن عيش", "محل بقالة", "سوبر ماركت", "حلاق", "مكوجي", "مغسلة"], "أكل وشرب": ["أرز", "مكرونة", "عيش", "بيض", "جبنة", "لبن", "زبادي", "عسل", "حلاوة", "مربى", "زيت", "سمنة", "زبدة", "ملح", "سكر", "فلفل", "كمون", "شطة", "كاتشب", "مايونيز", "بطاطس", "طماطم", "خيار", "بصل", "ثوم", "جزر", "فلفل رومي", "بتنجان", "كوسة", "بسلة", "فاصوليا", "عدس", "فول", "طعمية", "كشري", "حواوشي", "بيتزا", "برجر", "شاورما", "كباب", "كفتة", "فراخ", "لحمة", "سمك", "تونة", "كبدة", "شوربة", "سلطة", "مخلل", "شيبسي", "لبان", "بونبوني", "شوكولاتة", "بسكويت", "كيكة", "ايس كريم", "كنافة", "بسبوسة", "فاكهة", "تفاح", "موز", "برتقال", "عنب", "بطيخ", "مانجو", "فراولة", "خوخ", "رمان", "كمثرى", "جوافة", "تمر", "تين", "مشمش", "أناناس", "كيوي", "كانز", "مياه", "شاي", "قهوة", "عصير", "بيبسي", "كوكاكولا", "سفن اب", "ميرندا", "عصير قصب", "تمر هندي", "سوبيا", "لبن رايب", "ينسون", "نعناع", "قرفة", "كاكاو", "نسكافيه", "كابتشينو", "شاي بلبن", "سحلب", "خروب", "كريب", "فطير", "بان كيك", "وافل", "دوناتس", "جيلي", "مارشميلو", "غزل البنات", "لب", "سوداني", "فستق", "لوز", "بندق", "كاجو", "عين جمل", "بقسماط", "شابورة", "كرواسون", "باتيه", "سميط", "فايش", "ملوخية", "سبانخ", "قلقاس", "محشي", "ورق عنب", "كرنب", "ممبار", "بامية", "قرنبيط", "بروكلي", "مشروم", "ليمون", "اسبريسو", "موكا", "لاتيه", "شاي أخضر", "قهوة تركي", "قهوة عربي", "عصير مانجو", "عصير فراولة", "عصير تفاح", "سردين", "جمبري", "كابوريا", "استاكوزا", "سبيط", "سمك بلطي", "سمك بوري", "لحمة مفرومة", "سجق", "سوسيس", "بسطرمة", "لانشون", "رومي مدخن", "جبنة رومي", "جبنة بيضا", "جبنة نستو", "جبنة قديمة", "مية معدنية", "مية غازية", "شويبس", "فيروز", "عصير قمر الدين", "عصير برتقال", "عصير ليمون", "زبادو", "ميلك شيك", "فرابيتشينو", "سموزي"], "أدوات وأشياء": ["سكينة", "شوكة", "معلقة", "طبق", "كوباية", "فنجان", "براد", "حلة", "طاسة", "صينية", "مبشرة", "مقشرة", "مصفاة", "هراسة", "مغرفة", "هون", "لبانة", "كنكة", "طقم توابل", "برطمان", "ترمس", "طرشي", "زمزمية", "لانش بوكس", "شنطة سفر", "كوتشي", "صندل", "شبشب", "شراب", "قميص", "بنطلون", "تيشيرت", "بلوفر", "جاكيت", "بالطو", "بدلة", "فستان", "طرحة", "جيبة", "بيجامة", "جلاليبة", "عباية", "كاب", "برنيطة", "جوانتي", "كوفية", "حزام", "كرافتة", "ساعة يد", "خاتم", "غويشة", "سلسلة", "حلق", "توكة", "بنسة شعر", "بروش", "ميدالية", "شمسية", "علم", "خريطة", "بوصلة", "تلسكوب", "ميكروسكوب", "كاميرا", "ميكروفون", "بيانو", "جيتار", "طبلة", "كمانجة", "ناي", "قانون", "سماعة دي جي", "مروحة ايد", "ريشة", "كرة قدم", "كرة سلة", "مضرب تنس", "طاولة بينج بونج", "شطرنج", "دومينو", "كوتشينة", "سلم وتعبان", "لودو", "طيارة ورق", "مرجيحة", "زحليقة", "مسدس ميه", "بالونة", "صاروخ", "عروسة لعبة", "دبدوب", "عجلة", "سكوتر", "نظارة شمس", "نظارة نظر", "عدسات", "محلول", "قطرة", "بلاستر", "شاش", "قطن", "سرنجة", "ترمومتر", "خيط", "إبرة", "مقص", "مازورة", "متر", "فرشاة صبغ", "رولة", "جردل", "خرطوم", "سلم خشب", "منشار", "شنيور", "صاروخ كهربائي", "مسمار قلاووظ", "صامولة", "وردة مسمار", "أزميل", "مبرد", "مشرط", "مفك صليبة", "مفك عادة", "كماشة", "قطاعة سلك", "شريط قياس", "ميزان ميه", "كوريك", "مفتاح انجليزي", "مفتاح فرنساوي", "قلم رصاص", "قلم جاف", "قلم سبورة", "قلم فلوماستر", "كراسة", "كشكول", "كتاب", "مجلد", "دوسيه", "خراطة", "استيكة", "كوريكتور", "صمغ", "سلوتيب", "استيك", "دبوس مكتب", "دبوس طرحة"], "أماكن ومواصلات": ["جامع", "كنيسة", "مستشفى", "صيدلية", "مدرسة", "حضانة", "جامعة", "سنتر", "مكتبة", "محل", "سوبر ماركت", "مول", "مطعم", "كافيه", "ورشة", "بنك", "بنزينة", "قسم شرطة", "مطافي", "سجن", "محكمة", "سفارة", "قصر", "فيلا", "عمارة", "شقة", "فندق", "سينما", "مسرح", "كباريه", "سيرك", "ملاهي", "حديقة", "جنينة", "غابة", "صحراء", "شاطئ", "بحر", "نهر", "بحيرة", "جبل", "كهف", "شارع", "كوبري", "نفق", "محطة", "رصيف", "مطار", "ميناء", "مركب", "سفينة", "لنش", "يخت", "قارب", "غواصة", "طيارة", "هليكوبتر", "سيارة", "تاكسي", "ميكروباص", "اتوبيس", "مترو", "قطار", "ترام", "توكتوك", "موتوسيكل", "فيسبا", "عجلة", "سكوتر", "لودر", "ونش", "عربية اسعاف", "عربية مطافي", "بوكس شرطة", "دبابة", "مخبز", "مغسلة", "كوافير", "صالون حلاقة", "صالة جيم", "نادي", "استاد", "ملعب", "حمام سباحة", "متحف", "معرض", "عيادة", "معمل تحاليل", "شركة", "مصنع", "مخزن", "سوق", "جزارة", "مسمط", "مقلة", "عطارة", "مكتب بريد", "سنترال", "شهر عقاري", "مرور", "سجل مدني", "طيارة ورق", "بالون طائر", "تلفريك", "حصان", "عربية كارو", "عربية نقل", "تريلا", "عربية نص نقل", "توك توك", "موتوسيكل صيني", "بيتش باجي", "جيت سكي", "بدال", "عوامة", "موقف اتوبيسات", "محطة قطر", "محطة مترو", "صالة وصول", "برج مراقبة", "منارة", "جزر", "واحة", "وادي", "شلال", "بركان", "خيمة", "عشة", "كوخ", "قبة", "ميدان", "دوران", "تقاطع", "حارة", "زقاق"], "حيوانات ونباتات": ["أسد", "نمر", "فهد", "ذئب", "ثعلب", "كلب", "قطة", "فار", "أرنب", "قرد", "نسناس", "فيل", "زرافة", "حصان", "حمار", "جمل", "بقرة", "جاموسة", "خروف", "معزة", "خنزير", "غزال", "دب", "باندا", "كنغر", "كوالا", "تمساح", "ثعبان", "سحلية", "برص", "سلحفاة", "ضفدع", "سمكة", "قرش", "حوت", "دولفين", "أخطبوط", "قنديل بحر", "استاكوزا", "كابوريا", "نحلة", "نملة", "دبانة", "ناموسة", "صرصار", "عنكبوت", "عقرب", "فراشة", "غراب", "حمامة", "عصفور", "صقر", "نسر", "بومة", "ببغاء", "بطة", "وزة", "فرخة", "ديك", "ديك رومي", "نعامة", "بطريق", "شجرة", "نخلة", "صبار", "نجيلة", "غصن", "ورقة شجر", "ليمونة", "برتقالة", "بذرة", "قنفذ", "خفاش", "سنجاب", "حرباء", "دودة", "يرقة", "خنفساء", "جرادة", "جعل", "دبور", "فرس النهر", "وحيد القرن", "فقمة", "حصان البحر", "نجم البحر", "محار", "جمبري", "سبيط", "طاووس", "نورس", "بجعة", "لقلق", "نعناع", "ريحان", "بقدونس", "كزبرة", "شبت", "كرفس", "جرجير", "خس", "فجل", "صبارة", "وردة بلدي", "فل", "ياسمين", "نرجس", "عباد الشمس", "قرنفل", "توليب", "بصلة", "فص ثوم", "جدر", "ساق", "لحاء", "ثمرة", "زهرة", "شجيرة", "سوسة", "برغوت", "قملة", "قراد", "بق", "خنزير غينيا", "دب قطبي", "بطريق", "فقمة", "كلب بحر", "سيد قشطة", "حمار وحشي", "غوريلا", "شمبانزي", "طحالب", "عشب", "نبات ظل"], "مهن ووظائف": ["دكتور", "مهندس", "مدرس", "ضابط", "محامي", "قاضي", "طيار", "ممرضة", "صيدلي", "نجار", "سباك", "كهربائي", "حداد", "جزار", "خباز", "حلاق", "كوافير", "محاسب", "مدير", "سكرتير", "صحفي", "مذيع", "ممثل", "مغني", "رسام", "كاتب", "عالم", "فلاح", "سواق", "بواب", "حارس", "طباخ", "جرسون", "عامل", "ميكانيكي", "صياد", "مفتش", "طبيب أسنان", "دكتور بيطري", "طبيب عيون", "جراح", "مسعف", "مهندس معماري", "مهندس ديكور", "مهندس كمبيوتر", "مبرمج", "مصمم", "مصور", "مونتير", "مخرج", "مؤلف", "شاعر", "ملحن", "موزع", "عازف", "راقص", "لاعب كورة", "مدرب", "حكم", "رئيس", "وزير", "محافظ", "عمدة", "ظابط شرطة", "ضابط جيش", "عسكري", "عريف", "شاويش", "محقق", "مخبر", "سباك صحي", "نقاش", "مبيض محارة", "بنا", "صنايعي", "مقاول", "سواق تاكسي", "سواق ميكروباص", "سواق قطر", "سواق طيارة", "كابتن بحري", "بحار", "غطاس", "مضيفة طيران", "مندوب مبيعات", "كاشير", "بياع", "صاحب محل", "تاجر", "مستورد", "جواهرجي", "سايس", "قهوجي", "جزمجي", "خياط", "ترزي", "منجد", "فني تكييف", "فني ألوميتال", "عامل نظافة", "زبال", "ساعي بريد", "طيار دليفري", "أمين مخزن", "بودي جارد", "كابتن جيم", "دكتور نفسي", "أخصائي تغذية", "فني أشعة", "كيميائي", "فيزيائي"], "رياضة وهوايات": ["كرة قدم", "كرة سلة", "كرة طائرة", "تنس", "تنس طاولة", "اسكواش", "سباحة", "غوص", "جري", "مشي", "عجل", "فروسية", "ملاكمة", "مصارعة", "كاراتيه", "جودو", "تايكوندو", "جمباز", "رفع أثقال", "شطرنج", "قراءة", "كتابة", "رسم", "تلوين", "عزف", "غناء", "تصوير", "صيد", "طبخ", "خياطة", "تطريز", "نحت", "تخييم", "كرة يد", "كرة ماء", "تنس أرضي", "ريشة طاولة", "بلياردو", "سنوكر", "بولينج", "جولف", "هرم", "تزلج", "تزحلق", "ركوب أمواج", "شراع", "تجديف", "سباق سيارات", "سباق موتوسيكلات", "ماراثون", "وثب طويل", "وثب عالي", "رمي رمح", "رمي جلة", "رمي قرص", "رماية", "قوس وسهم", "سلاح شيش", "أيروبيكس", "يوجا", "زومبا", "كمال أجسام", "بيلاتس", "تصوير فوتوغرافي", "مونتاج فيديو", "تصميم جرافيك", "برمجة", "لعب جيمنج", "بلايستيشن", "جمع طوابع", "جمع عملات", "تربية عصافير", "تربية قطط", "تربية كلاب", "زراعة بلكونة", "أشغال يدوية", "كروشيه", "تريكو", "صناعة حظاظات", "تجميع بازل", "كلمات متقاطعة", "سودوكو", "قراءة روايات", "كتابة شعر", "تدوين", "تمثيل مسرحي", "مشاهدة أفلام", "سماع مزيكا", "رقص باليه", "رقص شعبي", "باركور", "غطس حر", "تسلق جبال", "قفز بالمظلات", "سكيت بورد"], "أجهزة وتكنولوجيا": ["موبايل", "لابتوب", "كمبيوتر", "ايباد", "تابلت", "سماعة", "مايك", "كاميرا", "شاشة", "بروجيكتور", "طابعة", "راوتر", "فلاشة", "هارد", "كيبورد", "ماوس", "بلايستيشن", "اكس بوكس", "ذراع تحكم", "شاحن", "باور بانك", "ساعة ذكية", "نظارة واقع افتراضي", "روبوت", "تكييف", "تلفزيون", "راديو", "كيسة كمبيوتر", "مازربورد", "بروسيسور", "رامات", "كارت شاشة", "كارت صوت", "مروحة بروسيسور", "باور سبلاي", "دي في دي", "سي دي", "اسطوانة", "شريط كاسيت", "فيديو", "ريسيفر", "طبق دش", "عدسة دش", "سلك نت", "كابل شاحن", "رأس شاحن", "شاحن وايرلس", "سماعة بلوتوث", "سماعة ايربودز", "صب ووفر", "مكبر صوت", "مايك استوديو", "كاميرا ديجيتال", "كاميرا فيديو", "ترايبود", "رينج لايت", "فلاش كاميرا", "ميموري كارد", "هارد اكسترنال", "شاشة سمارت", "شاشة كمبيوتر", "ماوس باد", "كيبورد جيمنج", "ماوس جيمنج", "نظارة ثري دي", "درون", "طيارة تصوير", "جهاز بصمة", "كاميرا مراقبة", "انتركم", "فاكس", "تليفون أرضي", "آلة حاسبة", "ماكينة كاشير", "ماكينة عد فلوس", "سويتش نت", "اكسس بوينت", "ريموت كنترول", "ريموت تكييف", "منبه ديجيتال", "جهاز إنذار", "حساس حركة", "رسيفر واي فاي", "نظارة ذكية", "قلم ليزر", "ميكروفون لاسلكي"] };
@@ -489,9 +485,36 @@ io.on('connection', (socket) => {
             if(rooms[r].guessedPlayers.includes(pid)) return; 
 
             let guess = data.msg.trim();
-            let answer = rooms[r].currentPuzzle.answer;
+            let puz = rooms[r].currentPuzzle;
+            
+            let validAnswers = [puz.answer];
+            if (puz.answerEn && Array.isArray(puz.answerEn)) {
+                validAnswers = validAnswers.concat(puz.answerEn);
+            }
 
-            if(guess === answer) {
+            let gAr = normalizeArabic(guess);
+            let gEn = guess.toLowerCase().trim();
+
+            let isCorrect = false;
+            let isClose = false;
+
+            for (let a of validAnswers) {
+                let isEnglish = /^[a-z0-9\s]+$/i.test(a);
+                let normalizedA = isEnglish ? a.toLowerCase() : normalizeArabic(a);
+                let normalizedG = isEnglish ? gEn : gAr;
+                
+                if (normalizedG === normalizedA) {
+                    isCorrect = true; 
+                    break;
+                } else if (Math.abs(normalizedG.length - normalizedA.length) <= 2) {
+                    let diff = getEditDistance(normalizedG, normalizedA);
+                    if (diff <= 1 || (diff <= 2 && normalizedA.length >= 4)) {
+                        isClose = true;
+                    }
+                }
+            }
+
+            if(isCorrect) {
                 let guessedCount = rooms[r].guessedPlayers.length;
                 let pts = 20 - guessedCount;
                 if (pts < 11) pts = 11;
@@ -506,16 +529,9 @@ io.on('connection', (socket) => {
                     if(rooms[r].rebusTimer) clearTimeout(rooms[r].rebusTimer);
                     endRebusRound(r);
                 }
+            } else if (isClose) {
+                io.to(socket.id).emit('rebusCloseGuess', { msg: data.msg });
             } else {
-                let g = normalizeArabic(guess);
-                let a = normalizeArabic(answer);
-                if (g !== a && Math.abs(g.length - a.length) <= 2) {
-                    let diff = getEditDistance(g, a);
-                    if (diff <= 1 || (diff <= 2 && a.length >= 5)) {
-                        io.to(socket.id).emit('rebusCloseGuess', { msg: data.msg });
-                        return;
-                    }
-                }
                 io.to(r).emit('rebusChatMsg', { playerName: pName, msg: data.msg });
             }
         }
@@ -535,7 +551,6 @@ io.on('connection', (socket) => {
         let puz = rooms[roomId].selectedPuzzles[rooms[roomId].currentRound - 1];
         rooms[roomId].currentPuzzle = puz;
         
-        // التايمر اتعدل هنا بقى 60000 ملي ثانية (دقيقة واحدة)
         rooms[roomId].rebusEndTime = Date.now() + 60000; 
         
         io.to(roomId).emit('rebusRoundStarted', { 
@@ -543,18 +558,20 @@ io.on('connection', (socket) => {
             clue: puz.clue, 
             category: puz.category,
             endTime: rooms[roomId].rebusEndTime,
-            duration: 60 // مدة دقيقة تتبعت للكلاينت
+            duration: 60
         });
 
         if(rooms[roomId].rebusTimer) clearTimeout(rooms[roomId].rebusTimer);
-        // تايمر النهاية بقى دقيقة
         rooms[roomId].rebusTimer = setTimeout(() => { endRebusRound(roomId); }, 60000);
     }
 
     function endRebusRound(roomId) {
         if(!rooms[roomId]) return;
         const winnersCount = rooms[roomId].guessedPlayers.length;
-        io.to(roomId).emit('rebusRoundEnded', { answer: rooms[roomId].currentPuzzle.answer, winners: winnersCount });
+        let puz = rooms[roomId].currentPuzzle;
+        let ansEn = puz.answerEn && puz.answerEn.length > 0 ? puz.answerEn[0] : null;
+        
+        io.to(roomId).emit('rebusRoundEnded', { answer: puz.answer, answerEn: ansEn, winners: winnersCount });
         setTimeout(() => startNextRebusRound(roomId), 4000);
     }
 
@@ -564,11 +581,8 @@ io.on('connection', (socket) => {
             if(rooms[r].guessTimer) clearTimeout(rooms[r].guessTimer); if(rooms[r].tieTimer) clearTimeout(rooms[r].tieTimer); if(rooms[r].rebusTimer) clearTimeout(rooms[r].rebusTimer);
             rooms[r].gameState = 'waiting'; 
             rooms[r].votes = {}; 
-            rooms[r].kickedPlayers = []; // مسحنا قايمة المطرودين من هنا
+            rooms[r].kickedPlayers = []; 
             io.to(r).emit('gameRestarted'); 
-            
-            // حل مشكلة بقاء كلمة (مشاهد) بعد الإعادة:
-            // بنبعت تحديث للمستخدمين بالقائمة الجديدة (اللي هي فاضية من المطرودين) فوراً عشان تتشال الكلمة
             emitUpdatedPlayers(r); 
         } 
     });

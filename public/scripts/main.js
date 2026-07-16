@@ -531,11 +531,10 @@ socket.on('rebusRoundStarted', (data) => {
     showScreen('rebusGameScreen');
     document.getElementById('rebusRoundNum').innerText = data.round;
 
-    // --- تعديل لضبط ترتيب الحرف في اليمين والصورة في الشمال ---
     const puzzleContainer = document.getElementById('puzzleText');
     puzzleContainer.innerHTML = ''; 
     puzzleContainer.style.display = 'flex';
-    puzzleContainer.style.direction = 'rtl'; // إجبار الترتيب من اليمين لليسار
+    puzzleContainer.style.direction = 'rtl'; 
     puzzleContainer.style.justifyContent = 'center';
     puzzleContainer.style.alignItems = 'center';
     puzzleContainer.style.gap = '10px';
@@ -551,7 +550,6 @@ socket.on('rebusRoundStarted', (data) => {
             puzzleContainer.appendChild(plusSpan);
         }
     });
-    // --- نهاية تعديل الترتيب ---
 
     document.getElementById('rebusCategoryDisplay').innerText = "تصنيف: " + data.category;
     document.getElementById('chatLog').innerHTML = ''; 
@@ -560,15 +558,13 @@ socket.on('rebusRoundStarted', (data) => {
     const tBar = document.getElementById('rebusTimerBar'); 
     const tParent = tBar.parentElement;
     
-    // --- إصلاح مشكلة اختفاء التايمر وتوسيطه ---
     if(tParent) {
-        tParent.style.height = 'auto'; // السماح للحاوية بالتمدد
-        tParent.style.background = 'transparent'; // إزالة المربع الغامق اللي كان ورا الشريط
-        tParent.style.border = 'none'; // مسح أي حواف
+        tParent.style.height = 'auto'; 
+        tParent.style.background = 'transparent'; 
+        tParent.style.border = 'none'; 
         tParent.style.boxShadow = 'none';
     }
     
-    // إعطاء ستايل للأرقام عشان تكون كبيرة وواضحة في النص
     tBar.style.width = '100%'; 
     tBar.style.backgroundColor = 'transparent'; 
     tBar.style.textAlign = 'center';
@@ -579,15 +575,14 @@ socket.on('rebusRoundStarted', (data) => {
     tBar.style.lineHeight = '1';
     tBar.style.padding = '10px 0';
     
-    // عداد محلي ثابت بيبدأ مع لحظة استلام الحدث (يمنع التعليق تماماً أو اختلاف الوقت بين اللاعبين)
-    let durationInSeconds = 120; 
+    // ربط التايمر بالمدة اللي بتيجي من السيرفر (واللي خليناها 60 ثانية)
+    let durationInSeconds = data.duration || 60; 
     
     function updateRebusTimer() {
         let minutes = Math.floor(durationInSeconds / 60);
         let seconds = durationInSeconds % 60;
         tBar.innerText = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
         
-        // تغيير ألوان الإضاءة حسب الوقت المتبقي
         if (durationInSeconds <= 40 && durationInSeconds > 15) {
             tBar.style.color = '#ffe600'; 
             tBar.style.textShadow = '0 0 10px #ffe600';
@@ -600,7 +595,7 @@ socket.on('rebusRoundStarted', (data) => {
         }
     }
     
-    updateRebusTimer(); // عشان الرقم يظهر في اللحظة الأولى وميستناش ثانية
+    updateRebusTimer(); 
     
     if(rebusTimerInterval) clearInterval(rebusTimerInterval);
     rebusTimerInterval = setInterval(() => { 
@@ -613,7 +608,6 @@ socket.on('rebusRoundStarted', (data) => {
             clearInterval(rebusTimerInterval); 
         }
     }, 1000); 
-    // --- نهاية التعديل ---
 });
 
 function sendRebusGuess() {
@@ -705,6 +699,7 @@ socket.on('gameRestarted', () => {
     if (isHost && restartGameBtn && hostSettingsModal) { restartGameBtn.disabled = true; hostSettingsModal.classList.add('hidden'); } 
     const guestWaitingHostModal = document.getElementById('guestWaitingHostModal'); if(guestWaitingHostModal) guestWaitingHostModal.classList.add('hidden'); 
     const podiumScreen = document.getElementById('podiumScreen'); if(podiumScreen) podiumScreen.classList.add('hidden');
+    // تنظيف قائمة المطرودين من الـ Front-End كمان كزيادة تأكيد
     kickedPlayersGlobal = [];
 });
 

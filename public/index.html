@@ -1,1 +1,356 @@
-متناك شرموط
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>لعبة الجاسوس وتخمين الكلمة</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles/style.css">
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        * { box-sizing: border-box; }
+        
+        body, html { 
+            font-family: 'Cairo', sans-serif; 
+            overflow-x: hidden; 
+            min-height: 100vh; 
+            background: #0a0a0f; 
+            background-image: radial-gradient(ellipse at 20% 50%, #1a0a2e 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, #0a1a2e 0%, transparent 60%); 
+            background-attachment: fixed; 
+            color: #fff; 
+            margin: 0; 
+            padding: 0; 
+        }
+
+        .hidden { display: none !important; }
+
+        body.pc-mode { cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 24 24' fill='%2300f3ff' stroke='%23ffffff' stroke-width='1.5'%3E%3Cpath d='M4 2L20 10L13 13L10 20L4 2Z'/%3E%3C/svg%3E") 4 2, auto !important; }
+        body.pc-mode button, body.pc-mode .category-card, body.pc-mode .vote-card, body.pc-mode .word-card, body.pc-mode input, body.pc-mode .general-settings-icon, body.pc-mode .host-settings-icon { cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 24 24' fill='%23ff0055' stroke='%23ffffff' stroke-width='1.5'%3E%3Cpath d='M4 2L20 10L13 13L10 20L4 2Z'/%3E%3C/svg%3E") 4 2, pointer !important; }
+
+        .glass-container { margin: 20px auto; padding: 25px; max-width: 450px; background: rgba(15, 23, 42, 0.8); border-radius: 15px; border: 1px solid #334155; }
+        body.pc-mode .glass-container { max-width: 600px; }
+
+        button { font-family: 'Cairo', sans-serif; transition: transform 0.2s, box-shadow 0.2s; background: rgba(0,0,0,0.4); color: #fff; cursor: pointer; border-radius: 8px; border: 1px solid #00f3ff; padding: 12px; font-weight: bold;}
+        button:hover { transform: scale(1.05); }
+
+        .game-wrapper { display: flex; margin: 20px auto; width: 95%; }
+        .sidebar { background: rgba(15, 23, 42, 0.9); border: 2px solid #00f3ff; border-radius: 15px; display: flex; flex-direction: column; box-shadow: 0 0 15px rgba(0, 243, 255, 0.1); }
+        .main-board { background: rgba(10, 10, 15, 0.95); border: 3px solid #fff; border-radius: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow-y: auto; box-shadow: inset 0 0 30px rgba(255,255,255,0.05), 0 0 20px rgba(0,0,0,0.5); }
+
+        body.pc-mode .game-wrapper { flex-direction: row; max-width: 1200px; height: 85vh; gap: 20px; }
+        body.pc-mode .sidebar { width: 300px; max-height: none; padding: 15px; }
+        body.pc-mode .main-board { flex: 1; padding: 30px; }
+
+        body.mobile-mode .game-wrapper { flex-direction: column; max-width: 450px !important; height: auto; gap: 15px; }
+        body.mobile-mode .sidebar { width: 100%; max-height: none; padding: 15px; }
+        body.mobile-mode .main-board { width: 100%; min-height: 500px; padding: 15px; }
+
+        .players-list-gartic { flex: 1; overflow-y: auto; padding-right: 5px; margin-bottom: 15px; transition: all 0.3s ease; }
+        .player-item { display: flex; align-items: center; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 10px; margin-bottom: 10px; transition: transform 0.3s ease; }
+        .player-avatar { width: 45px; height: 45px; background: #00f3ff; color: #000; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 1.5rem; margin-left: 12px; border: 2px solid #fff; flex-shrink: 0;}
+        .player-info { flex: 1; display: flex; flex-direction: column; width: 100%; } 
+        .player-name { font-weight: bold; font-size: 1.1rem; color: #fff; } 
+        .player-status { font-size: 0.8rem; color: #00ff88; display: flex; align-items: center; width: 100%; }
+        
+        body.mobile-mode .players-list-gartic { display: flex; flex-direction: row; overflow-x: auto; overflow-y: hidden; padding-bottom: 15px; gap: 12px; margin-bottom: 15px; scrollbar-width: thin; scrollbar-color: #00f3ff rgba(0,0,0,0.2); }
+        body.mobile-mode .players-list-gartic::-webkit-scrollbar { height: 6px; } 
+        body.mobile-mode .players-list-gartic::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 10px; } 
+        body.mobile-mode .players-list-gartic::-webkit-scrollbar-thumb { background: #00f3ff; border-radius: 10px; }
+        body.mobile-mode .player-item { flex: 0 0 auto; width: 140px; flex-direction: column; justify-content: center; text-align: center; margin-bottom: 0; padding: 15px 5px; } 
+        body.mobile-mode .player-avatar { margin-left: 0; margin-bottom: 10px; width: 55px; height: 55px; font-size: 2rem; }
+        body.mobile-mode .player-status { justify-content: center; flex-wrap: wrap; gap: 5px; }
+
+        .btn-sidebar { width: 100%; margin-bottom: 10px; padding: 10px; font-size: 0.95rem; } 
+        .btn-danger { background: rgba(255, 0, 85, 0.2); border-color: #ff0055; color: #fff; } 
+        .btn-danger:hover { background: rgba(255, 0, 85, 0.5); box-shadow: 0 0 15px #ff0055; }
+
+        .spy-icon, .avatar-glow { display: inline-block; font-size: 5rem !important; margin-bottom: 10px; animation: floatSpy 3s ease-in-out infinite, rgbDropShadow 6s infinite alternate !important; }
+        @keyframes floatSpy { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+        @keyframes rgbDropShadow { 0% { filter: drop-shadow(0 0 20px #ff0055); } 25% { filter: drop-shadow(0 0 20px #00f3ff); } 50% { filter: drop-shadow(0 0 20px #00ff88); } 75% { filter: drop-shadow(0 0 20px #ffe600); } 100% { filter: drop-shadow(0 0 20px #b000ff); } }
+        
+        @keyframes colorWave { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
+        .rgb-title, #roleTitle { display: block; text-align: center !important; width: 100%; font-weight: 900; margin-bottom: 25px; font-size: 2.8rem; background: linear-gradient(to right, #ff0055, #00f3ff, #00ff88, #ffe600, #b000ff, #ff0055); background-size: 200% auto; color: transparent; -webkit-background-clip: text; background-clip: text; animation: colorWave 3s linear infinite; filter: drop-shadow(0 0 10px rgba(0, 243, 255, 0.4)); }
+        
+        @keyframes rgbGlow { 0% { box-shadow: 0 0 12px #ff0055, inset 0 0 8px #ff0055; border-color: #ff0055; } 25% { box-shadow: 0 0 12px #00f3ff, inset 0 0 8px #00f3ff; border-color: #00f3ff; } 50% { box-shadow: 0 0 12px #00ff88, inset 0 0 8px #00ff88; border-color: #00ff88; } 75% { box-shadow: 0 0 12px #ffe600, inset 0 0 8px #ffe600; border-color: #ffe600; } 100% { box-shadow: 0 0 12px #b000ff, inset 0 0 8px #b000ff; border-color: #b000ff; } }
+        
+        button { animation: rgbGlow 6s infinite alternate !important; } 
+        .view-options .btn-view { animation: none !important; box-shadow: none; opacity: 0.6; border-color: rgba(255,255,255,0.2); } 
+        .view-options .btn-view.active-view { animation: rgbGlow 6s infinite alternate !important; opacity: 1; border-color: #00f3ff; }
+        
+        .voting-grid, .words-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; margin-top: 20px; width: 100%; } 
+        .vote-card, .word-card { background: rgba(15, 23, 42, 0.8); border: 1px solid #334155; border-radius: 8px; padding: 15px 5px; text-align: center; transition: 0.3s; font-weight: bold; position: relative; cursor: pointer; } 
+        .vote-card:hover, .word-card.spy-active { border-color: #00f3ff; box-shadow: 0 0 15px rgba(0, 243, 255, 0.3); } 
+        .vote-card.voted { border-color: #00ff88; box-shadow: 0 0 15px #00ff88; pointer-events: none; opacity: 0.8; } 
+        .vote-card.disabled { pointer-events: none; opacity: 0.5; filter: grayscale(100%); }
+        .vote-card.kicked { pointer-events: none; opacity: 0.3; background: #333; color: #777; text-decoration: line-through; }
+        
+        .live-log-container { background: rgba(0,0,0,0.5); border-radius: 10px; padding: 10px; height: 130px; overflow-y: auto; margin-top: 20px; border: 1px solid rgba(255,255,255,0.1); text-align: right; font-size: 0.9rem; width: 100%; } 
+        .log-entry { margin-bottom: 5px; color: #ccc; animation: fadeIn 0.3s ease-in; } .target-name { color: #ff0055; font-weight: bold; }
+        
+        .spy-tag { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: #00f3ff; color: #000; font-size: 0.75rem; font-weight: bold; padding: 3px 10px; border-radius: 10px; white-space: nowrap; animation: pop 0.3s ease; box-shadow: 0 0 10px rgba(0, 243, 255, 0.5); z-index: 10; }
+        
+        .categories-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 15px; width: 100%; } 
+        .category-card { background: rgba(15, 23, 42, 0.8); border: 1px solid #334155; border-radius: 8px; padding: 15px 5px; text-align: center; transition: 0.3s; font-weight: bold; font-size: 1rem; color: #ccc; position: relative; cursor: pointer; } 
+        .category-card:hover { border-color: #00f3ff; color: #fff; box-shadow: 0 0 10px rgba(0, 243, 255, 0.3); } 
+        .category-card.selected { border-color: #00ff88; background: rgba(0, 255, 136, 0.1); color: #00ff88; box-shadow: 0 0 10px rgba(0, 255, 136, 0.3); transform: scale(1.05); } 
+        .category-card.random-card { border-color: rgba(176, 0, 255, 0.5); color: #e08cff; } 
+        .category-card.roulette-active { border-color: #fff; background: rgba(255, 255, 255, 0.2); color: #fff; box-shadow: 0 0 20px #fff; transform: scale(1.1); z-index: 5; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } } 
+        @keyframes pop { 0% { transform: translateX(-50%) scale(0); } 100% { transform: translateX(-50%) scale(1); } }
+        
+        #starsContainer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; overflow: hidden; background: transparent; } 
+        .falling-star { position: absolute; background: #fff; border-radius: 50%; box-shadow: 0 0 8px rgba(255,255,255,0.8); animation: starFall linear infinite; } 
+        @keyframes starFall { 0% { transform: translateY(-10vh); opacity: 0; } 10% { opacity: 1; } 80% { opacity: 1; } 100% { transform: translateY(110vh); opacity: 0; } }
+
+        .password-input { width: 80%; padding: 15px; font-size: 1.5rem; text-align: center; letter-spacing: 5px; border-radius: 10px; border: 2px solid #00f3ff; background: rgba(0,0,0,0.5); color: #fff; margin-bottom: 20px; outline: none; } 
+        .password-input:focus { box-shadow: 0 0 15px rgba(0, 243, 255, 0.5); }
+        
+        .custom-scroll::-webkit-scrollbar { width: 8px; }
+        .custom-scroll::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 10px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #00f3ff; border-radius: 10px; }
+
+        .real-wheel-container { position: relative; width: 280px; height: 280px; border-radius: 50%; border: 4px solid #fff; box-shadow: 0 0 25px #00f3ff, inset 0 0 15px rgba(0,0,0,0.8); margin: 30px auto; overflow: hidden; } 
+        .wheel-spinner { width: 100%; height: 100%; border-radius: 50%; position: relative; background: conic-gradient(from -22.5deg, #ff0055 0 45deg, #00f3ff 45deg 90deg, #00ff88 90deg 135deg, #ffe600 135deg 180deg, #b000ff 180deg 225deg, #ff8c00 225deg 270deg, #0055ff 270deg 315deg, #ff00aa 315deg 360deg); } 
+        .wheel-pointer { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 35px solid #fff; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.5)); z-index: 10; } 
+        .wheel-center-dot { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 20px; height: 20px; background: #fff; border-radius: 50%; z-index: 5; box-shadow: 0 0 10px #000; } 
+        .wheel-label { position: absolute; top: 50%; left: 50%; width: 50%; margin-top: -12px; transform-origin: 0% 50%; text-align: right; padding-right: 15px; font-weight: 900; font-size: 0.85rem; color: #fff; text-shadow: 1px 1px 3px #000, -1px -1px 3px #000; white-space: nowrap; direction: rtl; line-height: 24px;}
+        
+        /* ستايلات التخمين والشات */
+        .puzzle-display { background: rgba(0,0,0,0.5); border-radius: 12px; padding: 30px; display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 20px; border: 2px solid #fff; box-shadow: 0 0 20px rgba(255,255,255,0.1); width: 100%; max-width: 400px; margin-left: auto; margin-right: auto;}
+        .puzzle-part { font-size: 3.5rem; font-weight: 900; color: #fff; text-shadow: 0 0 15px #00f3ff; direction: ltr; display: inline-block; }
+        
+        .chat-container { width: 100%; max-width: 500px; display: flex; flex-direction: column; height: 250px; background: rgba(0,0,0,0.6); border-radius: 12px; border: 1px solid #334155; margin: 0 auto; overflow: hidden; }
+        #chatLog { flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column-reverse; text-align: right;}
+        .chat-input-area { display: flex; gap: 5px; padding: 10px; background: rgba(20,20,30,0.8); border-top: 1px solid #334155;}
+        #chatInput { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #555; background: #111; color: #fff; font-family: 'Cairo'; font-size: 1rem; outline:none;}
+        #chatInput:focus { border-color: #00f3ff; }
+        
+        .chat-msg { margin-bottom: 8px; font-size: 1.1rem; line-height: 1.4; animation: fadeIn 0.3s ease; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 5px;}
+        .chat-msg .sender { font-weight: bold; color: #00f3ff; margin-left: 5px; }
+        .chat-msg.correct { color: #00ff88; font-weight: bold; text-align: right; background: transparent; padding: 0; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 5px;}
+        .chat-msg.close-guess { color: #ff4444; font-weight: bold; text-align: right; background: transparent; padding: 0; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 5px;}
+        
+        /* شريط التايمر */
+        .timer-bar-container { width: 100%; max-width: 400px; height: 12px; background: rgba(255,255,255,0.1); border-radius: 10px; margin: 0 auto 20px auto; overflow: hidden; border: 1px solid #333; }
+        .timer-bar { height: 100%; width: 100%; background: #00f3ff; transition: width 0.1s linear, background-color 0.5s ease; }
+
+        .podium-section { display: flex; justify-content: center; align-items: flex-end; gap: 15px; margin: 30px auto; max-width: 450px; height: 220px; width: 100%;}
+        .podium-block { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; flex: 1; max-width: 120px; border-radius: 10px 10px 0 0; padding-bottom: 10px; position: relative; }
+        .podium-1 { height: 170px; background: linear-gradient(to top, #ffd700, #ffea00); order: 2; z-index: 10; box-shadow: 0 0 25px rgba(255,215,0,0.6); border: 2px solid #fff; border-bottom: none;}
+        .podium-2 { height: 130px; background: linear-gradient(to top, #c0c0c0, #e0e0e0); order: 1; box-shadow: 0 0 15px rgba(192,192,192,0.5); border: 2px solid #fff; border-bottom: none;}
+        .podium-3 { height: 100px; background: linear-gradient(to top, #cd7f32, #d2691e); order: 3; box-shadow: 0 0 15px rgba(205,127,50,0.5); border: 2px solid #fff; border-bottom: none;}
+        .pod-name { position: absolute; top: -35px; width: 150%; text-align: center; font-weight: 900; color: #fff; text-shadow: 0 0 5px #000; font-size: 1.1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: rgba(0,0,0,0.5); padding: 2px 5px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.2);}
+        .podium-1 .pod-name { top: -45px; font-size: 1.4rem; color: #ffd700; text-shadow: 0 0 10px #000; border-color: #ffd700;}
+        .pod-rank { font-size: 2.5rem; font-weight: 900; color: #000; }
+        .pod-score { font-size: 1.1rem; color: #000; font-weight: bold; background: rgba(255,255,255,0.9); padding: 2px 10px; border-radius: 10px; margin-top: 5px; border: 1px solid #000;}
+    </style>
+</head>
+<body class="mobile-mode">
+    <div id="starsContainer"></div>
+    <div id="notificationToast" class="toast hidden">تم النسخ! 📋</div>
+
+    <div id="hostPasswordModal" class="modal-overlay hidden" style="z-index: 999999;">
+        <div class="modal-content glass-container" style="text-align: center;">
+            <div style="font-size: 4rem; margin-bottom: 15px; animation: floatSpy 3s ease-in-out infinite;">🔒</div>
+            <h2 class="neon-text" style="color: #00f3ff; margin-bottom: 20px;">تأكيد الهوية</h2>
+            <p style="color: #ccc; margin-bottom: 15px; font-size: 1.1rem;">أدخل الرقم السري الخاص بالهوست:</p>
+            <input type="password" id="hostPasswordInput" class="password-input" placeholder="***" autocomplete="off">
+            <button id="confirmHostPasswordBtn" style="width: 100%; margin-bottom: 10px; font-size: 1.1rem;">تأكيد الدخول ✔️</button>
+            <button id="cancelHostPasswordBtn" style="width: 100%; background: rgba(255, 255, 255, 0.1); border-color: #666; color: #fff;">إلغاء ❌</button>
+        </div>
+    </div>
+
+    <div id="wrongPasswordModal" class="modal-overlay hidden" style="z-index: 999999;">
+        <div class="modal-content glass-container" style="text-align: center;">
+            <div style="font-size: 4rem; margin-bottom: 15px; text-shadow: 0 0 20px #ff0055;">⛔</div>
+            <h2 class="neon-text" style="color: #ff0055; margin-bottom: 20px;">مرفوض!</h2>
+            <p style="color: #ccc; font-size: 1.2rem; margin-bottom: 25px;">الرقم السري خاطئ، أنت لست الهوست الأصلي.</p>
+            <button id="closeWrongPasswordBtn" style="width: 100%; background: rgba(255, 0, 85, 0.2); border-color: #ff0055;">إغلاق</button>
+        </div>
+    </div>
+
+    <div id="realWheelModal" class="modal-overlay hidden" style="z-index: 9999999;">
+        <div class="modal-content glass-container" style="text-align: center; max-width: 350px;">
+            <h2 class="neon-text" style="color: #ffe600; text-shadow: 0 0 15px #ffe600; margin-bottom: 10px;">عجلة الحظ 🎡</h2>
+            <p style="color: #ccc; font-size: 1.1rem; margin-bottom: 0;">يتم الآن اختيار التصنيف...</p>
+            <div class="real-wheel-container">
+                <div class="wheel-pointer"></div>
+                <div class="wheel-center-dot"></div>
+                <div class="wheel-spinner" id="wheelSpinnerElement">
+                    <div class="wheel-label" style="transform: rotate(-90deg);">حاجات البيت</div>
+                    <div class="wheel-label" style="transform: rotate(-45deg);">أكل وشرب</div>
+                    <div class="wheel-label" style="transform: rotate(0deg);">أدوات وأشياء</div>
+                    <div class="wheel-label" style="transform: rotate(45deg);">أماكن ومواصلات</div>
+                    <div class="wheel-label" style="transform: rotate(90deg);">حيوانات ونباتات</div>
+                    <div class="wheel-label" style="transform: rotate(135deg);">مهن ووظائف</div>
+                    <div class="wheel-label" style="transform: rotate(180deg);">رياضة وهوايات</div>
+                    <div class="wheel-label" style="transform: rotate(225deg);">تكنولوجيا</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🔥 شاشة قرار الجاسوس وي بلاي -->
+    <div id="spyDecisionModal" class="modal-overlay hidden" style="z-index: 999999;">
+        <div class="modal-content glass-container" style="text-align: center;">
+            <h2 class="neon-text" style="color: #ffe600; font-size: 2.2rem; margin-bottom: 25px;" id="spyDecisionTitle">في انتظار قرار الجاسوس...</h2>
+            <p id="spyDecisionText" style="color: #ccc; font-size: 1.2rem; margin-bottom: 25px;"></p>
+            <div id="spyDecisionButtons" class="hidden" style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button id="btnSpyGuess" style="flex:1; border-color:#00f3ff; color:#00f3ff; font-size:1.1rem;">تخمين الكلمة 🧠</button>
+                <button id="btnSpyContinue" style="flex:1; border-color:#00ff88; color:#00ff88; font-size:1.1rem;">إكمال اللعب 🔄</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="hostSettingsModal" class="modal-overlay hidden" style="z-index: 999999;"><div class="modal-content glass-container"><h2 class="neon-text" style="margin-bottom: 25px; color: #00f3ff; text-shadow: 0 0 15px #00f3ff;">إدارة اللاعبين 👥</h2><div id="modalPlayersList" style="max-height:300px; overflow-y:auto;"></div><button id="restartGameBtn" disabled style="width: 100%; margin-top: 15px;">إعادة اللعب 🔄</button><button id="closeModalBtn" style="margin-top: 15px; width: 100%; background: #333; border:none;">إغلاق</button></div></div>
+    
+    <div id="invalidRoomModal" class="modal-overlay hidden" style="z-index: 999999;">
+        <div class="modal-content glass-container" style="text-align: center;">
+            <div style="font-size: 4rem; margin-bottom: 15px;">❌</div>
+            <h2 class="neon-text" style="color: #ff0055; margin-bottom: 15px;">عذراً!</h2>
+            <p id="errorMsgText" style="color: #fff; font-size: 1.3rem; margin-bottom: 20px;"></p>
+            <button id="closeInvalidRoomBtn" style="width: 100%;">حسناً</button>
+        </div>
+    </div>
+    
+    <div id="kickedModal" class="modal-overlay hidden" style="z-index: 999999;"><div class="modal-content glass-container" style="text-align: center;"><div style="font-size: 4rem; margin-bottom: 15px;">🚫</div><h2 class="neon-text" style="color: #ff0055;">تم طردك!</h2></div></div>
+    
+    <div id="hostLeftModal" class="modal-overlay hidden" style="z-index: 999999;">
+        <div class="modal-content glass-container" style="text-align: center;">
+            <div style="font-size: 4rem; margin-bottom: 15px;">⚠️</div>
+            <h2 class="neon-text" style="color: #ff0055;">توقفت اللعبة!</h2>
+            <p id="hostLeftText" style="color: #ccc; margin-bottom: 20px;">الهوست غادر وأغلق الغرفة.</p>
+            <button id="closeHostLeftBtn" style="width: 100%;">حسناً</button>
+        </div>
+    </div>
+    
+    <div id="tieBreakerModal" class="modal-overlay hidden" style="z-index: 999999;"><div class="modal-content glass-container" style="text-align: center;"><div style="font-size: 4rem; margin-bottom: 15px;">⚖️</div><h2 class="neon-text" style="color: #ff0055;">تعادل!</h2><p style="color: #ccc;">تعادل: <span id="tiedPlayersNames" style="color: #fff; font-weight: bold;"></span></p><div id="tieTimer" style="font-size: 3rem; color: #00ff88; font-weight: bold;">12</div></div></div>
+    <div id="votingResultModal" class="modal-overlay hidden" style="z-index: 999999;"><div class="modal-content glass-container" style="text-align: center;"><div id="votingResultIcon" style="font-size: 4rem;">🎭</div><h2 id="votingResultTitle" class="neon-text">النتيجة</h2><p id="votingResultDesc1" style="color: #ccc;"></p><p id="votingResultDesc2" style="color: #ccc; margin-bottom: 25px;"></p><button id="spyProceedBtn" class="hidden" style="width: 100%;">تخمين الكلمة 🧠</button></div></div>
+    <div id="finalResultModal" class="modal-overlay hidden" style="z-index: 999999;"><div class="modal-content glass-container" style="text-align: center;"><h2 class="neon-text" style="color: #00f3ff;">نتيجة الجولة 🏁</h2><p id="finalResultText1"></p><p id="finalResultText2" style="font-size: 1.4rem; color: #00f3ff; font-weight: bold;"></p><p id="finalResultText3"></p><p id="finalResultText4" style="font-size: 1.3rem; font-weight: bold;"></p><button id="finalOkBtn" style="width: 100%;">حسناً 👍</button></div></div>
+    
+    <div id="guestWaitingHostModal" class="modal-overlay hidden" style="z-index: 999999;"><div class="modal-content glass-container" style="text-align: center;"><div style="font-size: 4rem; margin-bottom: 15px;">⏳</div><h2 class="neon-text" style="color: #00f3ff; margin-bottom: 20px;">الرجاء الانتظار!</h2><p style="color: #ccc; font-size: 1.1rem; line-height: 1.6;">في انتظار الهوستر لإعادة اللعب أو إنهاء اللعبة بالكامل.</p></div></div>
+
+    <div id="welcomeScreen" class="glass-container active">
+        <div class="logo-section">
+            <div class="avatar-glow" style="font-size: 6rem !important;">🎭</div>
+            <h1 class="sasuke-title rgb-title" style="margin-bottom: 30px;">لعبة الجاسوس</h1>
+        </div>
+        <input type="text" id="playerNameInput" class="name-input hidden" placeholder="اكتب اسمك هنا يا بطل..." autocomplete="off">
+        <div class="view-options" style="margin-bottom: 20px;">
+            <button id="pcViewBtn" class="btn-view">كمبيوتر 💻</button>
+            <button id="mobileViewBtn" class="btn-view active-view">موبايل 📱</button>
+        </div>
+        
+        <button id="goToSpyBtn" style="width: 100%; margin-bottom: 10px; border-color: #00f3ff; color: #fff;">لعبة الجاسوس 🕵️‍♂️</button>
+        <button id="goToSpy2Btn" style="width: 100%; margin-bottom: 10px; border-color: #ff0055; color: #ff0055; box-shadow: 0 0 10px rgba(255, 0, 85, 0.3);">لعبة الجاسوس وي بلاي 🎭</button>
+        <button id="goToRebusBtn" style="width: 100%; margin-bottom: 15px; border-color: #ffe600; color: #ffe600; box-shadow: 0 0 10px rgba(255, 230, 0, 0.3);">تخمين الكلمة 🧩</button>
+        
+        <button id="joinRoomBtn" class="hidden" style="width: 100%;">انـــضـــمـــام 🚀</button>
+    </div>
+
+    <div id="gameLayout" class="game-wrapper hidden">
+        <aside class="sidebar">
+            <h3 style="text-align: center; color: #00f3ff; margin-bottom: 15px; font-weight: bold; text-shadow: 0 0 10px #00f3ff;">اللاعبين (<span id="playerCount">0</span>)</h3>
+            <div id="playersList" class="players-list-gartic"></div>
+            
+            <div style="border-top: 1px solid #333; padding-top: 15px; margin-top: auto;">
+                <button id="hostSettingsBtn" class="btn-sidebar hidden">إدارة اللاعبين 👥</button>
+                <button id="copyInviteBtn" class="btn-sidebar hidden">نسخ رابط الدعوة 🔗</button>
+                <button id="leaveRoomBtn" class="btn-sidebar btn-danger hidden">مغادرة الغرفة 🚪</button>
+                <button id="destroyRoomBtn" class="btn-sidebar btn-danger hidden">إغلاق الغرفة ❌</button>
+            </div>
+        </aside>
+
+        <main class="main-board">
+            <div id="waitingScreen" class="inner-screen" style="width: 100%; text-align: center;">
+                <div class="avatar-glow" style="font-size: 6rem !important;">🎭</div>
+                <h2 class="rgb-title" id="waitingTitle">لعبة الجاسوس</h2>
+                <p style="color: #ccc; font-size: 1.2rem; margin-bottom: 30px;">في انتظار باقي اللاعبين...</p>
+                <button id="actualStartBtn" class="hidden" style="width: 80%; font-size: 1.2rem;">اختيار التصنيف 🚀</button>
+                <button id="startGameBtn" disabled style="width: 80%; font-size: 1.2rem;">في انتظار الهوست ⏳</button>
+            </div>
+
+            <div id="modeSelectionScreen" class="inner-screen hidden" style="width: 100%;">
+                <h2 class="rgb-title" style="margin-bottom: 25px;">اختيار التصنيف</h2>
+                <div class="categories-grid" id="categoriesGrid"></div>
+                <button id="confirmStartGameBtn" class="hidden" style="margin-top: 25px; width: 100%; font-size: 1.2rem;">متابعة وبدء اللعب 🚀</button>
+            </div>
+
+            <div id="gameScreen" class="inner-screen hidden" style="width: 100%; text-align: center;">
+                <div class="avatar-glow" id="roleIcon" style="font-size: 6rem !important;">🎭</div>
+                <h2 class="rgb-title" id="roleTitle" style="margin-bottom: 20px; font-size: 3.5rem;">...</h2>
+                <p id="categoryTitle" class="hidden" style="color: #00f3ff; font-size: 1.5rem; font-weight: bold; margin-bottom: 30px; text-shadow: 0 0 10px rgba(0, 243, 255, 0.5);">التصنيف: ...</p>
+                
+                <div style="background: rgba(0,0,0,0.5); padding: 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 25px;">
+                    <p style="color: #ccc; font-size: 1.1rem; margin-bottom: 12px;">ابحثوا عن الجاسوس!</p>
+                    <p style="color: #64748b; font-size: 0.9rem; line-height: 1.5;">تناقشوا الآن عبر الصوت واكتشفوا من لا يعرف الكلمة.</p>
+                </div>
+
+                <button id="startVotingPhaseBtn" class="hidden" style="width: 80%; font-size: 1.2rem;">بدء التصويت 🗳️</button>
+            </div>
+
+            <div id="votingScreen" class="inner-screen hidden" style="width: 100%;">
+                <h2 class="rgb-title" style="margin-bottom: 5px;">وقت التصويت!</h2>
+                <p style="color: #00f3ff; font-size: 1.5rem; font-weight: bold; text-align: center; margin-bottom: 20px;" id="voteCounter">0/0</p>
+                <div class="voting-grid" id="votingGrid" style="margin-bottom: 20px;"></div>
+                <div class="live-log-container" id="liveVoteLog"><div style="color: #64748b; text-align: center;">سجل التصويت...</div></div>
+            </div>
+
+            <div id="guessingScreen" class="inner-screen hidden" style="width: 100%;">
+                <h2 class="rgb-title" style="margin-bottom: 5px;">مرحلة التخمين</h2>
+                <p style="color: #ccc; font-size: 1.1rem; text-align: center; margin-bottom: 10px;" id="guessingSubtitle">الجاسوس يختار الكلمة...</p>
+                <div id="spyTimer" style="color: #ff0055; font-size: 3rem; font-weight: bold; text-align: center; margin-bottom: 15px; text-shadow: 0 0 10px #ff0055;">30</div>
+                <div class="words-grid" id="wordsGrid"></div>
+                <button id="confirmGuessBtn" class="hidden" style="margin-top: 25px; width: 100%; font-size: 1.2rem;">تأكيد الاختيار ✔️</button>
+            </div>
+
+            <div id="rebusGameScreen" class="inner-screen hidden" style="width: 100%; text-align: center;">
+                <h2 class="rgb-title" style="font-size: 2rem; margin-bottom: 5px;">جولة <span id="rebusRoundNum">1</span> / 10</h2>
+                <h3 id="rebusCategoryDisplay" style="color: #00ff88; font-size: 1.3rem; margin-bottom: 15px; text-shadow: 0 0 10px #00ff88;">تصنيف: ---</h3>
+                
+                <div class="puzzle-display">
+                    <span id="puzzleText" class="puzzle-part">...</span>
+                </div>
+                
+                <div class="timer-bar-container">
+                    <div id="rebusTimerBar" class="timer-bar"></div>
+                </div>
+
+                <div class="chat-container">
+                    <div id="chatLog"></div>
+                    <div class="chat-input-area">
+                        <input type="text" id="chatInput" placeholder="اكتب تخمينك هنا..." autocomplete="off">
+                        <button id="sendChatBtn" style="padding: 10px 20px; border-color: #00ff88; color: #00ff88;">إرسال</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="podiumScreen" class="inner-screen hidden" style="width: 100%; text-align: center;">
+                <h2 class="rgb-title" style="font-size: 3.5rem; margin-bottom: 10px;">انتهت اللعبه</h2>
+                <div class="podium-section">
+                    <div class="podium-block podium-2">
+                        <span class="pod-name" id="podiumName2">---</span>
+                        <div class="pod-rank">2</div>
+                        <div class="pod-score" id="podiumScore2">0</div>
+                    </div>
+                    <div class="podium-block podium-1">
+                        <span class="pod-name" id="podiumName1">---</span>
+                        <div class="pod-rank">1</div>
+                        <div class="pod-score" id="podiumScore1">0</div>
+                    </div>
+                    <div class="podium-block podium-3">
+                        <span class="pod-name" id="podiumName3">---</span>
+                        <div class="pod-rank">3</div>
+                        <div class="pod-score" id="podiumScore3">0</div>
+                    </div>
+                </div>
+                <button id="rebusReturnBtn" class="hidden" style="width: 100%; margin-top: 30px; font-size: 1.2rem;">العودة للغرفة 🔄</button>
+            </div>
+
+        </main>
+    </div>
+
+    <script src="scripts/main.js"></script>
+</body>
+</html>

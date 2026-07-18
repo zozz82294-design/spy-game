@@ -1,5 +1,18 @@
 // --- Version System ---
-const APP_VERSION = "1.2";
+const APP_VERSION = "1.4"; // تحديث الإصدار
+
+// --- Mobile Layout & List Overflow Fixes (Injected CSS) ---
+const customStyles = document.createElement('style');
+customStyles.innerHTML = `
+    /* Fix Rebus Mobile Layout */
+    @media (max-width: 768px) {
+        #rebusGameScreen { display: flex; flex-direction: column; height: 85vh; justify-content: space-between; overflow: hidden; }
+        #puzzleText { font-size: 2.2rem !important; margin: 10px 0 !important; }
+        #chatLog { flex-grow: 1; overflow-y: auto; max-height: 35vh; margin-bottom: 10px; }
+        #rebusTimerBar { font-size: 2rem !important; padding: 5px 0 !important; }
+    }
+`;
+document.head.appendChild(customStyles);
 
 // --- Localization System ---
 let currentLang = localStorage.getItem('gameLang') || 'ar';
@@ -38,6 +51,7 @@ const translationDict = {
     "إعادة اللعب؟": "Restart Game?",
     "إعادة اللعب": "Restart Game",
     "اختيار عشوائي 🎡": "Random Spin 🎡",
+    "جاري الاختيار...": "Selecting...",
     "إعدادات الهوست": "Host Settings",
     "إدارة اللاعبين": "Manage Players",
     "تدمير الغرفة": "Destroy Room",
@@ -119,13 +133,11 @@ function tr(text) {
     return translationDict[text] || text;
 }
 
-// دالة الترجمة الجديدة المحدثة لحل مشكلة التكرار
 function translateDOM() {
     const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
     let n;
     while(n = walker.nextNode()) {
         if(n.parentElement && !['SCRIPT','STYLE'].includes(n.parentElement.tagName)) {
-            // حفظ النص الأصلي للحرف لمنع تلفه
             if (n._originalText === undefined) {
                 n._originalText = n.nodeValue;
             }
@@ -133,11 +145,9 @@ function translateDOM() {
             let newText = n._originalText;
             if (currentLang === 'en') {
                 let trimmed = newText.trim();
-                // تطابق كامل
                 if (translationDict[trimmed]) {
                     newText = newText.replace(trimmed, translationDict[trimmed]);
                 } else {
-                    // تطابق جزئي دقيق لمنع التكرار
                     let keys = Object.keys(translationDict).sort((a,b) => b.length - a.length);
                     for(let key of keys) {
                         if (newText.includes(key)) {
@@ -150,7 +160,6 @@ function translateDOM() {
         }
     }
     
-    // ترجمة الـ Placeholders
     document.querySelectorAll('[placeholder]').forEach(el => {
         if (el._originalPlaceholder === undefined) {
             el._originalPlaceholder = el.placeholder;
@@ -164,7 +173,6 @@ function translateDOM() {
     });
 }
 
-// إنشاء علامة الإصدار وزر اللغة
 document.addEventListener("DOMContentLoaded", () => {
     const versionLabel = document.createElement('div');
     versionLabel.id = 'appVersionLabel';
@@ -431,6 +439,7 @@ socket.on('connect', () => {
 
 let kickedPlayersGlobal = [];
 
+// --- إصلاح تداخل الأسماء في قائمة اللاعبين ---
 socket.on('updatePlayers', (data) => {
     let playersArray = [];
     if(Array.isArray(data)) { playersArray = data; } 
@@ -441,15 +450,28 @@ socket.on('updatePlayers', (data) => {
     
     playersArray.forEach(p => {
         const isMe = p.id === myPlayerId; 
-        const hostBadge = p.isHost ? `<span style="color:#00f3ff; font-weight:bold; margin-left:5px;">👑 ${tr("هوست")}</span>` : ''; 
-        const youBadge = isMe ? `<span style="color:#00ff88; margin-left:5px;">(${tr("أنت")})</span>` : '';
-        const scoreBadge = currentGameMode === 'rebus' ? `<span style="background:rgba(255, 230, 0, 0.2); color:#ffe600; padding:2px 8px; border-radius:10px; font-weight:bold; font-size:0.9rem; margin-right:auto; border:1px solid #ffe600;">${p.score || 0} ${tr("نقطة")}</span>` : '';
-        const isSpectator = kickedPlayersGlobal.includes(p.id) ? `<span style="color:#ff0055; font-size:0.8rem; margin-right:5px;">(${tr("مُشاهد 👁️")})</span>` : '';
-        // لا نترجم اسم اللاعب لأنه اسم شخص
-        listHTML += `<div class="player-item ${kickedPlayersGlobal.includes(p.id) ? 'kicked' : ''}"><div class="player-avatar">👤</div><div class="player-info" style="width:100%;"><div class="player-name">${tr(p.name)}</div><div class="player-status" style="display:flex; align-items:center;">${hostBadge}${youBadge}${isSpectator}${scoreBadge}</div></div></div>`; 
+        const hostBadge = p.isHost ? `<span style="color:#00f3ff; font-weight:bold; padding:0 3px;">👑 ${tr("هوست")}</span>` : ''; 
+        const youBadge = isMe ? `<span style="color:#00ff88; padding:0 3px;">(${tr("أنت")})</span>` : '';
+        const scoreBadge = currentGameMode === 'rebus' ? `<div style="background:rgba(255, 230, 0, 0.2); color:#ffe600; padding:4px 10px; border-radius:10px; font-weight:bold; font-size:0.9rem; border:1px solid #ffe600; white-space:nowrap;">${p.score || 0} ${tr("نقطة")}</div>` : '';
+        const isSpectator = kickedPlayersGlobal.includes(p.id) ? `<span style="color:#ff0055; font-size:0.8rem; padding:0 3px;">(${tr("مُشاهد 👁️")})</span>` : '';
+        
+        // بناء تصميم مرن وجديد لمنع تداخل الأسماء والأزرار مع إضافة ... للاسم الطويل
+        listHTML += `
+        <div class="player-item ${kickedPlayersGlobal.includes(p.id) ? 'kicked' : ''}" style="display:flex; align-items:center; justify-content:space-between; padding:12px 10px; border-bottom:1px solid rgba(255,255,255,0.05); gap:10px;">
+            <div style="display:flex; align-items:center; gap:12px; flex-grow:1; overflow:hidden;">
+                <div class="player-avatar" style="font-size:1.8rem; flex-shrink:0;">👤</div>
+                <div class="player-info" style="display:flex; flex-direction:column; gap:4px; overflow:hidden;">
+                    <div class="player-name" style="font-weight:bold; font-size:1.1rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${tr(p.name)}</div>
+                    <div class="player-status" style="display:flex; flex-wrap:wrap; gap:2px; font-size:0.8rem; align-items:center;">
+                        ${hostBadge}${youBadge}${isSpectator}
+                    </div>
+                </div>
+            </div>
+            <div class="player-score" style="flex-shrink:0;">${scoreBadge}</div>
+        </div>`; 
         
         const actionBtn = p.isHost ? `<button class="btn-sidebar edit" style="width: auto; padding: 5px 10px; margin: 0;" onclick="editPlayerName('${p.id}')">✏️</button>` : `<button class="btn-sidebar edit" style="width: auto; padding: 5px 10px; margin: 0; margin-left: 5px;" onclick="editPlayerName('${p.id}')">✏️</button><button class="btn-sidebar btn-danger" style="width: auto; padding: 5px 10px; margin: 0;" onclick="kickPlayer('${p.id}')">❌</button>`;
-        modalHTML += `<div class="modal-player-item" style="display:flex; justify-content:space-between; align-items: center; margin-bottom:10px; background:rgba(255,255,255,0.1); padding:10px; border-radius:5px;"><span style="font-weight:bold;">${tr(p.name)} ${p.isHost?'👑':''} ${isSpectator}</span><div style="display:flex;">${actionBtn}</div></div>`;
+        modalHTML += `<div class="modal-player-item" style="display:flex; justify-content:space-between; align-items: center; margin-bottom:10px; background:rgba(255,255,255,0.1); padding:10px; border-radius:5px;"><span style="font-weight:bold; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:60%;">${tr(p.name)} ${p.isHost?'👑':''} ${isSpectator}</span><div style="display:flex; flex-shrink:0;">${actionBtn}</div></div>`;
     });
     
     document.getElementById('playersList').innerHTML = listHTML; document.getElementById('modalPlayersList').innerHTML = modalHTML;
@@ -516,26 +538,67 @@ socket.on('categorySelected', (cat) => {
     const card = document.getElementById(`cat-idx-${targetIdx}`); if (card) card.classList.add('selected'); chosenCategory = cat; document.getElementById('confirmStartGameBtn').classList.remove('hidden');
 });
 
+// --- إزالة عجلة الحظ الكلاسيكية وعمل Slot Machine عصري ---
 socket.on('wheelSpinning', (targetCat) => {
-    isWheelSpinning = true; document.getElementById('confirmStartGameBtn').classList.add('hidden'); document.getElementById('realWheelModal').classList.remove('hidden');
-    const spinner = document.getElementById('wheelSpinnerElement'); const targetIdx = availableCategories.indexOf(targetCat);
-    spinner.style.transition = 'none'; spinner.style.transform = 'rotate(0deg)'; void spinner.offsetWidth; 
-    const randomOffset = Math.floor(Math.random() * 30) - 15; const targetRotation = (360 * 8) - (targetIdx * 45) + randomOffset;
-    spinner.style.transition = 'transform 5s cubic-bezier(0.1, 0.7, 0.1, 1)'; spinner.style.transform = `rotate(${targetRotation}deg)`;
+    isWheelSpinning = true; 
+    document.getElementById('confirmStartGameBtn').classList.add('hidden'); 
+    document.getElementById('realWheelModal').classList.remove('hidden');
     
-    let startTime = Date.now();
-    function playTick() {
-        if (!isWheelSpinning) return; let elapsed = Date.now() - startTime; if (elapsed > 4900) return; 
-        playSound('vote'); let progress = elapsed / 5000; let nextDelay = 30 + (Math.pow(progress, 3) * 500); 
-        setTimeout(playTick, nextDelay);
+    const spinner = document.getElementById('wheelSpinnerElement'); 
+    
+    // تصفير إعدادات الأنيميشن القديمة
+    spinner.style.transition = 'none'; 
+    spinner.style.transform = 'none'; 
+    spinner.style.width = '100%';
+    spinner.style.display = 'flex';
+    spinner.style.justifyContent = 'center';
+    spinner.style.alignItems = 'center';
+    spinner.style.minHeight = '150px';
+    
+    // تصميم المربع السريع الجديد
+    spinner.innerHTML = `<div id="shuffleText" style="font-size:2rem; font-weight:bold; color:#00f3ff; text-align:center; padding: 20px 40px; background:rgba(0,0,0,0.6); border-radius:15px; border:2px solid #00f3ff; box-shadow: 0 0 15px #00f3ff; text-shadow: 0 0 10px #00f3ff; transition: 0.2s transform;">${tr('جاري الاختيار...')}</div>`;
+    
+    const shuffleDiv = document.getElementById('shuffleText');
+    
+    let shuffles = 0;
+    let maxShuffles = 30; // عدد التغييرات السريعة
+    let intervalTime = 40; // سرعة التغيير الأولي
+
+    function doShuffle() {
+        if (shuffles < maxShuffles) {
+            // اختيار كلمة عشوائية مؤقتة
+            shuffleDiv.innerText = tr(availableCategories[Math.floor(Math.random() * availableCategories.length)]);
+            playSound('click'); // تكة متزامنة مع كل تغيير
+            shuffles++;
+            intervalTime += (shuffles / maxShuffles) * 12; // تبطئ تدريجياً
+            setTimeout(doShuffle, intervalTime);
+        } else {
+            // التوقف النهائي على التصنيف الصح
+            shuffleDiv.innerText = tr(targetCat);
+            shuffleDiv.style.color = '#00ff88';
+            shuffleDiv.style.borderColor = '#00ff88';
+            shuffleDiv.style.boxShadow = '0 0 20px #00ff88';
+            shuffleDiv.style.textShadow = '0 0 20px #00ff88';
+            shuffleDiv.style.transform = 'scale(1.1)'; // تأثير تكبير لحظي
+            playSound('win'); // صوت تأكيد الفوز متزامن تماماً
+            
+            isWheelSpinning = false; 
+            
+            document.querySelectorAll('.category-card').forEach(c => c.classList.remove('selected', 'roulette-active'));
+            const targetIdx = availableCategories.indexOf(targetCat);
+            const targetCard = document.getElementById(`cat-idx-${targetIdx}`);
+            if(targetCard) targetCard.classList.add('selected'); 
+            chosenCategory = targetCat;
+            
+            setTimeout(() => { 
+                document.getElementById('realWheelModal').classList.add('hidden'); 
+                if(isHost) document.getElementById('confirmStartGameBtn').classList.remove('hidden'); 
+            }, 2000);
+        }
     }
-    playTick();
     
-    setTimeout(() => {
-        isWheelSpinning = false; playSound('win'); document.querySelectorAll('.category-card').forEach(c => c.classList.remove('selected', 'roulette-active'));
-        document.getElementById(`cat-idx-${targetIdx}`).classList.add('selected'); chosenCategory = targetCat;
-        setTimeout(() => { document.getElementById('realWheelModal').classList.add('hidden'); if(isHost) document.getElementById('confirmStartGameBtn').classList.remove('hidden'); }, 1500);
-    }, 5000); 
+    // بدء الأنيميشن
+    doShuffle();
 });
 
 const confirmStartGameBtn = document.getElementById('confirmStartGameBtn');
@@ -567,6 +630,14 @@ socket.on('gameStarted', (data) => {
 
 const startVotingPhaseBtn = document.getElementById('startVotingPhaseBtn');
 if (startVotingPhaseBtn) startVotingPhaseBtn.addEventListener('click', (e) => { e.target.disabled = true; playSound('start'); socket.emit('startVotingPhase', sessionStorage.getItem('hostRoomId')); setTimeout(() => e.target.disabled = false, 2000); });
+
+function addLogMessage(containerId, htmlContent) {
+    const log = document.getElementById(containerId);
+    log.insertAdjacentHTML('afterbegin', htmlContent);
+    if (log.children.length > 50) {
+        log.removeChild(log.lastChild);
+    }
+}
 
 socket.on('votingStarted', (data) => { 
     playSound('start'); 
@@ -614,7 +685,9 @@ socket.on('voteRegistered', (data) => {
     if (data.voterName !== "النظام") playSound('vote'); 
     document.getElementById('voteCounter').innerText = `${data.currentVotes}/${data.totalRequired}`; 
     if (data.currentVotes >= data.totalRequired) { document.getElementById('voteCounter').style.color = "#00ff88"; document.getElementById('voteCounter').style.textShadow = "0 0 10px #00ff88"; } 
-    if (data.voterName !== "النظام") { const logP = document.createElement('div'); logP.className = 'log-entry'; logP.innerHTML = `${tr(data.voterName)} ${tr("صوت على")} <span class="target-name">${tr(data.targetName)}</span>`; document.getElementById('liveVoteLog').prepend(logP); } 
+    if (data.voterName !== "النظام") { 
+        addLogMessage('liveVoteLog', `<div class="log-entry">${tr(data.voterName)} ${tr("صوت على")} <span class="target-name">${tr(data.targetName)}</span></div>`); 
+    } 
 });
 
 socket.on('votingEnded', (data) => { 
@@ -854,17 +927,17 @@ if (chatInput) chatInput.addEventListener('keypress', (e) => {
 });
 
 socket.on('rebusChatMsg', (data) => { 
-    document.getElementById('chatLog').innerHTML = `<div class="chat-msg"><span class="sender">${tr(data.playerName)}:</span> ${data.msg}</div>` + document.getElementById('chatLog').innerHTML; 
+    addLogMessage('chatLog', `<div class="chat-msg"><span class="sender">${tr(data.playerName)}:</span> ${data.msg}</div>`);
 });
 
 socket.on('rebusCorrectGuess', (data) => { 
     playSound('vote'); 
-    document.getElementById('chatLog').innerHTML = `<div class="chat-msg correct">${tr("لقد عرفها")} ${tr(data.playerName)}</div>` + document.getElementById('chatLog').innerHTML; 
+    addLogMessage('chatLog', `<div class="chat-msg correct">${tr("لقد عرفها")} ${tr(data.playerName)}</div>`);
 });
 
 socket.on('rebusCloseGuess', (data) => {
     playSound('vote');
-    document.getElementById('chatLog').innerHTML = `<div class="chat-msg close-guess">⚠️ (${tr("كلمة قريبة جداً")}) ${tr("أنت:")} ${data.msg}</div>` + document.getElementById('chatLog').innerHTML; 
+    addLogMessage('chatLog', `<div class="chat-msg close-guess">⚠️ (${tr("كلمة قريبة جداً")}) ${tr("أنت:")} ${data.msg}</div>`);
 });
 
 socket.on('rebusRoundEnded', (data) => { 

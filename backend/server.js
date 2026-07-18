@@ -302,6 +302,9 @@ function getEditDistance(a, b) {
 }
 
 io.on('connection', (socket) => {
+    socket.lastChatTime = 0; 
+    socket.lastVoteTime = 0;
+
     socket.on('createRoom', (data) => {
         try {
             const roomId = data.roomId; const playerId = data.playerId; const hostName = data.name || '𝐒𝐀𝐒𝐔𝐊𝐄';
@@ -411,6 +414,10 @@ io.on('connection', (socket) => {
         let targetId = typeof data === 'object' ? data.targetId : data; let fallbackRoomId = typeof data === 'object' ? data.fallbackRoomId : null;
         let roomId = socket.roomId || fallbackRoomId; const playerId = socket.playerId;
         
+        const now = Date.now();
+        if (now - socket.lastVoteTime < 300) return;
+        socket.lastVoteTime = now;
+
         if(roomId && rooms[roomId] && rooms[roomId].gameState === 'voting') {
             if (rooms[roomId].gameMode === 'spy2' && rooms[roomId].kickedPlayers && rooms[roomId].kickedPlayers.includes(playerId)) return;
             
@@ -480,6 +487,10 @@ io.on('connection', (socket) => {
     });
 
     socket.on('sendChatMsg', (data) => {
+        const now = Date.now();
+        if (now - socket.lastChatTime < 300) return;
+        socket.lastChatTime = now;
+
         let r = socket.roomId || data.fallbackRoomId;
         if(r && rooms[r] && rooms[r].gameState === 'rebus_playing') {
             let pid = socket.playerId; 

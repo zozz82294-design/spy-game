@@ -59,7 +59,7 @@ const rebusPuzzlesDB = [
     { category: "حلوى", clue: "شوكو + ❌ + ة", answer: "شوكولاتة", answerEn: ["chocolate"] },
     { category: "طعام", clue: "سان + 🚿", answer: "ساندوتش", answerEn: ["sandwich"] },
     { category: "مكان", clue: "صي + 🍉 + ة", answer: "صيدلية", answerEn: ["pharmacy", "clinic"] },
-    { category: "طائر", clue: "عص + 💡", answer: "عصفور", answerEn: ["bird", "sparrow"] },
+    { category: "طائر", clue: "عص + 💡", عصفور: ["bird", "sparrow"] },
     { category: "أداة", clue: "م + 🗝️", answer: "مفتاح", answerEn: ["key"] },
     { category: "فاكهة", clue: "بر + 🍊", answer: "برتقال", answerEn: ["orange"] },
     { category: "مكان", clue: "م + 🏫", answer: "مدرسة", answerEn: ["school"] },
@@ -319,7 +319,7 @@ io.on('connection', (socket) => {
             if (rooms[roomId].players[playerId] && rooms[roomId].players[playerId].disconnectTimeout) { clearTimeout(rooms[roomId].players[playerId].disconnectTimeout); rooms[roomId].players[playerId].disconnectTimeout = null; }
             
             const existingName = rooms[roomId].players[playerId] ? rooms[roomId].players[playerId].name : hostName;
-            rooms[roomId].players[playerId] = { id: playerId, socketId: socket.id, name: existingName, isHost: true, joinTime: Date.now() };
+            rooms[roomId].players[playerId] = { id: playerId, socketId: socket.id, name: existingName, isHost: true, joinTime: Date.now(), isOnline: true };
             
             emitUpdatedPlayers(roomId);
             socket.emit('syncState', rooms[roomId].gameState, rooms[roomId].gameMode);
@@ -344,10 +344,11 @@ io.on('connection', (socket) => {
                 if (isExistingPlayer) {
                     if (rooms[roomId].players[playerId].disconnectTimeout) { clearTimeout(rooms[roomId].players[playerId].disconnectTimeout); rooms[roomId].players[playerId].disconnectTimeout = null; }
                     rooms[roomId].players[playerId].socketId = socket.id;
+                    rooms[roomId].players[playerId].isOnline = true;
                 } else {
                     let finalName = data.name.trim(); let suffix = 1;
                     while(Object.values(rooms[roomId].players).some(p => p.name === finalName)) { finalName = `${data.name.trim()} (${suffix})`; suffix++; }
-                    rooms[roomId].players[playerId] = { id: playerId, socketId: socket.id, name: finalName, isHost: false, joinTime: Date.now() };
+                    rooms[roomId].players[playerId] = { id: playerId, socketId: socket.id, name: finalName, isHost: false, joinTime: Date.now(), isOnline: true };
                     rooms[roomId].scores[playerId] = 0;
                 }
                 
@@ -603,6 +604,8 @@ io.on('connection', (socket) => {
     socket.on('disconnect', () => { 
         const roomId = socket.roomId; const playerId = socket.playerId; 
         if (roomId && rooms[roomId] && rooms[roomId].players[playerId]) { 
+            rooms[roomId].players[playerId].isOnline = false;
+            emitUpdatedPlayers(roomId);
             const isHost = rooms[roomId].players[playerId].isHost;
             const timeoutLimit = isHost ? 3600000 : 180000; 
             rooms[roomId].players[playerId].disconnectTimeout = setTimeout(() => { handlePlayerLeave(roomId, playerId); }, timeoutLimit); 
